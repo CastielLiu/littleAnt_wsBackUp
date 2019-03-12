@@ -53,7 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 catkin_package(
-  INCLUDE_DIRS include
+#  INCLUDE_DIRS include
   
 #  LIBRARIES ant_base_control
   CATKIN_DEPENDS roscpp rospy std_msgs little_ant_msgs

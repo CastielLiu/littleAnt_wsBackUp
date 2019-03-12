@@ -65,12 +65,14 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
         return 0;
     else
         buf_rear += len;
-   
-   // printf("len = %d\r\n",len);
-    /*
+  
+   /* printf("len = %d\r\n",len);
+    printf("buf:%ld\t hreader:%ld\trear:%ld\r\n",buf,buf_head,buf_rear);
+    
     for(uint8_t * ptr=buf_head;ptr<buf_rear;ptr++)
     	printf("%x\t",*ptr);
-    printf("\n\n");*/
+    printf("\n\n");
+    */
     //uint8_t *firstBufHeader = buf_head;
 
     unsigned char pkgCmd =0;
@@ -78,8 +80,6 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
     
 	
     //当数据长度大于最小消息长度时即应解析数据
-    //当数据长度大于最小消息长度但小于stdCanMsg长度时，不应解析 stdCanMsg goto
-    //为防止数据覆盖，即使buf中可以解析出多条消息，也只解析一条，剩于的下次再解析
     for(; (buf_rear-buf_head)>=MIN_MSG_LEN;buf_head++)
     {
         if(*((uint16_t *)buf_head) != 0xCC66)
@@ -95,19 +95,17 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
 		printf("%05d\tfind header  %d  pkg_len:%d\r\n",SEQ_,buf_head-firstBufHeader,rec_pkg_len);
 		*/
 		
-        if((buf_rear-buf_head)<rec_pkg_len+4) //包不完整
+		//std::cout <<"(buf_rear-buf_head)"<< (buf_rear-buf_head) <<std::endl;
+		
+        if((buf_rear-buf_head)<rec_pkg_len+4 && (buf_rear-buf_head)>0) //包不完整
         {
-        	if(MAX_GET_COUNT > buf+BUF_LENGTH-1-buf_rear) //剩余buf空间不足以存放MAX_GET_COUNT
-            	goto Data_mosaic;//数据拼接
-        	else
-        		break;
+        	break;
         }
         	
-
         if(false == check(serial_msg_ptr)) //校验失败并不一定是数据传输错误,可能是检测到了伪数据头
         									//因此不能跨字节查找
         {
-            printf("check failed!!\n");
+            printf("can->serial  check failed!!\n");
            // printf("buf_head=%x\tbuf=%x\r\n",buf_head,buf);
             continue;
         }
@@ -155,17 +153,21 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
         }
         buf_head += (rec_pkg_len+3);  //虽然偏移量为rec_pkg_len+4，但是一定要+3 因为for循环的时候还会+1，
         								//丢包严重才发现这个问题
+        								
+        //~ if((buf_rear-buf_head)==0)
+			//~ buf_head
     }
-
-Data_mosaic:
-    int j=0;
-    for(;j<(buf_rear-buf_head);j++)
-    {
-        buf[j] = buf_head[j];
-    }
-
-    buf_rear = buf+j;
-    buf_head = buf;
+    if(MAX_GET_COUNT > BUF_LENGTH-(buf_rear-buf)-20) //剩余buf空间不足以存放MAX_GET_COUNT
+	{
+		int j=0;
+		for(;j<(buf_rear-buf_head);j++)
+		{
+			buf[j] = buf_head[j];
+		}
+		buf_rear = buf+j;
+		buf_head = buf;
+		return 0;
+	}
 
     return pkgCmd;
 }
