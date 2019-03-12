@@ -62,7 +62,7 @@ catkin_package(
 
 
 include_directories(
- include
+ include/little_ant/base_control
   src/base_control/USB2CAN
   ${catkin_INCLUDE_DIRS}
 )

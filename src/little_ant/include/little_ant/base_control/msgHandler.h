@@ -7,11 +7,12 @@
 #include"can2serial.h"
 #include <little_ant_msgs/State1.h>
 #include <little_ant_msgs/State2.h>
+#include <little_ant_msgs/State3.h>
+#include <little_ant_msgs/State4.h>
+
 
 #include <little_ant_msgs/ControlCmd1.h>
-#include <little_ant_msgs/ControlCmd4.h>
 #include <little_ant_msgs/ControlCmd2.h>
-#include <little_ant_msgs/ControlCmd3.h>
 
 #define ID_CMD_1 0x2C5
 #define	ID_CMD_2 0x1C5
@@ -27,7 +28,7 @@ class MsgHandler
 public:
 	MsgHandler();
 	~MsgHandler();
-	bool init();
+	bool init(int ,char**);
 	void run();
 	
 	void parse();
@@ -56,11 +57,8 @@ private:
 	little_ant_msgs::State2 state2;
 	little_ant_msgs::State3 state3;
 	little_ant_msgs::State4 state4;
-	
-	
-	
 
-}
+};
 
 
 #endif

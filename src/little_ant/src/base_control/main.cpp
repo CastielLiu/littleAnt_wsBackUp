@@ -24,26 +24,39 @@ MsgHandler::~MsgHandler()
 	
 }
 
-bool MsgHandler::init()
+bool MsgHandler::init(int argc,char**argv)
 {
 	ros::init(argc,argv,"base_control");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	nh_private.param<std::string>("port_name", port_name_, "/dev/ttyUSB0");
 	
-	cmd1_sub = nh.subscribe<little_ant_msgs::ControlCmd1>("/controlCmd1",10,&MsgHandler::callBack1,this);
-	cmd2_sub = nh.subscribe<little_ant_msgs::ControlCmd2>("/controlCmd2",10,&MsgHandler::callBack2,this);
+	cmd1_sub = nh.subscribe("/controlCmd1",10,&MsgHandler::callBack1,this);
+	cmd2_sub = nh.subscribe("/controlCmd2",10,&MsgHandler::callBack2,this);
 	
-	state1_pub = nh.publish<little_ant_msgs::State1>("vehicleState1",10);
-	state2_pub = nh.publish<little_ant_msgs::State2>("vehicleState2",10);
-	state3_pub = nh.publish<little_ant_msgs::State3>("vehicleState3",10);
-	state4_pub = nh.publish<little_ant_msgs::State4>("vehicleState4",10);
+	state1_pub = nh.advertise<little_ant_msgs::State1>("vehicleState1",10);
+	state2_pub = nh.advertise<little_ant_msgs::State2>("vehicleState2",10);
+	state3_pub = nh.advertise<little_ant_msgs::State3>("vehicleState3",10);
+	state4_pub = nh.advertise<little_ant_msgs::State4>("vehicleState4",10);
 	
 	if(!can2serial.openPort(port_name_.c_str()))
 	{
 		ROS_INFO("open port %s failed",port_name_.c_str());
 		return 0;
 	}
+	
+	can2serial.run();
+	
+	while(!can2serial.configBaudrate(500))
+		usleep(10000);
+	
+	int baudrate;
+	while(!(baudrate=can2serial.inquireBaudrate()))
+		usleep(10000);
+		
+	ROS_INFO("baudrate:%d",baudrate);
+	
+	can2serial.clearCanFilter();
 	return 1;
 }
 
@@ -60,9 +73,15 @@ void MsgHandler::parse()
 
 	while(ros::ok())
 	{
+		//ROS_INFO("ing.....");
 		usleep(3000);
 		if(!can2serial.getMsg(canMsg))
+		{
+			//ROS_INFO("nothing....");
 			continue;
+		}
+			
+		ROS_INFO("ID:%x",canMsg.ID);
 			
 		switch(canMsg.ID)
 		{
@@ -127,7 +146,7 @@ void MsgHandler::parse()
 
 
 
-void callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
+void MsgHandler::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 {
 	if(msg->set_driverlessMode)
 		canMsg_cmd1.data[0] |= 0x01;
@@ -147,7 +166,7 @@ void callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 	if(msg->set_turnLight_R)
 		canMsg_cmd1.data[1] |= 0x01;
 	else
-		canMsg_cmd1.data[1] &= 0xfe
+		canMsg_cmd1.data[1] &= 0xfe;
 		
 	if(msg->set_turnLight_L)
 		canMsg_cmd1.data[1] |= 0x02;
@@ -178,7 +197,7 @@ void callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 	
 }
 
-void callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
+void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
 	canMsg_cmd2.data[0] &= 0xf0;
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
@@ -194,7 +213,7 @@ void callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle%256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle>>8);
 	
-	if(set_emergencyBrake)
+	if(msg->set_emergencyBrake)
 		canMsg_cmd2.data[7] |= 0x10;
 	else
 		canMsg_cmd2.data[7] &= 0xef;
@@ -213,7 +232,7 @@ int main(int argc,char**argv)
 {
 	MsgHandler msgHandler;
 	
-	if(msgHandler.init())
+	if(msgHandler.init(argc,argv))
 		msgHandler.run();
 	
 	

@@ -53,6 +53,7 @@ void CAN_2_SERIAL::parse_msg()
 	{
 		receiveCanMsgFromDev();
 		usleep(1000);
+		//std::cout << "here "<< std::endl;
 	}
 }
 
@@ -64,9 +65,9 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
         return 0;
     else
         buf_rear += len;
+   
+   // printf("len = %d\r\n",len);
     /*
-    printf("len = %d\r\n",len);
-    
     for(uint8_t * ptr=buf_head;ptr<buf_rear;ptr++)
     	printf("%x\t",*ptr);
     printf("\n\n");*/
@@ -106,12 +107,14 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
         if(false == check(serial_msg_ptr)) //校验失败并不一定是数据传输错误,可能是检测到了伪数据头
         									//因此不能跨字节查找
         {
-            //printf("check failed!!\n");
+            printf("check failed!!\n");
            // printf("buf_head=%x\tbuf=%x\r\n",buf_head,buf);
             continue;
         }
 
         pkgCmd = serial_msg_ptr->cmd;
+
+		//std::cout << "pkgCmd:" <<pkgCmd <<std::endl;
 
         switch(pkgCmd)
         {
