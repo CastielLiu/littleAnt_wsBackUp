@@ -60,6 +60,8 @@ bool Serial::setOption()
     //termios_new.c_iflag &= ~(IXON|IXOFF|IXANY);
     termios_new.c_iflag &= ~ISTRIP;
     termios_new.c_iflag |= IGNBRK;
+    
+    termios_new.c_iflag &= ~ICRNL;
 
     termios_new.c_cflag |= CLOCAL;
     termios_new.c_cflag |= CREAD;
