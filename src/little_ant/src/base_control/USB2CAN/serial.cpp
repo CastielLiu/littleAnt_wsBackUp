@@ -6,7 +6,7 @@ using namespace std;
 
 Serial::Serial() 
 {
-    fd = -1;
+    
 }
 
 Serial::~Serial()
@@ -14,143 +14,69 @@ Serial::~Serial()
 	closeOff();
 }
 
-bool Serial::openUp(const char *dev)
+bool Serial::openUp(std::string port_name,int baud_rate)
 {
-    struct termios termios_old;
-    fd = open(dev, O_RDWR | O_NOCTTY | O_NDELAY );
-    if (fd < 0){
-        return false;
-    }
-    tcgetattr(fd , &termios_old);
-    return true;
+	baud_rate_ = baud_rate;
+	
+	if (port_) 
+	{
+	    perror("error : port is already opened...");
+	    return false;
+	}
+	port_ = serial_port_ptr(new boost::asio::serial_port(io_service_));
+	port_->open(port_name, ec_);
+	if (ec_) 
+	{
+	    //printf("error : port_->open() failed...port_name=" << port_name_ << ", e=" << ec_.message().c_str());
+		return false;
+	}
+  
+  return true;
+  	
 }
 
-bool Serial::closeOff()
+void  Serial::closeOff()
 {
-    struct termios termios_old;
-    if(fd > 0){
-        tcsetattr(fd, TCSADRAIN, &termios_old);
-        close(fd);
+    if (port_) 
+	{
+	    port_->cancel();
+	    port_->close();
+	    port_.reset();
     }
-    fd = -1;
-    return true;
+	io_service_.stop();
+	io_service_.reset();
 }
 
-bool Serial::setOption()
+bool Serial::setOption( )
 {
-    tcflush(fd, TCIOFLUSH);
-     fcntl(fd, F_GETFL, 0);
-/*    
-    struct termios termios_old;
-    if (tcgetattr(fd, &termios_old) != 0)
-    {
-        return false;
-    }
-*/
-    struct termios termios_new;
-    cfsetispeed(&termios_new, B460800);
-    cfsetospeed(&termios_new, B460800);
 
-    termios_new.c_cflag &= ~CSIZE;
-    termios_new.c_cflag |= CS8;
+	// option settings...
+  port_->set_option(boost::asio::serial_port_base::baud_rate(baud_rate_));
+  port_->set_option(boost::asio::serial_port_base::character_size(8));
+  port_->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+  port_->set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+  port_->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
 
-    termios_new.c_cflag &= ~PARENB;
-    termios_new.c_cflag &= ~CSTOPB;
-    termios_new.c_cflag &= ~CRTSCTS;
-    //termios_new.c_iflag &= ~(IXON|IXOFF|IXANY);
-    termios_new.c_iflag &= ~ISTRIP;
-    termios_new.c_iflag |= IGNBRK;
-    
-    termios_new.c_iflag &= ~ICRNL;
-
-    termios_new.c_cflag |= CLOCAL;
-    termios_new.c_cflag |= CREAD;
-
-    termios_new.c_cc[VTIME] = 0;
-    termios_new.c_cc[VMIN] = 1;
-
-    termios_new.c_oflag = 0;
-    termios_new.c_lflag = 0;
-
-    if (tcsetattr(fd, TCSANOW, &termios_new) != 0)
-    {
-        return false;
-    }
-
-    int mcs = 0;
-    ioctl(fd, TIOCMGET, &mcs);
-    mcs |= TIOCM_RTS;
-    ioctl(fd, TIOCMSET, &mcs);
-    return true;
-/*
-    bzero(&termios_new, sizeof(termios_new));
-    cfmakeraw(&termios_new);
-    termios_new.c_cflag = B460800;
-    termios_new.c_cflag |= CLOCAL | CREAD;
-    termios_new.c_cflag &= ~CSIZE;
-    termios_new.c_cflag |= CS8;
-    termios_new.c_cflag &= ~CSTOPB;
-    termios_new.c_cflag &= ~PARENB;
-
-    tcflush(fd, TCIFLUSH);
-    tcflush(fd, TCOFLUSH);
-    termios_new.c_cc[VTIME] = 1;
-    termios_new.c_cc[VMIN] = 1;
-    tcflush(fd, TCIFLUSH);
-    tcsetattr(fd, TCSANOW, &termios_new);
-
-    return true;
-*/
+	return true;
 }
+
 
 int Serial::send(const unsigned char *data, int length)
 {
-    int len = 0, total_len = 0;
-    if(fd <0)
-    { 
-        return -1;
-    }
-
-    for (total_len=0;total_len<length;) 
-    {
-        len = write(fd, &data[total_len], length-total_len);
-        if (len > 0) 
-        {
-            total_len += len;
-        }
-        else if(len <= 0)
-        {
-            len = -1;
-            break;
-        }
-     }
-    return len;
+    return  boost::asio::write(*port_.get(), boost::asio::buffer(data, length), ec_);
 }
 
 int Serial::recv(unsigned char *data, int length)
 {
-    //cout << "ok2" << endl;
-    if (fd < 0) {
-       return -1;
-    }
-    memset(data, 0, length);//memset()
-    int len = 0;
-    len = read(fd, data, length);
-    //~ while((len = read(fd, data, length))<=0)
-    //~ {
-	//~ //	ros::Duration(0.001).sleep();
-		//~ usleep(1000);
-//~ //        memset(data, 0, length);
-//~ //        len = 0;
-    //~ }
-    //printf("%02x ", (unsigned char)*data);
-    //printf("read ok: %d, %02x\n", len, (unsigned char)*data);
-    return len;
+    return boost::asio::read(*port_.get(), boost::asio::buffer(data, length), ec_);
 }
 
 
 bool Serial::isOpen()
 {
-    return (fd>=0)?true:false;
+	if(port_)
+		return true;
+	else
+		return false;
 }
 

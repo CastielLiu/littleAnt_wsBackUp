@@ -15,6 +15,7 @@ CAN_2_SERIAL::CAN_2_SERIAL()
 
 CAN_2_SERIAL::~CAN_2_SERIAL()
 {
+	boost::mutex::scoped_lock look(mutex_);
     this->closePort();
    // std::cout << "closePort "<<std::endl;
 }
@@ -126,7 +127,10 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
                 
                 if(stdCanMsgArray.size()==stdCanMsgArray.capacity())
                 	stdCanMsgArray.erase(stdCanMsgArray.begin());
+                
+               // mutex_.lock();
                 stdCanMsgArray.push_back(stdCanMsg);
+                //mutex_.unlock();
                 //std::cout << "vectorSize:"<<stdCanMsgArray.size()<< std::endl;
                 
                 //std::cout<< std::hex <<stdCanMsg.ID<<std::endl;;

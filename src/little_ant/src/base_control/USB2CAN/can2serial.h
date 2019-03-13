@@ -96,6 +96,8 @@ private:
     bool check(const SERIAL_MSG *serial_msg);
     int sendCmd(uint8_t cmdId,const uint8_t *buf,uint8_t count) ;
     uint8_t generateCheckNum(const uint8_t * ,int );
+    
+    boost::mutex mutex_;
 
 };
 

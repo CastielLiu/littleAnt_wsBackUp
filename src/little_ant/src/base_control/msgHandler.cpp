@@ -39,18 +39,24 @@ bool MsgHandler::init(int argc,char**argv)
 		return 0;
 	}
 	
+	can2serial.setCanFilter(0x01,ID_STATE1,ID_STATE1); usleep(10000);
+	can2serial.setCanFilter(0x02,ID_STATE2,ID_STATE2); usleep(10000);
+	can2serial.setCanFilter(0x03,ID_STATE3,ID_STATE3); usleep(10000);
+	can2serial.setCanFilter(0x04,ID_STATE4,ID_STATE4); usleep(10000);
+	
 	can2serial.run();
 	
 	while(!can2serial.configBaudrate(500))
+	{
+		ROS_INFO("set baudrate...");
 		usleep(10000);
-	
-	int baudrate;
-	while(!(baudrate=can2serial.inquireBaudrate()))
-		usleep(10000);
+	}
 		
-	ROS_INFO("baudrate:%d",baudrate);
+	ROS_INFO("System initialization completed");
 	
-	can2serial.clearCanFilter();
+	//usleep(1500000);
+	
+	//can2serial.clearCanFilter();
 	return 1;
 }
 
@@ -93,15 +99,15 @@ void MsgHandler::parse()
 				
 			case ID_STATE2:
 				state2.wheel_speed_FL_valid = !(canMsg.data[0] >>6);
-				state2.wheel_speed_FL = (canMsg.data[0]&0x3f)*256+canMsg.data[1];
+				state2.wheel_speed_FL = ((canMsg.data[0]&0x3f)*256+canMsg.data[1])*0.0625;
 				state2.wheel_speed_FR_valid = !(canMsg.data[1] >>6);
-				state2.wheel_speed_FR = (canMsg.data[2]&0x3f)*256+canMsg.data[3];
+				state2.wheel_speed_FR = ((canMsg.data[2]&0x3f)*256+canMsg.data[3])*0.0625;
 				
 				state2.wheel_speed_RL_valid = !(canMsg.data[4] >>6);
-				state2.wheel_speed_RL = (canMsg.data[4]&0x3f)*256+canMsg.data[5];
+				state2.wheel_speed_RL = ((canMsg.data[4]&0x3f)*256+canMsg.data[5])*0.0625;
 				
 				state2.wheel_speed_RR_valid = !(canMsg.data[6] >>6);
-				state2.wheel_speed_RR = (canMsg.data[6]&0x3f)*256+canMsg.data[7];
+				state2.wheel_speed_RR = ((canMsg.data[6]&0x3f)*256+canMsg.data[7])*0.0625;
 				
 				state2_pub.publish(state2);
 				break;
