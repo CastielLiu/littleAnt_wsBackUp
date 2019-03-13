@@ -1,0 +1,10 @@
+<!-- little Ant -->
+
+<launch>
+
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
+		<param name="port_name" value="/dev/ttyUSB0"/>
+	</node>
+
+
+</launch>

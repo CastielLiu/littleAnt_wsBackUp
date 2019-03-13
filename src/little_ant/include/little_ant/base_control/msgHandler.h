@@ -5,6 +5,11 @@
 #include <std_msgs/String.h>
 #include <iostream>
 #include"can2serial.h"
+
+#include<boost/thread.hpp>
+#include<boost/bind.hpp>
+
+
 #include <little_ant_msgs/State1.h>
 #include <little_ant_msgs/State2.h>
 #include <little_ant_msgs/State3.h>
