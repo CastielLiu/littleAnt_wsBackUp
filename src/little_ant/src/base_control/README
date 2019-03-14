@@ -9,3 +9,9 @@
  ID_STATE2 0x300
  ID_STATE3 0x4D1
  ID_STATE4 0x1D5
+ 
+ gear  0:initial
+ 	   1:drive 
+ 	   9:Reverse
+ 	   A:Neutral
+ 	   B:Parking

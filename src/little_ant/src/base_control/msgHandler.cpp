@@ -129,7 +129,7 @@ void MsgHandler::parse()
 				
 			case ID_STATE4:
 				state4.driverless_mode = bool(canMsg.data[0]&0x01);
-				state4.steeringAngle = (canMsg.data[1]*256+canMsg.data[2])*0.1;
+				state4.steeringAngle = 1080.0-(canMsg.data[1]*256+canMsg.data[2])*0.1;
 				if(state4.steeringAngle==6553.5)
 					state4.steeringAngle_valid = 0;
 				else
@@ -209,15 +209,15 @@ void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
 	
-	uint16_t steeringAngle = msg->set_steeringAngle*10;
+	uint16_t steeringAngle = 10800 - msg->set_steeringAngle*10;
 	
-	canMsg_cmd2.data[4] =  uint8_t(steeringAngle%256);
-	canMsg_cmd2.data[5] = uint8_t(steeringAngle>>8);
+	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
 	if(msg->set_emergencyBrake)
-		canMsg_cmd2.data[7] |= 0x10;
+		canMsg_cmd2.data[6] |= 0x10;
 	else
-		canMsg_cmd2.data[7] &= 0xef;
+		canMsg_cmd2.data[6] &= 0xef;
 		
 	can2serial.sendStdCanMsg(canMsg_cmd2);
 	
