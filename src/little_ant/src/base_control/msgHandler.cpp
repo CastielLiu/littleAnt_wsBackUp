@@ -92,7 +92,8 @@ void MsgHandler::parse()
 				state1.accel_pedal_position_valid = !(canMsg.data[2] & 0x02);
 				state1.brake_pedal_valid = !(canMsg.data[2] & 0x04);
 				state1.act_gear_valid = !(canMsg.data[2]&0x10);
-				state1.driverless_mode = !(canMsg.data[2]&0x40);
+				state1.vehicle_ready = bool(canMsg.data[2]&0x20);
+				state1.driverless_mode = bool(canMsg.data[2]&0x40);
 				
 				state1_pub.publish(state1);
 				break;

@@ -222,7 +222,12 @@ int CAN_2_SERIAL::sendCmd(uint8_t cmdId,const uint8_t *buf,uint8_t count)
     sendBuf[send_pkg_len+3] = generateCheckNum(sendBuf,send_pkg_len);
 
     int status =  serial.send(sendBuf,send_pkg_len+4);
-
+    
+    /*
+    for(int i =0;i<send_pkg_len+4;i++)
+    	printf("%x\t",sendBuf[i]);
+    printf("\n");
+*/
     delete [] sendBuf;
 
     return status;
@@ -262,7 +267,7 @@ bool CAN_2_SERIAL::setCanFilter(uint8_t filterNum,int filterID,int filterMask,ui
 		buf[5] = 0x00;
 		
 		buf[6] = (filterMask >> 24)&0xff;
-		buf[7] = (filterMask >> 18)&0xff;
+		buf[7] = (filterMask >> 16)&0xff;
 		buf[8] = 0x00;
 		buf[9] = 0x00;
 		

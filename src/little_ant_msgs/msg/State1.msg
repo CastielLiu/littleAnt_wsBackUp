@@ -11,6 +11,8 @@ bool accel_pedal_position_valid
 bool act_gear_valid
 bool brake_pedal_valid
 
+bool vehicle_ready
+
 bool driverless_mode
 
 
