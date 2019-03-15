@@ -35,6 +35,13 @@ bool Serial::openUp(std::string port_name,int baud_rate)
   	
 }
 
+bool Serial::tcflush(flush_type_t type)
+{
+	if(::tcflush(port_->lowest_layer().native_handle(), type)!=0)
+		return 1;
+	return 0;
+}
+
 void  Serial::closeOff()
 {
     if (port_) 
