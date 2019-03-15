@@ -14,43 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   little_ant_msgs
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
-
-
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -63,6 +26,7 @@ catkin_package(
 
 include_directories(
  include/little_ant/base_control
+ include/little_ant/ESR_radar
   src/base_control/USB2CAN
   ${catkin_INCLUDE_DIRS}
 )
@@ -74,7 +38,11 @@ add_executable(base_control    ${SRC_BASE_CONTROL_1} ${SRC_BASE_CONTROL_2})
 add_dependencies(base_control  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(base_control ${catkin_LIBRARIES})
 
-
+AUX_SOURCE_DIRECTORY(src/ESR_radar/.  SRC_ESR_RADAR_1)
+AUX_SOURCE_DIRECTORY(src/base_control/USB2CAN/. SRC_ESR_RADAR_2)
+add_executable(esr_radar ${SRC_ESR_RADAR_1} ${SRC_ESR_RADAR_2})
+add_dependencies(esr_radar  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(esr_radar ${catkin_LIBRARIES})
 
 
 
