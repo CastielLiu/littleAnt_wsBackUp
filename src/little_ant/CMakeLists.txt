@@ -44,6 +44,10 @@ add_executable(esr_radar ${SRC_ESR_RADAR_1} ${SRC_ESR_RADAR_2})
 add_dependencies(esr_radar  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(esr_radar ${catkin_LIBRARIES})
 
+add_executable(key_control src/keyControl/keyControl.cpp)
+add_dependencies(key_control  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(key_control ${catkin_LIBRARIES})
+
 
 
 
