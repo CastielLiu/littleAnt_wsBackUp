@@ -68,6 +68,9 @@ private:
     //MAX_GET_COUNT  一次从串口缓冲区读取字节最大值
     //MIN_MSG_LEN  最小消息单元包含字节数
     enum{BUF_LENGTH=400 ,MAX_GET_COUNT=200,MIN_MSG_LEN=7};
+    
+    int n_readnBytesPerCycle;
+    
     enum BaudRateCofigStatus_t
     {
         BaudRateCofig_Ok=0x00,

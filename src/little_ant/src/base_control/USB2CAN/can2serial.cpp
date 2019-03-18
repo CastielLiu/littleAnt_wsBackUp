@@ -11,6 +11,8 @@ using std::endl;
 CAN_2_SERIAL::CAN_2_SERIAL()
 {
 	stdCanMsgArray.reserve(MAX_STD_CAN_MSG_BUF);
+	baudRateCofigStatus = BaudrateCofig_None;
+	n_readnBytesPerCycle = MAX_GET_COUNT;
 }
 
 CAN_2_SERIAL::~CAN_2_SERIAL()
@@ -55,22 +57,20 @@ void CAN_2_SERIAL::parse_msg()
 	{
 		receiveCanMsgFromDev();
 		usleep(1000);
-		//std::cout << "here "<< std::endl;
 	}
 }
 
 unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
 {
-    int len = serial.recv(buf_rear,MAX_GET_COUNT);
-
+    int len = serial.recv(buf_rear,n_readnBytesPerCycle);
     if(len<=0 )
         return 0;
     else
         buf_rear += len;
   
-   /* printf("len = %d\r\n",len);
-    printf("buf:%ld\t hreader:%ld\trear:%ld\r\n",buf,buf_head,buf_rear);
-    
+   // printf("len = %d\r\n",len);
+   // printf("buf:%ld\t hreader:%ld\trear:%ld\r\n",buf,buf_head,buf_rear);
+  /*  
     for(uint8_t * ptr=buf_head;ptr<buf_rear;ptr++)
     	printf("%x\t",*ptr);
     printf("\n\n");
@@ -79,8 +79,6 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
 
     unsigned char pkgCmd =0;
     
-    
-	
     //当数据长度大于最小消息长度时即应解析数据
     for(; (buf_rear-buf_head)>=MIN_MSG_LEN;buf_head++)
     {
@@ -141,6 +139,7 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
 
             case 0x92: //baudrate configure status
                 baudRateCofigStatus = BaudRateCofigStatus_t(*(buf_head+5));
+                std::cout << baudRateCofigStatus << std::endl;
                 break;
                 
             case 0x93: //baudrate inquiry response
@@ -257,6 +256,7 @@ bool CAN_2_SERIAL::configBaudrate(int baudrate)
 
 bool CAN_2_SERIAL::setCanFilter(uint8_t filterNum,int filterID,int filterMask,uint8_t filterMode)
 {
+
 	uint8_t buf[11];
 	buf[0] = 0x01; //port
 	buf[1] = filterNum;
