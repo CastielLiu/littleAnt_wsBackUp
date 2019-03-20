@@ -48,6 +48,10 @@ add_executable(key_control src/keyControl/keyControl.cpp)
 add_dependencies(key_control  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(key_control ${catkin_LIBRARIES})
 
+add_executable(telecontrol src/telecontrol/telecontrol.cpp src/base_control/USB2CAN/serial.cpp)
+add_dependencies(telecontrol  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(telecontrol ${catkin_LIBRARIES})
+
 
 
 
