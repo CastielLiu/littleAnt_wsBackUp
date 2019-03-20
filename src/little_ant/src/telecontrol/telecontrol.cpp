@@ -21,11 +21,15 @@ uint8_t *rearPtr = recvBuf;
 uint8_t msgBuf[12];
 boost::mutex mutex_;
 
+std::string port_name_;
+
 int main(int argc ,char **argv)
 {
 	ros::init(argc,argv,"key_control");
 	
 	ros::NodeHandle nh;
+	ros::NodeHandle nh_private("~");
+	nh_private.param<std::string>("port_name",port_name_,"/dev/ttyUSB0");
 	
 	ros::Publisher pub1 = nh.advertise<little_ant_msgs::ControlCmd1>("/controlCmd1",10);
 	ros::Publisher pub2 = nh.advertise<little_ant_msgs::ControlCmd2>("/controlCmd2",10);
@@ -165,7 +169,7 @@ uint8_t generate_check_sum(uint8_t *buf,int len)
 void getMsg()
 {
 	Serial serial;
-    if(!serial.openUp("/dev/ttyUSB0",9600))
+    if(!serial.openUp(port_name_.c_str(),9600))
     	return ;
     serial.setOption();
     

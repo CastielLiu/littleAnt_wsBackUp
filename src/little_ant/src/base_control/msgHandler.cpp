@@ -46,7 +46,7 @@ bool MsgHandler::init(int argc,char**argv)
 	
 	can2serial.run();
 	
-	while(!can2serial.configBaudrate(500))
+	while(!can2serial.configBaudrate(500) &&ros::ok())
 	{
 		ROS_INFO("set baudrate...");
 		usleep(10000);
