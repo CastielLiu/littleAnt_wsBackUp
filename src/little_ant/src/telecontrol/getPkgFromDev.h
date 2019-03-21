@@ -58,10 +58,18 @@ class GetPkgFromDev
 			while(getThread_flag)
 			{   
 				int len = serial.recv(rearPtr,pkg_length_);
+				
+			/*	for(int i=0;i<len;i++)
+				{
+					printf("%x\t",rearPtr[i]);
+				}
+				printf("\n");
+			*/	
 				rearPtr += len;
-
+				
 				for(;rearPtr-headPtr>=pkg_length_;headPtr++)
 				{
+					
 					if((*headPtr)==0x66 && (*(headPtr+1)) ==0xcc)
 					{
 						if(generate_check_sum(headPtr,pkg_length_-1) != headPtr[pkg_length_-1])
@@ -69,9 +77,9 @@ class GetPkgFromDev
 						msgHeader = headPtr;
 				
 						boost::mutex::scoped_lock lock(mutex_); 
-						memcpy(pkgBuf,msgHeader,pkg_length_);
+						memcpy(pkgBuf,msgHeader+2,pkg_length_-2);
 				
-						headPtr += pkg_length_-1;
+						headPtr += pkg_length_;
 				
 						break;
 					}
