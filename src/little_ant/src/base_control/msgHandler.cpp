@@ -200,10 +200,15 @@ void MsgHandler::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 
 void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
+	float set_speed = msg->set_speed;
+	float currentSpeed = (state2.wheel_speed_FR + state2.wheel_speed_FL)/2;
+	if(set_speed-currentSpeed>5.0)
+		set_speed = currentSpeed+5.0;
+		
 	canMsg_cmd2.data[0] &= 0xf0;
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
 	
-	canMsg_cmd2.data[1] = uint8_t(msg->set_speed * 10);
+	canMsg_cmd2.data[1] = uint8_t(set_speed * 10);
 	
 	canMsg_cmd2.data[2] = uint8_t(msg->set_brake *2.5);
 	
