@@ -46,7 +46,13 @@ int main(int argc ,char **argv)
 	while(ros::ok())
 	{
 	///////////////////////////////////////////////////////////////////////////////		
-		cout <<"running..." <<endl;		
+		/*for(int i=0;i<12;i++)
+    	{
+    		printf("%x\t",recvBuf[i]);
+    	}
+    	cout <<endl;*/
+    	
+		//cout <<"running..." <<endl;
 		if ((msgBuf[5] | 0xEF) == 0xef)
 		{
 			if (mode == 0)

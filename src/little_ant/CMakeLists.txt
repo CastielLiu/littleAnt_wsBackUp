@@ -30,6 +30,7 @@ include_directories(
   src/base_control/USB2CAN
   ${catkin_INCLUDE_DIRS}
 )
+ 
 
 
 AUX_SOURCE_DIRECTORY(src/base_control/. SRC_BASE_CONTROL_1)
@@ -51,6 +52,10 @@ target_link_libraries(key_control ${catkin_LIBRARIES})
 add_executable(telecontrol src/telecontrol/telecontrol.cpp src/base_control/USB2CAN/serial.cpp)
 add_dependencies(telecontrol  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(telecontrol ${catkin_LIBRARIES})
+
+add_executable(telecontrol_stm32 src/telecontrol/telecontrol_stm32.cpp src/base_control/USB2CAN/serial.cpp)
+add_dependencies(telecontrol_stm32  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(telecontrol_stm32 ${catkin_LIBRARIES})
 
 
 
