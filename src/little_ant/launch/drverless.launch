@@ -1,12 +1,12 @@
 <!-- -->
 <launch>
 
-	<arg name="base_control_port" default="/dev/**"/>   <!--底层can分析仪-->
-	<arg name="gps_port" default="/dev/**"/>		    <!-- GPS-->
-	<arg name="telecontrol_port" default="/dev/**"/>    <!--遥控器 STM32-->
+	<arg name="base_control_port" default="/dev/USB0"/>   <!--底层can分析仪-->
+	<arg name="gps_port" default="/dev/USB1"/>		    <!-- GPS-->
+	<arg name="telecontrol_port" default="/dev/USB2"/>    <!--遥控器 STM32-->
 	
 
-	<node name="telecontrol" pkg="little_ant" type ="telecontrol" >
+	<node name="telecontrol" pkg="little_ant" type ="telecontrol_stm32" >
 		<param name ="port_name" value="$(arg telecontrol_port)"/>
 	</node>
 	
@@ -14,7 +14,7 @@
 		<param name ="port_name" value="$(arg base_control_port)"/>
 	</node>
 	
-	<node name="novatel_node" pkg="novatel" type="novatel_node"  output="screen" required="true">
+	<node name="novatel_node" pkg="novatel" type="novatel_node"  output="screen" > <!-- required="true" -->
 
 		<param name="port" value="$(gps_port)" />
 		<param name="baudrate" value="115200" />
@@ -29,7 +29,8 @@
 	</node>
 	
 	<node name="path_tracking_node" pkg="planning" type="path_tracking_node">
-		
+		<param name="path_points_file" value="${find planning}/data/gps.txt"/>
+		<param name="disThreshold" value="10.0"/>
 	
 	</node>
 	
@@ -37,3 +38,4 @@
 		<param name="file_path" value="$(find planning)/data/debug.txt"/>
 	</node>
 
+</launch>

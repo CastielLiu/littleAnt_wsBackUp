@@ -6,8 +6,11 @@ int main(int argc,char**argv)
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
+	PathTracking path_tracking;
+	if(!path_tracking.init(nh,nh_private))
+		return 1;
 	
-	
-	ros::spin();
+	path_tracking.run();
+
 	return 0;
 }

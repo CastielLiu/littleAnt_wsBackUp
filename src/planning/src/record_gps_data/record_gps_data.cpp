@@ -25,7 +25,7 @@ class Record
 		
 		location_t last_point , current_point;
 		
-		float sample_distance;
+		float sample_distance_;
 		ros::Subscriber gps_sub;
 		ros::Timer timer;
 		
@@ -54,7 +54,7 @@ bool Record::init()
 	ros::NodeHandle private_nh("~");
 	
 	private_nh.param<std::string>("file_path",file_path_,"/home/wendao/gps_data.txt");
-	private_nh.param<float>("sample_distance",sample_distance,0.1);
+	private_nh.param<float>("sample_distance",sample_distance_,0.1);
 	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
     
 	fp = fopen(file_path_.c_str(),"w");
@@ -76,12 +76,13 @@ float Record::calculate_dis2(location_t & point1,location_t& point2)
 	return x*x+y*y;
 }
 
+
 void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr & gps)
 {
 	current_point.latitude = gps->latitude;
 	current_point.longitude = gps->longitude;
 		
-	if(sample_distance*sample_distance <= calculate_dis2(current_point,last_point))
+	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
 		fprintf(fp,"%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);
 		fflush(fp);

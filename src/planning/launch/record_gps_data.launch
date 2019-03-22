@@ -1,0 +1,8 @@
+<!-- -->
+
+<launch>
+	<node name="record_gps_data" pkg="planning" type="record_gps_data">
+		<param name="file_path" value="$(find planning)/data/gps.txt"/>
+		<param name="sample_distance" value="0.1">
+	</node>
+</launch>

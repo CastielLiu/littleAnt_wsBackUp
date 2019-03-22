@@ -1,0 +1,20 @@
+<!-- -->
+<launch>
+
+	<arg name="telecontrol_port" default="/dev/ttyUSB0"/>    <!--遥控器 STM32-->
+	
+
+	<node name="telecontrol" pkg="little_ant" type ="telecontrol_stm32" output="screen">
+		<param name ="port_name" value="$(arg telecontrol_port)"/>
+	</node>
+	
+
+	
+	<node name="path_tracking_node" pkg="planning" type="path_tracking_node" output="screen">
+		<param name="path_points_file" value="${find planning}/data/gps.txt"/>
+		<param name="disThreshold" value="10.0"/>  <!-- 前视距离-->
+	
+	</node>
+ 
+	
+</launch>
