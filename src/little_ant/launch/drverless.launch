@@ -1,0 +1,39 @@
+<!-- -->
+<launch>
+
+	<arg name="base_control_port" default="/dev/**"/>   <!--底层can分析仪-->
+	<arg name="gps_port" default="/dev/**"/>		    <!-- GPS-->
+	<arg name="telecontrol_port" default="/dev/**"/>    <!--遥控器 STM32-->
+	
+
+	<node name="telecontrol" pkg="little_ant" type ="telecontrol" >
+		<param name ="port_name" value="$(arg telecontrol_port)"/>
+	</node>
+	
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
+		<param name ="port_name" value="$(arg base_control_port)"/>
+	</node>
+	
+	<node name="novatel_node" pkg="novatel" type="novatel_node"  output="screen" required="true">
+
+		<param name="port" value="$(gps_port)" />
+		<param name="baudrate" value="115200" />
+		<param name="odom_topic" value="/gps_odom" />
+		<param name="log_commands" value="inspvaxb ontime 0.05" />
+		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
+		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
+		<param name="gps_default_logs_period" value="0.0" />
+		<param name="span_default_logs_period" value="0.0" />
+		
+		<param name="inspvax_topic" value = "/gps" />
+	</node>
+	
+	<node name="path_tracking_node" pkg="planning" type="path_tracking_node">
+		
+	
+	</node>
+	
+	<node name="record_gps_data" pkg="planning" type="record_gps_data">
+		<param name="file_path" value="$(find planning)/data/debug.txt"/>
+	</node>
+
