@@ -15,22 +15,20 @@ find_package(catkin REQUIRED COMPONENTS
   jsk_recognition_msgs
 )
 
+include_directories(
+	include/little_ant
+	src/lib/USB2CAN
+	${catkin_INCLUDE_DIRS}
+)
 
 catkin_package(
-#  INCLUDE_DIRS include
-  
-#  LIBRARIES ant_base_control
+ 
   CATKIN_DEPENDS roscpp rospy std_msgs little_ant_msgs jsk_recognition_msgs
+   INCLUDE_DIRS include
+   LIBRARIES littleAnt_utils
 #  DEPENDS system_lib
 )
 
-
-include_directories(
- include/little_ant/base_control
- include/little_ant/ESR_radar
-  src/base_control/USB2CAN
-  ${catkin_INCLUDE_DIRS}
-)
 
 add_subdirectory(src/lib)
 
