@@ -18,7 +18,5 @@ int main(int argc,char **argv)
 		
 	radar.run();
 	
-	ros::spin();
-	
 	return 0;
 }

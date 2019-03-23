@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   little_ant_msgs
+  jsk_recognition_msgs
 )
 
 
@@ -19,7 +20,7 @@ catkin_package(
 #  INCLUDE_DIRS include
   
 #  LIBRARIES ant_base_control
-  CATKIN_DEPENDS roscpp rospy std_msgs little_ant_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs little_ant_msgs jsk_recognition_msgs
 #  DEPENDS system_lib
 )
 

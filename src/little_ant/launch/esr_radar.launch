@@ -1,0 +1,11 @@
+<!-- -->
+<launch>
+
+	<node name="esr_radar" pkg="little_ant" type ="esr_radar" >
+		<param name ="is_pubBoundingBox" value="true"/>
+		<param name ="is_sendMsgToEsr"  value="true"/>
+		<param name ="port_name" value="/dev/ttyUSB0"/>
+	</node>
+	
+	 
+</launch>
