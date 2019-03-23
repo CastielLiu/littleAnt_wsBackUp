@@ -5,7 +5,7 @@
 PathTracking::PathTracking()
 {
 	controlCmd2.set_gear =1;
-	controlCmd2.set_speed =10.0;
+	controlCmd2.set_speed =0.0;
 	controlCmd2.set_brake=0.0;
 	controlCmd2.set_accelerate =0.0;
 	controlCmd2.set_steeringAngle=0.0;
@@ -32,8 +32,9 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	pub_cmd1 = nh.advertise<little_ant_msgs::ControlCmd1>("/controlCmd1",5);
 	pub_cmd2 =nh.advertise<little_ant_msgs::ControlCmd2>("/controlCmd2",5);
 	
-	nh.param<std::string>("path_points_file",path_points_file_,std::string("/home/wendao/gps_data.txt"));
-	nh.param<float>("disThreshold",disThreshold_,5.0);
+	nh_private.param<std::string>("path_points_file",path_points_file_,std::string("/home/wendao/gps_data.txt"));
+	nh_private.param<float>("disThreshold",disThreshold_,5.0);
+	nh_private.param<float>("speed",speed_,3.0);
 	
 	
 	fp = fopen(path_points_file_.c_str(),"r");
@@ -56,14 +57,15 @@ void PathTracking::run()
 			continue;
 			
 		if(feof(fp)) break; //file complete
-		float dis2target = point2point_dis(current_point,target_point);
-		
-		if( dis2target < disThreshold_ || dis2target>1000.0)//初始状态下 target(0,0)-> dis2target 将会很大
-			fscanf(fp,"%lf\t%lf\n",&target_point.longitude,&target_point.latitude);
-		
-		
 		
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point,target_point);
+		
+		if( dis_yaw.first < disThreshold_ || dis_yaw.first>1000.0)//初始状态下 target(0,0)-> dis_yaw.first 将会很大
+		{
+			fscanf(fp,"%lf\t%lf\n",&target_point.longitude,&target_point.latitude);
+			continue;
+		}
+			
 		
 		float yaw_err = dis_yaw.second - current_point.yaw;
 		
@@ -78,9 +80,9 @@ void PathTracking::run()
 				target_point.longitude,target_point.latitude);
 		printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
 		
-		limitSteeringAngle(t_roadWheelAngle);
-		
-		controlCmd2.set_steeringAngle = t_roadWheelAngle *500.0/30.0;
+		limitRoadWheelAngle(t_roadWheelAngle);
+		controlCmd2.set_speed = speed_;
+		controlCmd2.set_steeringAngle = -t_roadWheelAngle *500.0/30.0;
 		
 		usleep(8000);
 	}
@@ -92,11 +94,12 @@ float PathTracking::deg2rad(float deg)
 	return  (deg/180.0)*M_PI;
 }
 
-void PathTracking::limitSteeringAngle(float& angle)
+void PathTracking::limitRoadWheelAngle(float& angle)
 {
 	if(angle>30.0) angle =30.0;
 	else if(angle<-30.0) angle =-30.0;
 }
+
 
 
 float PathTracking::point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2)

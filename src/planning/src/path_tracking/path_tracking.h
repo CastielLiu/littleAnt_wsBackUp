@@ -27,7 +27,7 @@ public:
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
 	float deg2rad(float deg);
-	void limitSteeringAngle(float& angle);
+	void limitRoadWheelAngle(float& angle);
 	
 	float point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2);
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
@@ -63,6 +63,8 @@ private:
 	
 	little_ant_msgs::ControlCmd1 controlCmd1;
 	little_ant_msgs::ControlCmd2 controlCmd2;
+	
+	float speed_;
 	
 	bool is_telecontrol;
 	
