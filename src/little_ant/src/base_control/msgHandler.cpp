@@ -39,18 +39,16 @@ bool MsgHandler::init(int argc,char**argv)
 		return 0;
 	}
 	
-	can2serial.setCanFilter(0x01,ID_STATE1,ID_STATE1); usleep(10000);
-	can2serial.setCanFilter(0x02,ID_STATE2,ID_STATE2); usleep(10000);
-	can2serial.setCanFilter(0x03,ID_STATE3,ID_STATE3); usleep(10000);
-	can2serial.setCanFilter(0x04,ID_STATE4,ID_STATE4); usleep(10000);
+	can2serial.clearCanFilter();
+	
+	can2serial.setCanFilter_alone(0x01,ID_STATE1); usleep(10000);
+	can2serial.setCanFilter_alone(0x02,ID_STATE2); usleep(10000);
+	can2serial.setCanFilter_alone(0x03,ID_STATE3); usleep(10000);
+	can2serial.setCanFilter_alone(0x04,ID_STATE4); usleep(10000);
 	
 	can2serial.run();
 	
-	while(!can2serial.configBaudrate(500) &&ros::ok())
-	{
-		ROS_INFO("set baudrate...");
-		usleep(10000);
-	}
+	can2serial.configBaudrate(500);
 		
 	ROS_INFO("System initialization completed");
 	

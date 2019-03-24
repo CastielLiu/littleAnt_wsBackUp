@@ -27,7 +27,7 @@ class ESR_RADAR
 		
 		
 	private:
-		CAN_2_SERIAL *in_can2serial;
+		CAN_2_SERIAL in_can2serial;
 		CAN_2_SERIAL *out_can2serial;
 		
 		void send_installHeight(uint8_t installHeight);

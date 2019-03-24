@@ -14,18 +14,14 @@ ESR_RADAR::ESR_RADAR(int argc,char ** argv):
 	argc_(argc),
 	argv_(argv) 
 {
-	in_can2serial = new CAN_2_SERIAL();
 	out_can2serial = new CAN_2_SERIAL();
 	objects.header.frame_id = std::string("esr_radar");
 }
 
 ESR_RADAR::~ESR_RADAR()
 {
-	in_can2serial->closePort();
 	out_can2serial->closePort();
-	delete in_can2serial;
 	delete out_can2serial;
-	in_can2serial =NULL;
 	out_can2serial=NULL;
 }
 
@@ -35,8 +31,8 @@ bool ESR_RADAR::init()
 	ros::init(argc_,argv_,"esr_radar");
 	ros::NodeHandle nh_private("~");
 	ros::NodeHandle nh;
-	nh_private.param<std::string>("in_port_name", in_port_name_, "/dev/ttyUSB2");
-	nh_private.param<std::string>("out_port_name", out_port_name_, "/dev/ttyUSB3");
+	nh_private.param<std::string>("in_port_name", in_port_name_, "/dev/ttyUSB0");
+	nh_private.param<std::string>("out_port_name", out_port_name_, "/dev/ttyUSB1");
 	
 	nh_private.param<bool>("is_pubBoundingBox",is_pubBoundingBox_,false);
 	
@@ -59,24 +55,34 @@ bool ESR_RADAR::init()
 	
 		out_can2serial->clearCanFilter();
 		
-		out_can2serial->setCanFilter(1,0x00,0x00);
+		out_can2serial->setCanFilter(1,0x00,0x7ff);
 		
 		out_can2serial->configBaudrate(500);
 		ROS_INFO("send to esr initialization complete");
 		
 	}
 	
-	if(!in_can2serial->openPort(in_port_name_.c_str()))
+	if(!in_can2serial.openPort(in_port_name_.c_str()))
 	{
 		ROS_ERROR("open esr port %s failed!",in_port_name_.c_str());
 		return 0;
 	}
 	
-	in_can2serial->clearCanFilter();
+	in_can2serial.clearCanFilter();
+
 	
-	in_can2serial->configBaudrate(500);
+	in_can2serial.setCanFilter_alone(0x01,0x4E0); usleep(1000);
+	in_can2serial.setCanFilter(0x02,0x500,0x7c0); //500-53f
 	
-	in_can2serial->run();
+		
+	in_can2serial.run();
+	
+	while(!in_can2serial.configBaudrate(500) &&ros::ok())
+	{
+		ROS_INFO("set baudrate...");
+		usleep(10000);
+	}
+	
 	
 	ROS_INFO("esr radar initialization complete");
 
@@ -113,6 +119,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 	this->boxes.header.frame_id = "esr_radar";
 	
 	jsk_recognition_msgs::BoundingBox box;
+	box.header.frame_id = "esr_radar";
 	box.dimensions.x = 1.0;
 	box.dimensions.y =1.0;
 	box.dimensions.z = 1.0;
@@ -141,7 +148,7 @@ void ESR_RADAR::handleCanMsg()
 	while(1)
 	{
 		usleep(10000);
-		if(!in_can2serial->getMsg(can_msg)) continue;
+		if(!in_can2serial.getMsg(can_msg)) continue;
 		
 		parse_msg(can_msg);
 	}
@@ -150,7 +157,7 @@ void ESR_RADAR::handleCanMsg()
 
 void ESR_RADAR::parse_msg(STD_CAN_MSG &can_msg)
 {
-	//cout << "ID:" << hex << can_msg.ID <<endl;
+	cout << "ID:" << hex << can_msg.ID <<endl;
 	uint16_t scan_index;
 	if(can_msg.ID == 0x4E0)
 	{

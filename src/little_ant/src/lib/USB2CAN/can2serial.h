@@ -58,6 +58,7 @@ public:
     int inquireBaudrate(int port = 0x01);
 
 	bool setCanFilter(uint8_t filterNum,int filterID,int filterMask,uint8_t filterMode=0x00);
+	bool setCanFilter_alone(uint8_t filterNum,int filterID);
 	bool clearCanFilter(uint8_t filterNum=0xff); //0xff clear all
 
     bool getMsg(STD_CAN_MSG & msg);
@@ -67,7 +68,7 @@ private:
     
     //MAX_GET_COUNT  一次从串口缓冲区读取字节最大值
     //MIN_MSG_LEN  最小消息单元包含字节数
-    enum{BUF_LENGTH=400 ,MAX_GET_COUNT=200,MIN_MSG_LEN=7};
+    enum{BUF_LENGTH=400 ,MAX_GET_COUNT=20,MIN_MSG_LEN=7};
     
     int n_readnBytesPerCycle;
     

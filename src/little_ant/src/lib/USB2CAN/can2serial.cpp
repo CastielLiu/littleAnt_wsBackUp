@@ -139,7 +139,7 @@ unsigned char CAN_2_SERIAL::receiveCanMsgFromDev()
 
             case 0x92: //baudrate configure status
                 baudRateCofigStatus = BaudRateCofigStatus_t(*(buf_head+5));
-                std::cout << baudRateCofigStatus << std::endl;
+                //std::cout << baudRateCofigStatus << std::endl;
                 break;
                 
             case 0x93: //baudrate inquiry response
@@ -244,6 +244,8 @@ bool CAN_2_SERIAL::configBaudrate(int baudrate)
     
     usleep(100000);
     
+    sendCmd(0x12,buf,2);
+    
     bool status=0;
     
     if(baudRateCofigStatus==BaudRateCofig_Ok)
@@ -279,6 +281,14 @@ bool CAN_2_SERIAL::setCanFilter(uint8_t filterNum,int filterID,int filterMask,ui
 	sendCmd(0x18,buf,11);
 	
 	usleep(100000);
+	
+	for(int i=0;i<11;i++)
+	{
+		printf("%x\t",buf[i]);
+	}
+	printf("\n");
+	
+	sendCmd(0x18,buf,11);
 	bool status = 0;
 	if(filterSetStatus[filterNum] == 0x00)
 	{
@@ -289,6 +299,39 @@ bool CAN_2_SERIAL::setCanFilter(uint8_t filterNum,int filterID,int filterMask,ui
 	return status;
 }
 
+bool CAN_2_SERIAL::setCanFilter_alone(uint8_t filterNum,int filterID)
+{
+
+	uint8_t buf[11];
+	buf[0] = 0x01; //port
+	buf[1] = filterNum;
+	filterID <<= 21;
+
+	buf[2] = (filterID >> 24)&0xff;
+	buf[3] = (filterID >>16)&0xff;
+	buf[4] = 0x00;
+	buf[5] = 0x00;
+		
+	buf[6] = 0xff;
+	buf[7] = 0xff;
+	buf[8] = 0xff;
+	buf[9] = 0xff;
+		
+
+	buf[10] = 0x00;
+	sendCmd(0x18,buf,11);
+	
+	usleep(100000);
+	
+	for(int i=0;i<11;i++)
+	{
+		printf("%x\t",buf[i]);
+	}
+	printf("\n");
+	
+	sendCmd(0x18,buf,11);
+}
+
 bool CAN_2_SERIAL::clearCanFilter(uint8_t filterNum)
 {
 	uint8_t buf[2];
@@ -297,6 +340,8 @@ bool CAN_2_SERIAL::clearCanFilter(uint8_t filterNum)
 	sendCmd(0x19,buf,2);
 	
 	usleep(100000);
+	
+	sendCmd(0x19,buf,2);
 	
 	if(filterClearStatus==1)
 	{
