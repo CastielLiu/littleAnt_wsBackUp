@@ -27,12 +27,12 @@ class ESR_RADAR
 		
 		
 	private:
-		CAN_2_SERIAL in_can2serial;
-		CAN_2_SERIAL *out_can2serial;
+		Can2serial *in_can2serial;
+		Can2serial *out_can2serial;
 		
 		void send_installHeight(uint8_t installHeight);
 		void send_installHeight_callback(const ros::TimerEvent&);
-		void parse_msg(STD_CAN_MSG &can_msg);
+		void parse_msg(CanMsg_t &can_msg);
 		void pubBoundingBoxArray();
 		
 		ros::Publisher esr_pub;
