@@ -16,6 +16,7 @@ ESR_RADAR::ESR_RADAR(int argc,char ** argv):
 {
 	out_can2serial = new CAN_2_SERIAL();
 	objects.header.frame_id = std::string("esr_radar");
+	lastMsgId = 0x7ff;
 }
 
 ESR_RADAR::~ESR_RADAR()
@@ -156,7 +157,7 @@ void ESR_RADAR::parse_msg(STD_CAN_MSG &can_msg)
 {
 	cout << "ID:" << hex << can_msg.ID <<endl;
 	uint16_t scan_index;
-	if(can_msg.ID == 0x4E0)
+	if(can_msg.ID == 0x4E0 || can_msg.ID < lastMsgId)
 	{
 		scan_index = can_msg.data[3]*256 + can_msg.data[4];
 		objects.sequence = scan_index;
@@ -240,6 +241,7 @@ void ESR_RADAR::parse_msg(STD_CAN_MSG &can_msg)
 				break;
 		}*/
 	}
+	lastMsgId = can_msg.ID;
 }
 
 void ESR_RADAR::send_installHeight_callback(const ros::TimerEvent&)

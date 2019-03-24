@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   gps_msgs
+  serial
 )
 
 ## System dependencies are found with CMake's conventions
@@ -121,6 +122,8 @@ include_directories(
  include
   ${catkin_INCLUDE_DIRS}
   src/path_tracking
+  src/can2serial
+  
 )
 
 ## Declare a C++ library
@@ -137,6 +140,12 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 
+AUX_SOURCE_DIRECTORY(src/can2serial/. TEST_SRC)
+
+add_executable(test_ ${TEST_SRC})
+add_dependencies(test_ ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_   ${catkin_LIBRARIES})
+
 AUX_SOURCE_DIRECTORY(src/path_tracking/.  SRC_path_tracking_node)
 
 add_executable( path_tracking_node ${SRC_path_tracking_node} )
@@ -146,6 +155,10 @@ target_link_libraries(path_tracking_node   ${catkin_LIBRARIES})
 add_executable(record_gps_data src/record_gps_data/record_gps_data.cpp)
 add_dependencies(record_gps_data ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(record_gps_data   ${catkin_LIBRARIES})
+
+#find_package(serial)
+#include_directories(src/can2serial)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

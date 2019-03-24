@@ -46,6 +46,8 @@ class ESR_RADAR
 		
 		ros::Timer timer_50ms;
 		
+		uint16_t lastMsgId;
+		
 		int argc_;
 		char **argv_;
 		
