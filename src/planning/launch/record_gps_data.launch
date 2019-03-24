@@ -1,8 +1,30 @@
 <!-- -->
 
 <launch>
+
+
+	<arg name="gps_port" default="/dev/gps"/>		    <!-- GPS-->
+	
+	
+	
 	<node name="record_gps_data" pkg="planning" type="record_gps_data">
 		<param name="file_path" value="$(find planning)/data/gps.txt"/>
 		<param name="sample_distance" value="0.1"/>
 	</node>
+	
+	<node pkg="novatel" type="novatel_node" name="novatel_node" output="screen" >
+
+		<param name="port" value="$(arg gps_port)" />
+		<param name="baudrate" value="115200" />
+		<param name="odom_topic" value="/gps_odom" />
+		<param name="log_commands" value="inspvaxb ontime 0.05" />
+		<!-- <param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />-->
+		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
+		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
+		<param name="gps_default_logs_period" value="0.0" />
+		<param name="span_default_logs_period" value="0.0" />
+		
+		<param name="inspvax_topic" value = "/gps" />
+	</node>
+	
 </launch>
