@@ -13,6 +13,7 @@ int main()
 	
 	can2serial.clearCanFilter();
 	can2serial.setCanFilter(0x03,0x500,0x7c0);
+	can2serial.setCanFilter(0x03,0x500,0x7c0);
 
 	
 	

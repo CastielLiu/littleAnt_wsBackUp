@@ -68,20 +68,16 @@ bool ESR_RADAR::init()
 		return 0;
 	}
 	
-	in_can2serial.clearCanFilter();
+	in_can2serial.clearCanFilter(); usleep(10000);
 
 	
 	in_can2serial.setCanFilter_alone(0x01,0x4E0); usleep(1000);
 	in_can2serial.setCanFilter(0x02,0x500,0x7c0); //500-53f
 	
+	in_can2serial.configBaudrate(500);
 		
 	in_can2serial.run();
 	
-	while(!in_can2serial.configBaudrate(500) &&ros::ok())
-	{
-		ROS_INFO("set baudrate...");
-		usleep(10000);
-	}
 	
 	
 	ROS_INFO("esr radar initialization complete");
@@ -128,6 +124,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 	
 	while(ros::ok())
 	{
+		boxes.boxes.clear();
 		mutex_.lock();
 		for(size_t i=0;i<last_frame_objects.size;i++)
 		{
