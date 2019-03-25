@@ -34,25 +34,37 @@ include_directories(
   src/path_tracking
   src/can2serial
   src/decision_making
+  src/avoiding
   
 )
 
 
 AUX_SOURCE_DIRECTORY(src/can2serial/. TEST_SRC)
 
-add_executable(test_ ${TEST_SRC})
-add_dependencies(test_ ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_   ${catkin_LIBRARIES})
+set(TEST_ false)
+if(TEST_)
+	add_executable(test_ ${TEST_SRC})
+	add_dependencies(test_ ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+	target_link_libraries(test_   ${catkin_LIBRARIES})
+endif()
 
 AUX_SOURCE_DIRECTORY(src/path_tracking/.  SRC_path_tracking_node)
 
-add_executable( path_tracking_node ${SRC_path_tracking_node} )
+add_executable(path_tracking_node ${SRC_path_tracking_node} )
 add_dependencies(path_tracking_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(path_tracking_node   ${catkin_LIBRARIES})
 
 add_executable(decision_making_node src/decision_making/decision_making.cpp)
 add_dependencies(decision_making_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(decision_making_node   ${catkin_LIBRARIES})
+
+add_executable(avoiding_node src/avoiding/avoiding.cpp)
+add_dependencies(avoiding_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(avoiding_node   ${catkin_LIBRARIES})
+
+
+
+
 
 add_executable(record_gps_data src/record_gps_data/record_gps_data.cpp)
 add_dependencies(record_gps_data ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

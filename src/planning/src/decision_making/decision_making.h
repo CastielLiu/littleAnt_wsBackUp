@@ -14,11 +14,11 @@ public:
 	void init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 
 private:
-	void sennsor_decision_callback(const little_ant_msgs::ControlCmd1::ConstPtr& msg);
+	void sensor_decision_callback(const little_ant_msgs::ControlCmd::ConstPtr& msg);
 
-	void sendCmd1Timer_20ms_(const ros::TimerEvent&);
+	void sendCmd1_callback(const ros::TimerEvent&);
 
-	void sendCmd2Timer_10ms_(const ros::TimerEvent&);
+	void sendCmd2_callback(const ros::TimerEvent&);
 
 
 private:

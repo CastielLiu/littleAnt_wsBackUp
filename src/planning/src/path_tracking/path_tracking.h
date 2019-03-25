@@ -1,8 +1,7 @@
 #ifndef PATH_TRACKING_H_
 #define PATH_TRACKING_H_
 #include<ros/ros.h>
-#include"little_ant_msgs/ControlCmd1.h"
-#include"little_ant_msgs/ControlCmd2.h"
+#include<little_ant_msgs/ControlCmd.h>
 
 #include<little_ant_msgs/State2.h>  //speed
 #include"gps_msgs/Inspvax.h"
@@ -32,24 +31,19 @@ public:
 	float point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2);
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
 	
-	void pub_cmd2_10ms(const ros::TimerEvent&);
-	void pub_cmd1_20ms(const ros::TimerEvent&);
+	void pub_gps_cmd_callback(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
-	void telecontrolState_callback(const std_msgs::Bool::ConstPtr& msg) ;
 
 	
 	
 private:
-	ros::Subscriber sub_gps;
-	ros::Subscriber sub_telecontrol;
-	ros::Subscriber sub_vehicleState2;
+	ros::Subscriber sub_gps_;
+	ros::Subscriber sub_vehicleState2_;
 	
-	ros::Timer timer1;
-	ros::Timer timer2;
+	ros::Timer timer_;
 	
-	ros::Publisher pub_cmd1;
-	ros::Publisher pub_cmd2;
+	ros::Publisher pub_gps_cmd_;
 	FILE * fp;
 	
 	
@@ -59,15 +53,11 @@ private:
 	gpsMsg_t target_point;
 	
 	float disThreshold_;
-	float vehicle_axis_dis;
+	float vehicle_axis_dis_;
 	
-	little_ant_msgs::ControlCmd1 controlCmd1;
-	little_ant_msgs::ControlCmd2 controlCmd2;
+	little_ant_msgs::ControlCmd gps_controlCmd_;
 	
 	float speed_;
-	
-	bool is_telecontrol;
-	
 
 };
 

@@ -1,18 +1,19 @@
 #include"path_tracking.h"
 
-#define AXIS_DIS 1.5
 
 PathTracking::PathTracking()
 {
-	controlCmd2.set_gear =1;
-	controlCmd2.set_speed =0.0;
-	controlCmd2.set_brake=0.0;
-	controlCmd2.set_accelerate =0.0;
-	controlCmd2.set_steeringAngle=0.0;
-	controlCmd2.set_emergencyBrake =0;
+	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
+	gps_controlCmd_.status = true;
 	
-	controlCmd1.set_driverlessMode =true;
-	is_telecontrol = true;
+	gps_controlCmd_.cmd2.set_gear =1;
+	gps_controlCmd_.cmd2.set_speed =0.0;
+	gps_controlCmd_.cmd2.set_brake=0.0;
+	gps_controlCmd_.cmd2.set_accelerate =0.0;
+	gps_controlCmd_.cmd2.set_steeringAngle=0.0;
+	gps_controlCmd_.cmd2.set_emergencyBrake =0;
+	
+	gps_controlCmd_.cmd1.set_driverlessMode =true;
 }
 
 PathTracking::~PathTracking()
@@ -22,16 +23,14 @@ PathTracking::~PathTracking()
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	sub_gps = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
-	sub_vehicleState2 = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
-	sub_telecontrol = nh.subscribe("/is_telecontrol" ,2,&PathTracking::telecontrolState_callback,this);
+	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
+	sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
 	
-	timer1 = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_cmd2_10ms,this);
-	timer2 = nh.createTimer(ros::Duration(0.02),&PathTracking::pub_cmd1_20ms,this);
+	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
-	pub_cmd1 = nh.advertise<little_ant_msgs::ControlCmd1>("/controlCmd1",5);
-	pub_cmd2 =nh.advertise<little_ant_msgs::ControlCmd2>("/controlCmd2",5);
+	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",5);
 	
+	nh_private.param<float>("vehicle_axis_dis",vehicle_axis_dis_,1.50);
 	nh_private.param<std::string>("path_points_file",path_points_file_,std::string("/home/wuconglei/wendao/littleAnt_ws/src/planning/data/gps.txt"));
 	nh_private.param<float>("disThreshold",disThreshold_,5.0);
 	nh_private.param<float>("speed",speed_,3.0);
@@ -73,7 +72,7 @@ void PathTracking::run()
 		
 		float turning_radius = (-0.5 * dis_yaw.first)/sin(deg2rad(yaw_err));
 		
-		float t_roadWheelAngle = asin(AXIS_DIS/turning_radius)*180/M_PI;
+		float t_roadWheelAngle = asin(vehicle_axis_dis_/turning_radius)*180/M_PI;
 		
 		printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 				current_point.longitude,current_point.latitude,current_point.yaw,
@@ -81,8 +80,8 @@ void PathTracking::run()
 		printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
 		
 		limitRoadWheelAngle(t_roadWheelAngle);
-		controlCmd2.set_speed = speed_;
-		controlCmd2.set_steeringAngle = -t_roadWheelAngle *500.0/20.0;
+		gps_controlCmd_.cmd2.set_speed = speed_;
+		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle *500.0/20.0;
 		
 		usleep(8000);
 	}
@@ -122,17 +121,9 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	return dis_yaw;
 }
 
-void PathTracking::pub_cmd2_10ms(const ros::TimerEvent&)
+void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 {
-	//ROS_ERROR("is_telecontrol:%d",is_telecontrol);
-	if(is_telecontrol==false)
-		pub_cmd2.publish(controlCmd2);
-}
-
-void PathTracking::pub_cmd1_20ms(const ros::TimerEvent&)
-{
-	if(is_telecontrol ==false)
-		pub_cmd1.publish(controlCmd1);
+		pub_gps_cmd_.publish(gps_controlCmd_);
 }
 
 void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
@@ -147,7 +138,4 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	
 }
 
-void PathTracking::telecontrolState_callback(const std_msgs::Bool::ConstPtr& msg)
-{
-	is_telecontrol = msg->data;
-}
+ 
