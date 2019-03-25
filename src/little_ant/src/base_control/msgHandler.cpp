@@ -199,7 +199,14 @@ void MsgHandler::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
 	float set_speed = msg->set_speed;
-	if(msg->set_brake==true) 
+	float set_brake = msg->set_brake;
+	
+	if(set_brake>40)
+	{
+		set_brake = 40;
+		set_speed = 0;
+	}
+	else if(set_brake >0.0) 
 		set_speed = 0.0;
 	else if(set_speed >15.0) 
 		set_speed =15.0;
