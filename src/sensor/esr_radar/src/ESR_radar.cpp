@@ -123,7 +123,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 	box.dimensions.y =1.0;
 	box.dimensions.z = 1.0;
 	
-	ros::Rate r(10);
+	ros::Rate r(20);
 	
 	while(ros::ok())
 	{
@@ -147,7 +147,7 @@ void ESR_RADAR::handleCanMsg()
 	CanMsg_t can_msg;
 	while(1)
 	{
-		usleep(10000);
+		usleep(10);
 		if(!in_can2serial->getCanMsg(can_msg)) continue;
 		
 		parse_msg(can_msg);

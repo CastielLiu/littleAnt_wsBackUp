@@ -8,7 +8,9 @@
 #include<iostream>
 #include<string>
 
-#define MAX_NOUT_SIZE  200
+#define MAX_NOUT_SIZE  2000  //read from serial per time
+#define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity
+#define MAX_PKG_BUF_LEN 50   // can2serial max pkg len
 
 typedef struct
 {
@@ -62,14 +64,19 @@ private:
 	boost::shared_ptr<boost::thread> read_thread_ptr_;
 	bool reading_status_;
 	
-	uint8_t data_buffer_[20]; //最大包长为20
+	uint8_t data_buffer_[MAX_PKG_BUF_LEN]; //最大包长为20
 	size_t buffer_index_;
 	
 	uint16_t package_len_;
 	size_t bytes_remaining_;
 	
 	CanMsg_t canMsg_;
-	std::vector<CanMsg_t> canMsgArray_;
+	
+	CanMsg_t canMsgBuf_[MAX_MSG_BUF_SIZE];
+	bool canMsgStatus[MAX_MSG_BUF_SIZE];
+	
+	size_t writeIndex_;
+	size_t readIndex_;
 	
 	boost::mutex mutex_;
 	

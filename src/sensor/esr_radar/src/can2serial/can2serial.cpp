@@ -7,9 +7,12 @@ Can2serial::Can2serial()
 	reading_status_=false;
 	buffer_index_ = 0;
 	bytes_remaining_ = 0;
-	canMsgArray_.reserve(20);
 	baudRateCofigStatus_ =BaudrateCofig_None;
 	filterClearStatus_ = false;
+	for(size_t i=0;i<MAX_MSG_BUF_SIZE;i++)
+		canMsgStatus[i] = false;
+	readIndex_ =0;
+	writeIndex_ =0;
 }
 
 Can2serial::~Can2serial()
@@ -107,11 +110,19 @@ void Can2serial::ReadSerialPort()
 	
 }
 
+
+		 
+          
 void Can2serial::BufferIncomingData(unsigned char *message, unsigned int length)
 {
 	// add incoming data to buffer
 	for (unsigned int ii=0; ii<length; ii++) 
-	{
+	{// make sure bufIndex is not larger than buffer
+		if(buffer_index_>=MAX_PKG_BUF_LEN)
+		{
+			buffer_index_ = 0;
+			  printf("Overflowed receive buffer. Buffer cleared.");
+		}
 		//std::cout << "bytes_remaining_...:" <<bytes_remaining_  <<std::endl;
 		switch(buffer_index_)
 		{
@@ -176,6 +187,7 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
 	{
 		case CanMsgCmd:
             	
+            	if(0==(data_buffer_[12] >>5)) break;                           //data[1] esr_radar object status
             	canMsg_.type = data_buffer_[5];
                 canMsg_.ID = (data_buffer_[6]<<24)+(data_buffer_[7]<<16)+(data_buffer_[8]<<8)+(data_buffer_[9]);
                 canMsg_.len = data_buffer_[10];
@@ -183,15 +195,11 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
                 for(size_t i=0;i<canMsg_.len;i++)
                 	canMsg_.data[i] = data_buffer_[11+i];
                 	
-                if(canMsgArray_.size()==canMsgArray_.capacity())
-                	canMsgArray_.erase(canMsgArray_.begin());
-                else
-                {
-		           	boost::mutex::scoped_lock lock(mutex_); 
-		           	
-		            canMsgArray_.push_back(canMsg_);
-				}
-                //std::cout << "vectorSize:"<<stdCanMsgArray.size()<< std::endl;
+                canMsgBuf_[writeIndex_] = canMsg_;
+                canMsgStatus[writeIndex_] = true;
+                writeIndex_++;
+                if(writeIndex_==MAX_MSG_BUF_SIZE)
+                	writeIndex_=0;
                 
                 //std::cout<< std::hex <<stdCanMsg.ID<<std::endl;;
                 break;
@@ -432,26 +440,17 @@ int Can2serial::inquireBaudrate(uint8_t port)
 
 bool Can2serial::getCanMsg(CanMsg_t &msg)
 {
-	if(canMsgArray_.empty())
+	//boost::mutex::scoped_lock lock(mutex_);
+	if(canMsgStatus[readIndex_]==false || readIndex_==writeIndex_)
 		return false;
-		
-	boost::mutex::scoped_lock lock(mutex_);
-	
-	msg = canMsgArray_[0];
-	canMsgArray_.erase(canMsgArray_.begin());
+	msg = canMsgBuf_[readIndex_];
+	canMsgStatus[readIndex_]=false;
+	readIndex_++;
+	if(readIndex_==MAX_MSG_BUF_SIZE)
+		readIndex_= 0;
 	
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
