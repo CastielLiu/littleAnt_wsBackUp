@@ -7,7 +7,7 @@
 
 		<param name="avoid_speed" value="10.0" />
 		<param name="objects_topic" value="/detected_bounding_boxs" />
-		<param name="deceleration_cofficient" value="32" />
+		<param name="deceleration_cofficient" value="20" />
 		
 		<param name="safety_distance_side" value="2.0"/>  
 		<param name="pedestrian_detection_area_side" value="3.0" />

@@ -3,10 +3,8 @@
 <launch>
 
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
-		<param name="port_name" value="/dev/ttyUSB0"/>
+		<param name="port_name" value="/dev/U1"/>
 	</node>
 	
-	<node name="key_control" pkg="little_ant" type ="key_control" />
-
 
 </launch>

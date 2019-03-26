@@ -14,10 +14,10 @@
 		<param name ="port_name" value="$(arg base_control_port)"/>
 	</node>
 	
-	<node name="path_tracking_node" pkg="planning" type="path_tracking_node"  >
+	<node name="path_tracking_node" pkg="planning" type="path_tracking_node" output="screen">
 		<param name="path_points_file" value="$(find planning)/data/gps.txt"/>
-		<param name="disThreshold" value="6.0"/>
-		<param name="speed" value="0.0"/>
+		<param name="disThreshold" value="10.0"/>
+		<param name="speed" value="10.0"/>
 	
 	</node>
 	
@@ -41,19 +41,8 @@
 		<param name="file_path" value="$(find planning)/data/debug.txt"/>
 	</node>
 	
-	<node type="avoiding_node" pkg="planning"  name="avoiding_node" output="screen" >
 
-		<param name="avoid_speed" value="3.0" />
-		<param name="objects_topic" value="/detected_bounding_boxs" />
-		<param name="deceleration_cofficient" value="70" />
-		
-		<param name="safety_distance_side" value="2.0"/>  
-		<param name="pedestrian_detection_area_side" value="3.0" />
-		<param name="danger_distance_side"  value="1.2" />
-		
-	</node>
-
-	<node  type="decision_making_node" pkg ="planning" name="decision_making_node"  />   <!--                   -->
+	<node  type="decision_making_node" pkg ="planning" name="decision_making_node" />   <!--                   -->
 	
 	
 

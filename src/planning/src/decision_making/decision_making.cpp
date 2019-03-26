@@ -35,6 +35,7 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 	switch(msg->origin)
 	{
 		case little_ant_msgs::ControlCmd::_GPS:
+ROS_INFO("GPS: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
 			gps_cmd_status = msg->status;
 			if(telecontrol_cmd_status || lidar_cmd_status || (!gps_cmd_status))
 				break;
@@ -45,6 +46,7 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 			
 		
 		case little_ant_msgs::ControlCmd::_LIDAR:
+ROS_INFO("_LIDAR: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
 			lidar_cmd_status = msg->status;
 			if(telecontrol_cmd_status ||(!lidar_cmd_status))
 				break;
@@ -54,6 +56,7 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 			break;	
 		
 		case little_ant_msgs::ControlCmd::_TELECONTROL:
+ROS_INFO("_TELECONTROL: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
 			telecontrol_cmd_status =msg->status;
 			if(!telecontrol_cmd_status) break;
 			if(msg->just_decelerate)
