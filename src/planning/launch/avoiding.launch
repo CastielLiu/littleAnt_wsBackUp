@@ -1,0 +1,19 @@
+<!-- -->
+
+<launch>
+
+	
+	<node pkg="planning" type="avoiding_node" name="avoiding_node" output="screen" >
+
+		<param name="avoid_speed" value="10.0" />
+		<param name="objects_topic" value="/detected_bounding_boxs" />
+		<param name="deceleration_cofficient" value="32" />
+		
+		<param name="safety_distance_side" value="2.0"/>  
+		<param name="pedestrian_detection_area_side" value="3.0" />
+		<param name="danger_distance_side"  value="1.2" />
+		
+	</node>
+	
+</launch>
+

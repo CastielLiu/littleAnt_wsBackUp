@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   gps_msgs
   serial
+  jsk_recognition_msgs
 )
 
 
