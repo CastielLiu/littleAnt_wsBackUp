@@ -23,7 +23,7 @@ public:
 	
 	void init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	{
-		nh_private.param<std::string>("port_name",port_name_,"/dev/ttyUSB0");
+		nh_private.param<std::string>("port_name",port_name_,"/dev/U3");
 	
 		pub_telecontrol_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
 	
@@ -121,7 +121,7 @@ public:
 		while(ros::ok)
 		{
 			usleep(20000);
-			//cout << "running...."<<endl;
+			cout << "running...."<<endl;
 			boost::mutex::scoped_lock lock(mutex_); 
 			data = serial.getPkgPtr();
 		

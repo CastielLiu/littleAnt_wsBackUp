@@ -196,11 +196,16 @@ void MsgHandler::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 	
 }
 
+#define LIMITS 5
+
+
 void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
 	float set_speed = msg->set_speed;
 	float set_brake = msg->set_brake;
-	
+
+	static float last_set_steeringAngle = 0;
+
 	if(set_brake>40)
 	{
 		set_brake = 40;
@@ -221,9 +226,19 @@ void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	canMsg_cmd2.data[2] = uint8_t(msg->set_brake *2.5);
 	
-	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
+	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *LIMITS);
 	
-	uint16_t steeringAngle = 10800 - msg->set_steeringAngle*10;
+	float current_set_steeringAngle = msg->set_steeringAngle;
+	
+	if(current_set_steeringAngle - last_set_steeringAngle > LIMITS)
+		current_set_steeringAngle = last_set_steeringAngle+LIMITS;
+	else if(current_set_steeringAngle - last_set_steeringAngle <-LIMITS)
+		current_set_steeringAngle = last_set_steeringAngle -LIMITS;
+		
+	last_set_steeringAngle = current_set_steeringAngle;
+		
+	
+	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10;
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
@@ -238,3 +253,18 @@ void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 		
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -16,7 +16,7 @@ Avoiding::Avoiding()
 	safety_distance_side_ = 0.9 + 0.8;
 	vehicle_axis_dis_ = 1.5;
 
-	danger_distance_front_ = 3.0;
+	danger_distance_front_ = 5.0;
 	safety_distance_front_=20.0;
 	vehicleSpeed_ = 5.0;
 	
@@ -140,7 +140,7 @@ ROS_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 				float t_roadWheelAngle = asin(vehicle_axis_dis_/turning_radius)*180/M_PI;
 				this->limitRoadWheelAngle(t_roadWheelAngle);
 				avoid_cmd_.cmd2.set_speed = avoid_speed_;
-				if(objects->boxes[obstacleIndices[i]].pose.position.y > 0.2) //障碍物在左侧
+				if(objects->boxes[obstacleIndices[i]].pose.position.y > 0.5) //障碍物在左侧
 				{
 					avoid_cmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * 200.0/15;
 ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],-t_roadWheelAngle);
@@ -264,8 +264,8 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 {
 
 	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)*5.0/18; //m/s
-	danger_distance_front_ = brakingAperture_2_deceleration(40.0) * vehicleSpeed_ * vehicleSpeed_ /2 + 3.0;
-	safety_distance_front_ = danger_distance_front_ + 15.0;
+	danger_distance_front_ = brakingAperture_2_deceleration(40.0) * vehicleSpeed_ * vehicleSpeed_ /2 + 5.0;
+	safety_distance_front_ = danger_distance_front_ + 10.0;
 	ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",vehicleSpeed_,danger_distance_front_,safety_distance_front_);
 }
 

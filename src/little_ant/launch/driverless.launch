@@ -43,7 +43,7 @@
 	
 	<node type="avoiding_node" pkg="planning"  name="avoiding_node" output="screen" >
 
-		<param name="avoid_speed" value="3.0" />
+		<param name="avoid_speed" value="10.0" />
 		<param name="objects_topic" value="/detected_bounding_boxs" />
 		<param name="deceleration_cofficient" value="70" />
 		
