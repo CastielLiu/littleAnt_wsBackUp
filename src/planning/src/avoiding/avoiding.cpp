@@ -133,7 +133,9 @@ ROS_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 		//ROS_ERROR("avoid_speed_:%f",avoid_speed_);
 				avoid_cmd_.cmd2.set_brake = 0.0;
 				
-				float _x = objects->boxes[obstacleIndices[i]].pose.position.x/2;
+				//float _x = objects->boxes[obstacleIndices[i]].pose.position.x/2;// 型心水平点
+				float _x = obstacleVertex_x_y[i][0]; //避障区内_x > 0
+				
 				float _y = (fabs(obstacleVertex_x_y[i][1]) + safety_distance_side_)/2;
 				float _theta = 2*atan(2*_x/_y);
 				float turning_radius = _x / sin(_theta);
@@ -161,7 +163,11 @@ ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[
 			avoid_cmd_.status = true;
 			avoid_cmd_.just_decelerate =true;
 			avoid_cmd_.cmd2.set_speed = 0.0;
-			avoid_cmd_.cmd2.set_brake = deceleration_2_brakingAperture(0.5*vehicleSpeed_*vehicleSpeed_/(dis_x-5)); // -5 is safty distance!
+			if(dis_x>5)
+				avoid_cmd_.cmd2.set_brake = deceleration_2_brakingAperture(0.5*vehicleSpeed_*vehicleSpeed_/(dis_x-5)); // -5 is safty distance!
+			else
+				avoid_cmd_.cmd2.set_brake = 40;
+				
 			ROS_INFO("Pedestrian........................x: %f\ty: %f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1]);
 			//ROS_ERROR("speed: %f\tbrake: %f",avoid_cmd_.cmd2.set_speed,avoid_cmd_.cmd2.set_brake);
 			break;
@@ -247,7 +253,7 @@ whatArea_t Avoiding::which_area(float& x,float& y)
 {
 	if(y>safety_distance_side_ || y< -safety_distance_side_ || x>safety_distance_front_ || x< 1.0)
 	{
-		if(x<safety_distance_front_ && x> safety_distance_front_/3 && 
+		if(x<safety_distance_front_ && x> safety_distance_front_/3 &&  //行人检测区域限定
 			y < pedestrian_detection_area_side_ && y> -pedestrian_detection_area_side_) //行人检测区
 			return PedestrianDetectionArea;
 		else
@@ -262,16 +268,19 @@ whatArea_t Avoiding::which_area(float& x,float& y)
 
 void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)   
 {
-
 	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)*5.0/18; //m/s
-	danger_distance_front_ = brakingAperture_2_deceleration(40.0) * vehicleSpeed_ * vehicleSpeed_ /2 + 5.0;
-	safety_distance_front_ = danger_distance_front_ + 10.0;
+	danger_distance_front_ = brakingAperture_2_deceleration(40.0) * vehicleSpeed_ * vehicleSpeed_ /2 + 5.0;  //最大减速度->最短制动距离 + 防撞距离
+	//safety_distance_front_ = danger_distance_front_ + 10.0;
+	
+	safety_distance_front_ = danger_distance_front_ *(1+0.7);  // 安全距离 随危险距离变化
+	
 	ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",vehicleSpeed_,danger_distance_front_,safety_distance_front_);
 }
 
 float Avoiding::deceleration_2_brakingAperture(const float & deceleration)
 {
-	return deceleration * deceleration_cofficient_;
+	float brakingAperture = (deceleration * deceleration_cofficient_);
+	return brakingAperture>40? 40:brakingAperture;
 }
 
 float Avoiding::brakingAperture_2_deceleration(const float & brakingAperture)

@@ -5,7 +5,7 @@
 	<arg name="gps_port" default="/dev/U2"/>		    <!-- GPS-->
 	<arg name="telecontrol_port" default="/dev/U3"/>    <!--遥控器 STM32-->
 	
-
+<!--遥控-->
 	<node name="telecontrol" pkg="little_ant" type ="telecontrol_stm32" >
 		<param name ="port_name" value="$(arg telecontrol_port)"/>
 	</node>
@@ -16,11 +16,14 @@
 	
 	<node name="path_tracking_node" pkg="planning" type="path_tracking_node"  >
 		<param name="path_points_file" value="$(find planning)/data/gps.txt"/>
-		<param name="disThreshold" value="6.0"/>
-		<param name="speed" value="0.0"/>
+		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -- >
+		<param name="speed" value="10.0"/>						 <!-- 跟踪速度  -- >
 	
 	</node>
 	
+	
+	
+<!--GPS-->	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
 
 		<param name="port" value="$(arg gps_port)" />
@@ -36,25 +39,39 @@
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
 	
-	
+<!--调试-->	
 	<node name="record_gps_data" pkg="planning" type="record_gps_data">
 		<param name="file_path" value="$(find planning)/data/debug.txt"/>
 	</node>
-	
+
+<!--避障-->	
 	<node type="avoiding_node" pkg="planning"  name="avoiding_node" output="screen" >
 
-		<param name="avoid_speed" value="10.0" />
+		<param name="avoid_speed" value="10.0" />						 <!-- 避障时的车速  -->
 		<param name="objects_topic" value="/detected_bounding_boxs" />
-		<param name="deceleration_cofficient" value="70" />
+		<param name="deceleration_cofficient" value="70" />              <!--值越大表明汽车减速性能越好  -->
 		
-		<param name="safety_distance_side" value="2.0"/>  
-		<param name="pedestrian_detection_area_side" value="3.0" />
-		<param name="danger_distance_side"  value="1.2" />
+		<param name="safety_distance_side" value="2.0"/>    <!--   两侧安全距离（参照雷达中心）       -->
+		<param name="pedestrian_detection_area_side" value="3.0" />   <!--  行人检测区宽度（参照雷达）   -->
+		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
 	</node>
 
-	<node  type="decision_making_node" pkg ="planning" name="decision_making_node"  />   <!--                   -->
+ <!--总决策-->
+	<node  type="decision_making_node" pkg ="planning" name="decision_making_node"  />  
 	
 	
 
 </launch>
+
+
+
+
+
+
+
+
+
+
+
+

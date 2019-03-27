@@ -2,9 +2,11 @@
 
 DecisionMaking::DecisionMaking()
 {
-	gps_cmd_status = false;
-	lidar_cmd_status = false;
-	telecontrol_cmd_status = false;
+	gps_cmd_status_ = false;
+	lidar_cmd_status_ = false;
+	telecontrol_cmd_status_ = false;
+	
+	gps_cmd_speed_ = 0.0;
 }
 
 DecisionMaking::~DecisionMaking()
@@ -35,9 +37,11 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 	switch(msg->origin)
 	{
 		case little_ant_msgs::ControlCmd::_GPS:
-ROS_INFO("GPS: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			gps_cmd_status = msg->status;
-			if(telecontrol_cmd_status || lidar_cmd_status || (!gps_cmd_status))
+			//ROS_INFO("GPS: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
+			gps_cmd_status_ = msg->status;
+			gps_cmd_speed_ = msg->cmd2.set_speed;
+			
+			if(telecontrol_cmd_status_ || lidar_cmd_status_ || (!gps_cmd_status_))
 				break;
 				
 			cmd1_ = msg->cmd1;
@@ -46,19 +50,22 @@ ROS_INFO("GPS: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,
 			
 		
 		case little_ant_msgs::ControlCmd::_LIDAR:
-ROS_INFO("_LIDAR: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			lidar_cmd_status = msg->status;
-			if(telecontrol_cmd_status ||(!lidar_cmd_status))
+			//ROS_INFO("_LIDAR: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
+			lidar_cmd_status_ = msg->status;
+			if(telecontrol_cmd_status_ ||(!lidar_cmd_status_))
 				break;
 				
 			cmd1_ = msg->cmd1;
 			cmd2_ = msg->cmd2;
+			
+			if(msg->cmd2.set_speed > gps_cmd_speed_) //雷达避障速度超过gps跟踪速度时，以跟踪速度为准
+				cmd2_.set_speed = gps_cmd_speed_;
 			break;	
 		
 		case little_ant_msgs::ControlCmd::_TELECONTROL:
-ROS_INFO("_TELECONTROL: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			telecontrol_cmd_status =msg->status;
-			if(!telecontrol_cmd_status) break;
+			//ROS_INFO("_TELECONTROL: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
+			telecontrol_cmd_status_ =msg->status;
+			if(!telecontrol_cmd_status_) break;
 			if(msg->just_decelerate)
 			{
 				cmd2_.set_speed = msg->cmd2.set_speed;

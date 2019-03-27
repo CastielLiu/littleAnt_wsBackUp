@@ -37,9 +37,11 @@ private:
 	little_ant_msgs::ControlCmd1 cmd1_;
 	little_ant_msgs::ControlCmd2 cmd2_;
 	
-	bool gps_cmd_status;
-	bool lidar_cmd_status;
-	bool telecontrol_cmd_status;
+	bool gps_cmd_status_;
+	bool lidar_cmd_status_;
+	bool telecontrol_cmd_status_;
+	
+	float gps_cmd_speed_;
 	
 };
 
