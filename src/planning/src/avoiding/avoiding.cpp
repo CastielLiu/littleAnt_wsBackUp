@@ -145,12 +145,12 @@ ROS_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 				if(objects->boxes[obstacleIndices[i]].pose.position.y > 0.5) //障碍物在左侧
 				{
 					avoid_cmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * 200.0/15;
-ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],-t_roadWheelAngle);
+//ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],-t_roadWheelAngle);
 				}
 				else  //right
 				{
 					avoid_cmd_.cmd2.set_steeringAngle = t_roadWheelAngle *200.0/15;
-ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],t_roadWheelAngle);
+//ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],t_roadWheelAngle);
 				}
 				
 				break;
@@ -168,7 +168,7 @@ ROS_INFO("car  avoiding  x: %f\ty: %f\t t_roadWheelAngle:%f",obstacleVertex_x_y[
 			else
 				avoid_cmd_.cmd2.set_brake = 40;
 				
-			ROS_INFO("Pedestrian........................x: %f\ty: %f",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1]);
+			ROS_INFO("Pedestrian....x: %f\ty: %f \tbrake:%f ",obstacleVertex_x_y[i][0],obstacleVertex_x_y[i][1],avoid_cmd_.cmd2.set_brake);
 			//ROS_ERROR("speed: %f\tbrake: %f",avoid_cmd_.cmd2.set_speed,avoid_cmd_.cmd2.set_brake);
 			break;
 		}

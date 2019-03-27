@@ -53,6 +53,9 @@ add_dependencies(telecontrol_stm32  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(telecontrol_stm32 ${catkin_LIBRARIES} littleAnt_utils)
 
 
+add_executable(calculate_deceleration_node src/test/test.cpp)
+add_dependencies(calculate_deceleration_node  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(calculate_deceleration_node ${catkin_LIBRARIES})
 
 
 

@@ -79,7 +79,7 @@ void MsgHandler::parse()
 			continue;
 		}
 			
-		ROS_INFO("ID:%x",canMsg.ID);
+		//ROS_INFO("ID:%x",canMsg.ID);
 			
 		switch(canMsg.ID)
 		{
@@ -108,7 +108,7 @@ void MsgHandler::parse()
 				state2.wheel_speed_RR_valid = !(canMsg.data[6] >>6);
 				state2.wheel_speed_RR = ((canMsg.data[6]&0x3f)*256+canMsg.data[7])*0.0625;
 				
-				state2_pub.publish(state2);
+				state2_pub.publish(state2);  //speed km/h
 				break;
 				
 			case ID_STATE3:

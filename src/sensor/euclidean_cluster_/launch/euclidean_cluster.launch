@@ -1,3 +1,5 @@
+<!-- -->
+
 <launch>
 
 	 <!-- node pkg="pcl_test" type="pcl_test_node" name="pcl_test_node" output="screen"/-->
@@ -9,8 +11,6 @@
     <param name="x_max"  type="double"  value="40.0"/>
     <param name="x_min"  type="double"  value="-1.5"/>
      
-
-    
     </node>
 
 
