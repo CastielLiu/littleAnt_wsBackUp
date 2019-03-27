@@ -1,0 +1,19 @@
+<launch>
+
+	 <!-- node pkg="pcl_test" type="pcl_test_node" name="pcl_test_node" output="screen"/-->
+    <node name="euclidean_cluster" pkg="euclidean_cluster" type="euclidean_cluster_node" output="screen">
+    
+     <param name="y_max"  type="double"  value="6.0"/>
+     <param name="y_min"  type="double"  value="-4.0"/>
+    
+    <param name="x_max"  type="double"  value="40.0"/>
+    <param name="x_min"  type="double"  value="-1.5"/>
+     
+
+    
+    </node>
+
+
+</launch>
+
+
