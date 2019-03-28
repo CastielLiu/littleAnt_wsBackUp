@@ -3,7 +3,7 @@
 <launch>
 
 
-	<arg name="gps_port" default="/dev/U2"/>		    <!-- GPS-->
+	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	
 	
 	

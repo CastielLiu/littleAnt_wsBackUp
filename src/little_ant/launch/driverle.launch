@@ -2,14 +2,10 @@
 <launch>
 
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
-	<arg name="gps_port" default="/dev/ttyS3"/>		    <!-- GPS-->
+	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="telecontrol_port" default="/dev/U4"/>    <!--遥控器 STM32-->
 
-<!--聚类      -->
-	<include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch" output="screen"/>
-<!-- 激光雷达 -->
-<!--	<include file="$(find hesi__)/launch/p40p.launch"  />   -->
-	
+	 
 <!--遥控-->
 	<node name="telecontrol" pkg="little_ant" type ="telecontrol_stm32" >
 		<param name ="port_name" value="$(arg telecontrol_port)"/>
@@ -19,10 +15,12 @@
 		<param name ="port_name" value="$(arg base_control_port)"/>
 	</node>
 	
+
+<!--    -->
 	<node name="path_tracking_node" pkg="planning" type="path_tracking_node"  >
-		<param name="path_points_file" value="$(find planning)/data/gps.txt"/>
+		<param name="path_points_file" value="$(find planning)/data/2.txt"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
-		<param name="speed" value="10.0"/>						 <!-- 跟踪速度  -->
+		<param name="speed" value="14.0"/>						 <!-- 跟踪速度  -->
 	
 	</node>
 	
@@ -50,14 +48,14 @@
 	</node>
 
 <!--避障-->	
-	<node type="avoiding_node" pkg="planning"  name="avoiding_node"  >
+	<node type="avoiding_node" pkg="planning"  name="avoiding_node" output="screen" >
 
-		<param name="avoid_speed" value="10.0" />						 <!-- 避障时的车速  -->
+		<param name="avoid_speed" value="3.0" />						 <!-- 避障时的车速  -->
 		<param name="objects_topic" value="/detected_bounding_boxs" />
-		<param name="deceleration_cofficient" value="16" />              <!--系数越大  表明车辆制动性能越差  -->
+		<param name="deceleration_cofficient" value="70" />              <!--系数越大  表明车辆制动性能越差  -->
 		
 		<param name="safety_distance_side" value="2.0"/>    <!--   两侧安全距离（参照雷达中心）       -->
-		<param name="pedestrian_detection_area_side" value="3.0" />   <!--  行人检测区宽度（参照雷达）   -->
+		<param name="pedestrian_detection_area_side" value="2.6" />   <!--  行人检测区宽度（参照雷达）   -->
 		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
 	</node>

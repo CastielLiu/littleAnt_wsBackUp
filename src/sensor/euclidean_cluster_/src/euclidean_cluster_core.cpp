@@ -7,7 +7,8 @@ EuClusterCore::EuClusterCore(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
     cluster_distance_ = {0.4, 0.8, 1.4, 1.8};
     sub_point_cloud_ = nh.subscribe("/pandar_points", 5, &EuClusterCore::point_cb, this);
 
-	pub_filtered_points_ = nh.advertise<sensor_msgs::PointCloud2>("/filtered_points", 5);
+	pub_filtered_points_ = nh.advertise<sensor_msgs::PointCloud2>("/filtered_points", 10);
+
     pub_bounding_boxs_ = nh.advertise<jsk_recognition_msgs::BoundingBoxArray>("/detected_bounding_boxs", 5);
     
     private_nh.param<float>("x_max",x_max_,1.0);
@@ -35,7 +36,7 @@ void EuClusterCore::clip_filter(double clip_height, double clip_low,  const pcl:
         {
             indices.indices.push_back(i);
         }
-        else if ( (in->points[i].x<1.6) &&  (in->points[i].x>-1.5 ) && (abs(in->points[i].y)<0.6) )  //去除过近的点云 //
+        else if ( (in->points[i].x<1.6) &&  (in->points[i].x>-1.5 ) && (abs(in->points[i].y)<0.6) )  //去除过近的点云
         {
         
         	indices.indices.push_back(i);
@@ -172,10 +173,11 @@ void EuClusterCore::cluster_segment(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pc,
         obj_info.bounding_box_.dimensions.y = ((width_ < 0) ? -1 * width_ : width_);
         obj_info.bounding_box_.dimensions.z = ((height_ < 0) ? -1 * height_ : height_);
 
-		if(  volume<2 && volume >0.4 )
+		if(  volume<1.5 && volume >0.1 && obj_info.bounding_box_.dimensions.y <1.0  && obj_info.bounding_box_.dimensions.x <1.0
+			&& obj_info.bounding_box_.dimensions.z <2.2 && obj_info.bounding_box_.dimensions.z>1.2)
 		{
 			obj_info.bounding_box_.label=1;   //人
-			printf("label:%d  diatance:%f \r\n",obj_info.bounding_box_.label,distance);
+			printf("label:%d  diatance:%f\t%f \r\n",obj_info.bounding_box_.label,distance,volume);
 		}
 		else if(volume >2 && volume <10 )
 		{
@@ -187,6 +189,7 @@ void EuClusterCore::cluster_segment(pcl::PointCloud<pcl::PointXYZ>::Ptr in_pc,
 		{		
 			obj_info.bounding_box_.label=0; //未知
 		}
+	//printf("label:%d  diatance:%f\tvolume:%f \r\n",obj_info.bounding_box_.label,distance,volume);
 
         obj_list.push_back(obj_info);
     }

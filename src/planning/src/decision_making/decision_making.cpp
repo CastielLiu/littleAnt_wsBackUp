@@ -6,7 +6,7 @@ DecisionMaking::DecisionMaking()
 	lidar_cmd_status_ = false;
 	telecontrol_cmd_status_ = false;
 	
-	gps_cmd_speed_ = 0.0;
+	gps_cmd_speed_ = 5.0;
 }
 
 DecisionMaking::~DecisionMaking()

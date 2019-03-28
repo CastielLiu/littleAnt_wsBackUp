@@ -3,8 +3,7 @@
 <launch>
 
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
-		<param name="port_name" value="/dev/U1"/>
+		<param name="port_name" value="/dev/U5"/>
 	</node>
-	
 
 </launch>

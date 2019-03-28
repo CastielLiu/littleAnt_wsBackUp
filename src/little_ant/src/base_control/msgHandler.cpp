@@ -213,8 +213,8 @@ void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	}
 	else if(set_brake >0.0) 
 		set_speed = 0.0;
-	else if(set_speed >15.0) 
-		set_speed =15.0;
+	else if(set_speed >14.5) 
+		set_speed =14.5;
 	float currentSpeed = (state2.wheel_speed_FR + state2.wheel_speed_FL)/2;
 	if(set_speed-currentSpeed>5.0)
 		set_speed = currentSpeed+5.0;
@@ -238,7 +238,7 @@ void MsgHandler::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	last_set_steeringAngle = current_set_steeringAngle;
 		
 	
-	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10;
+	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +20;
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);

@@ -30,6 +30,7 @@ void state_callBack(const little_ant_msgs::State2::ConstPtr msg)
 	if(msg->wheel_speed_RL_valid==true) {i++; speed+=msg->wheel_speed_RL;}
 	if(msg->wheel_speed_RR_valid==true) {i++; speed+=msg->wheel_speed_RR;}
 	speed = speed/i /3.6; //m/s
+//ROS_INFO("speed:%f",speed);
 	if(speed ==0 &&g_start_calculate==true )
 	{
 		g_timer_end = ros::Time::now().toSec(); //end timing
@@ -50,6 +51,7 @@ void state_callBack(const little_ant_msgs::State2::ConstPtr msg)
 void cmd_callBack(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
 	float set_brake = msg->set_brake;
+//ROS_INFO("brake:%f",set_brake);
 	if(set_brake!=0)
 	{
 		g_timer_begin = ros::Time::now().toSec(); //start timing
@@ -70,7 +72,7 @@ int main(int argc,char**argv)
 	
 	
 	ros::Subscriber sub1 = nh.subscribe("/vehicleState2",1,&state_callBack);
-	ros::Subscriber sub2 = nh.subscribe("/ControlCmd2",1,&cmd_callBack);
+	ros::Subscriber sub2 = nh.subscribe("/controlCmd2",1,&cmd_callBack);
 	
 	//ROS_INFO("System initialization completed");
 	

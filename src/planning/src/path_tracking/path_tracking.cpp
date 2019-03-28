@@ -48,6 +48,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 void PathTracking::run()
 {
+	size_t i =0;
 	while(ros::ok())
 	{
 		
@@ -74,16 +75,18 @@ void PathTracking::run()
 		
 		float t_roadWheelAngle = asin(vehicle_axis_dis_/turning_radius)*180/M_PI;
 		
+if(i%20==0){
 		printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 				current_point.longitude,current_point.latitude,current_point.yaw,
 				target_point.longitude,target_point.latitude,dis_yaw.second);
 		printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
-		
+	}	
 		limitRoadWheelAngle(t_roadWheelAngle);
 		gps_controlCmd_.cmd2.set_speed = speed_;
-		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle *500.0/20.0;
+		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle *350.0/20.0;
 		
 		usleep(8000);
+i++;
 	}
 }
 
@@ -95,8 +98,8 @@ float PathTracking::deg2rad(float deg)
 
 void PathTracking::limitRoadWheelAngle(float& angle)
 {
-	if(angle>30.0) angle =30.0;
-	else if(angle<-30.0) angle =-30.0;
+	if(angle>20.0) angle =20.0;
+	else if(angle<-20.0) angle =-20.0;
 }
 
 
