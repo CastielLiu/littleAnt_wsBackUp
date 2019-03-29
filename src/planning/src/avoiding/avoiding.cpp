@@ -5,7 +5,7 @@
 
 Avoiding::Avoiding()
 {
-	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_TELECONTROL; //_TELECONTROL  //_LIDAR
+	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR; //_TELECONTROL  //_LIDAR
 	avoid_cmd_.status = false;
 	avoid_cmd_.just_decelerate = false;
 	avoid_cmd_.cmd1.set_driverlessMode = true;
@@ -13,7 +13,7 @@ Avoiding::Avoiding()
 	avoid_cmd_.cmd2.set_speed = avoid_speed_;
 	
 	danger_distance_side_ = 0.9 + 0.3;
-	safety_distance_side_ = 0.9 + 0.8;
+	safety_distance_side_ = 0.9 + 1.0;
 	vehicle_axis_dis_ = 1.5;
 
 	danger_distance_front_ = 5.0;
@@ -133,13 +133,22 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		//ROS_ERROR("avoid_speed_:%f",avoid_speed_);
 				avoid_cmd_.cmd2.set_brake = 0.0;
 				
-				//float _x = objects->boxes[obstacleIndices[i]].pose.position.x/2;// 型心水平点
-				float _x = obstacleVertex_x_y[i][0]; //避障区内_x > 0
+				float t_roadWheelAngle;
+				if(obstacleVertex_x_y[i][0] > danger_distance_front_)
+				{
+					//float _x = objects->boxes[obstacleIndices[i]].pose.position.x/2;// 型心水平点
+					float _x = obstacleVertex_x_y[i][0]/2; //避障区内_x > 0
 				
-				float _y = (fabs(obstacleVertex_x_y[i][1]) + safety_distance_side_)/2;
-				float _theta = 2*atan(2*_x/_y);
-				float turning_radius = _x / sin(_theta);
-				float t_roadWheelAngle = asin(vehicle_axis_dis_/turning_radius)*180/M_PI *5;
+					float _y = (fabs(obstacleVertex_x_y[i][1]) + safety_distance_side_)/2;
+					float _theta = 2*atan(2*_x/_y);
+					float turning_radius = _x / sin(_theta);
+					t_roadWheelAngle = asin(vehicle_axis_dis_/turning_radius)*180/M_PI *5;
+				}
+				else
+				{
+					t_roadWheelAngle = 5.0;
+				}
+				
 				this->limitRoadWheelAngle(t_roadWheelAngle);
 				avoid_cmd_.cmd2.set_speed = avoid_speed_;
 				if(objects->boxes[obstacleIndices[i]].pose.position.y > 0.5) //障碍物在左侧
@@ -270,7 +279,7 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 {
 	static int i=0;
 	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
-	danger_distance_front_ = brakingAperture_2_deceleration(40.0) * vehicleSpeed_ * vehicleSpeed_ /2 + 5.0;  //最大减速度->最短制动距离 + 防撞距离
+	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;  //最大减速度->最短制动距离 + 防撞距离
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
 	safety_distance_front_ = danger_distance_front_ *(3.2);  // 安全距离 随危险距离变化

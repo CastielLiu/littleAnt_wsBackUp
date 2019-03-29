@@ -17,7 +17,7 @@ public:
 	
 	Telecontrol()
 	{
-		telecontrol_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR;  //_TELECONTROL  
+		telecontrol_cmd_.origin = little_ant_msgs::ControlCmd::_TELECONTROL;  //_TELECONTROL  _LIDAR
 	}
 	~Telecontrol(){}
 	
