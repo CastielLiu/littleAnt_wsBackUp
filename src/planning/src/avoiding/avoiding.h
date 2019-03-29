@@ -6,6 +6,7 @@
 #include<jsk_recognition_msgs/BoundingBoxArray.h>
 #include<jsk_recognition_msgs/BoundingBox.h>
 #include<iostream>
+#include<std_msgs/Int8.h>
 
 typedef enum
 {
@@ -57,8 +58,10 @@ private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
 	ros::Publisher pub_avoid_cmd_;
+	ros::Publisher pub_avoid_to_gps_; //temp
 	
 	little_ant_msgs::ControlCmd avoid_cmd_;
+	std_msgs::Int8 start_avoidingFlag_;
 	
 	float avoid_speed_;
 	

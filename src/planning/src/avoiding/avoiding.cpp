@@ -39,6 +39,7 @@ void Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_objects_msg_ = nh.subscribe(objects_topic_,2,&Avoiding::objects_callback,this);
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",2,&Avoiding::vehicleSpeed_callback,this);
 	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
+	pub_avoid_to_gps_ = nh.advertise<std_msgs::Int8>("/start_avoiding",2);
 	
 }
 
@@ -128,6 +129,8 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 			}
 			else //other obstacle ,start to avoiding
 			{
+				start_avoidingFlag_.data = 1;
+				pub_avoid_to_gps_.publish(start_avoidingFlag_);
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate  = false;
 		//ROS_ERROR("avoid_speed_:%f",avoid_speed_);

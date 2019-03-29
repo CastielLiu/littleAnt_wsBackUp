@@ -25,15 +25,18 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
 	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
+	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",2,&PathTracking::avoiding_flag_callback,this);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",5);
 	
 	nh_private.param<float>("vehicle_axis_dis",vehicle_axis_dis_,1.50);
-	nh_private.param<std::string>("path_points_file",path_points_file_,std::string("/home/wuconglei/wendao/littleAnt_ws/src/planning/data/gps.txt"));
+	nh_private.param<std::string>("path_points_file",path_points_file_,std::string("a.txt"));
 	nh_private.param<float>("disThreshold",disThreshold_,5.0);
 	nh_private.param<float>("speed",speed_,3.0);
+	
+	nh_private.param<float>("avoiding_disThreshold",avoiding_disThreshold_,15.0);
 	
 	
 	fp = fopen(path_points_file_.c_str(),"r");
@@ -53,21 +56,21 @@ void PathTracking::run()
 	{
 		
 		ros::spinOnce();
-		if(current_point.longitude <1.0 && current_point.latitude <1.0)//初始状态或者数据异常
+		if(current_point_.longitude <1.0 && current_point_.latitude <1.0)//初始状态或者数据异常
 			continue;
 			
 		if(feof(fp)) break; //file complete
 		
-		std::pair<float, float> dis_yaw = get_dis_yaw(current_point,target_point);
+		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
 		if( dis_yaw.first < disThreshold_ || dis_yaw.first>1000.0)//初始状态下 target(0,0)-> dis_yaw.first 将会很大
 		{
-			fscanf(fp,"%lf\t%lf\n",&target_point.longitude,&target_point.latitude);
+			fscanf(fp,"%lf\t%lf\n",&target_point_.longitude,&target_point_.latitude);
 			continue;
 		}
 			
 		
-		float yaw_err = dis_yaw.second - current_point.yaw;
+		float yaw_err = dis_yaw.second - current_point_.yaw;
 		
 		if(yaw_err==0.0) continue;
 		
@@ -77,8 +80,8 @@ void PathTracking::run()
 		
 if(i%20==0){
 		printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
-				current_point.longitude,current_point.latitude,current_point.yaw,
-				target_point.longitude,target_point.latitude,dis_yaw.second);
+				current_point_.longitude,current_point_.latitude,current_point_.yaw,
+				target_point_.longitude,target_point_.latitude,dis_yaw.second);
 		printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
 	}	
 		limitRoadWheelAngle(t_roadWheelAngle);
@@ -131,14 +134,29 @@ void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 
 void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
-	current_point.longitude = msg->longitude;
-	current_point.latitude = msg->latitude;
-	current_point.yaw = msg->azimuth;
+	current_point_.longitude = msg->longitude;
+	current_point_.latitude = msg->latitude;
+	current_point_.yaw = msg->azimuth;
 }
 
 void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
 	
+}
+
+void PathTracking::avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg)
+{
+	if(msg->data== 1)
+	{
+		while(ros::ok() && !feof(fp))
+		{
+			fscanf(fp,"%lf\t%lf\n",&target_point_.longitude,&target_point_.latitude);
+			std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
+			if( dis_yaw.first >= avoiding_disThreshold_)
+				break;
+		}
+	}
+
 }
 
  

@@ -2,6 +2,7 @@
 #define PATH_TRACKING_H_
 #include<ros/ros.h>
 #include<little_ant_msgs/ControlCmd.h>
+#include<std_msgs/Int8.h>
 
 #include<little_ant_msgs/State2.h>  //speed
 #include"gps_msgs/Inspvax.h"
@@ -34,12 +35,14 @@ public:
 	void pub_gps_cmd_callback(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
+	void avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg);
 
 	
 	
 private:
 	ros::Subscriber sub_gps_;
 	ros::Subscriber sub_vehicleState2_;
+	ros::Subscriber sub_avoiding_from_lidar_;
 	
 	ros::Timer timer_;
 	
@@ -49,11 +52,12 @@ private:
 	
 	std::string path_points_file_;
 	
-	gpsMsg_t current_point;
-	gpsMsg_t target_point;
+	gpsMsg_t current_point_;
+	gpsMsg_t target_point_;
 	
 	float disThreshold_;
 	float vehicle_axis_dis_;
+	float avoiding_disThreshold_;
 	
 	little_ant_msgs::ControlCmd gps_controlCmd_;
 	

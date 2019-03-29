@@ -16,11 +16,12 @@
 	</node>
 	
 
-<!--    -->
+<!-- 跟踪   -->
 	<node name="path_tracking_node" pkg="planning" type="path_tracking_node"  >
 		<param name="path_points_file" value="$(find planning)/data/2.txt"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
-		<param name="speed" value="14.0"/>						 <!-- 跟踪速度  -->
+		<param name="avoiding_disThreshold" value="15.0">		<!-- 跟踪前视距离  -->
+		<param name="speed" value="14.0"/>						<!-- 跟踪速度  -->
 	
 	</node>
 	
