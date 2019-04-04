@@ -1,7 +1,9 @@
 #include "can2serial.h"
+#include<cstring>
 
 
-Can2serial::Can2serial()
+Can2serial::Can2serial() :
+	inquire_filter_response_ptr_((inquireFilterResponsePkg_t *)data_buffer_)
 {
 	serial_port_=NULL;
 	reading_status_=false;
@@ -62,10 +64,13 @@ bool Can2serial::configure_port(std::string port,int baud_rate)
 	return true;
 }
 
+
 void Can2serial::StartReading() 
 {
 	if (reading_status_)
 		return;
+		
+	//serial_port_->flush();
 	// create thread to read from sensor
 	reading_status_=true;
 	read_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&Can2serial::ReadSerialPort, this)));
@@ -75,15 +80,15 @@ void Can2serial::StopReading()
 {
 	reading_status_=false;
 }
-
+ 
 void Can2serial::ReadSerialPort() 
 {
-	unsigned char buffer[MAX_NOUT_SIZE];
 	size_t len;
 
 	// continuously read data from serial port
 	while (reading_status_) 
 	{
+		usleep(1000);
 		try 
 		{
 			// read data
@@ -96,12 +101,15 @@ void Can2serial::ReadSerialPort()
 	        std::cout << output.str() <<std::endl;
     	}
     	if(len==0) continue;
-    	//std::cout << "length:" <<len <<std::endl;
+    	
     	
 		// add data to the buffer to be parsed
+		
+		//ROS_INFO("read length :%d\r\n",len);
 		BufferIncomingData(buffer, len);
 		
 		/*
+		std::cout << std::dec<< "length:" <<len <<std::endl;
 		for(size_t i=0;i<len;i++)
 			printf("%x\t",buffer[i]);
 		printf("\n\n");
@@ -187,14 +195,17 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
 	{
 		case CanMsgCmd:
             	
-            	if(0==(data_buffer_[12] >>5)) break;                           //data[1] esr_radar object status
+            	//if(0==(data_buffer_[12] >>5)) break;                           //data[1] esr_radar object status
             																//just used in esr_radar to filter invalid objects
             	canMsg_.type = data_buffer_[5];
                 canMsg_.ID = (data_buffer_[6]<<24)+(data_buffer_[7]<<16)+(data_buffer_[8]<<8)+(data_buffer_[9]);
                 canMsg_.len = data_buffer_[10];
                 
-                for(size_t i=0;i<canMsg_.len;i++)
-                	canMsg_.data[i] = data_buffer_[11+i];
+                //for(size_t i=0;i<canMsg_.len;i++)
+                //	canMsg_.data[i] = data_buffer_[11+i];
+                
+                memcpy(canMsg_.data,data_buffer_+11,canMsg_.len);
+                
                 
                 {	
                 	boost::mutex::scoped_lock lock(mutex_);
@@ -220,6 +231,13 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
 			
 		case BaudrateInquireResponseCmd:
 			currentBaudrate_ = data_buffer_[6]*5;
+			break;
+			
+		case InquireFilterResponse:
+			if((ntohl(inquire_filter_response_ptr_->filterID)>>21)!=0)
+				printf("filter_num:%x\t filterID:%x\t filterMask:%x\r\n",
+					inquire_filter_response_ptr_->filterNum,ntohl(inquire_filter_response_ptr_->filterID)>>21,
+					ntohl(inquire_filter_response_ptr_->filterMask)>>21);
 			break;
 			
 		//case FilterInquireResponseCmd;
@@ -306,11 +324,11 @@ void Can2serial::sendCmd(uint8_t cmdId,const uint8_t *buf,uint8_t count)
 
     serial_port_->write(sendBuf,send_pkg_len+4);
     
-    
-  //  for(int i =0;i<send_pkg_len+4;i++)
-  //  	printf("%x\t",sendBuf[i]);
-   // printf("\n");
-
+    /*
+    for(int i =0;i<send_pkg_len+4;i++)
+    	printf("%x\t",sendBuf[i]);
+    printf("\n");
+*/
     delete [] sendBuf;
 }
 
@@ -425,7 +443,7 @@ bool Can2serial::clearCanFilter(uint8_t filterNum)
 }
 
 
-int Can2serial::inquireBaudrate(uint8_t port)
+void Can2serial::inquireBaudrate(uint8_t port)
 {
 	uint8_t buf[1];
 	if(port==1)
@@ -433,13 +451,12 @@ int Can2serial::inquireBaudrate(uint8_t port)
 	else if(port==2)
 		buf[0] = 0x02;
 	else
-		return 0;
+		return ;
 		
 	sendCmd(0x13,buf,1);
 	
-	usleep(100000);//100ms
+	usleep(10000);//100ms
 
-	return this->currentBaudrate_;
 }
 
 bool Can2serial::getCanMsg(CanMsg_t &msg)
@@ -460,6 +477,21 @@ bool Can2serial::getCanMsg(CanMsg_t &msg)
 }
 
 
+void Can2serial::inquireFilter(uint8_t filterNum ,uint8_t port)
+{
+	uint8_t buf[2];
+	if(port==1)
+		buf[0] = 0x01;
+	else if(port==2)
+		buf[0] = 0x02;
+	else
+		return ;
+	buf[1] = filterNum;
+		
+	sendCmd(0x1D,buf,2);
+	
+	usleep(10000);
+}
 
 
 

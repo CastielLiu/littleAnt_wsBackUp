@@ -4,7 +4,7 @@
 	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
 		<param name ="is_pubBoundingBox" type ="bool" value="False"/>
 		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
-		<param name ="in_port_name" value="/dev/ttyUSB1"/>
+		<param name ="in_port_name" value="/dev/ttyUSB0"/>
 		<param name ="out_port_name" value="/dev/ttyUSB2"/>
 	</node>
 </launch>

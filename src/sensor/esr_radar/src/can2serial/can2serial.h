@@ -8,9 +8,19 @@
 #include<iostream>
 #include<string>
 
+#include <arpa/inet.h> 
+
 #define MAX_NOUT_SIZE  2000  //read from serial per time
 #define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity
 #define MAX_PKG_BUF_LEN 200   // can2serial max pkg len
+
+#ifdef _MSC_VER // using MSVC
+	#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#else
+	#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+static unsigned char buffer[MAX_NOUT_SIZE];
 
 typedef struct
 {
@@ -19,6 +29,36 @@ typedef struct
     uint8_t data[8];
     uint8_t type; //stdFrame + dataFrame
 }CanMsg_t;
+
+PACK(
+struct stdCanMsgPkg_t {
+    uint8_t header1; //66
+    uint8_t header2; //cc
+    uint16_t pkg_len;
+    uint8_t pkg_cmd; //B1 stdCanMsg
+    uint8_t type; //frame type
+    uint32_t frame_id;
+    uint8_t frame_len;
+    uint8_t data[8];
+    uint8_t checknum;
+});
+
+PACK(
+struct inquireFilterResponsePkg_t {
+    uint8_t header1; //66
+    uint8_t header2; //cc
+    uint16_t pkg_len;
+    uint8_t pkg_cmd; //9D inquire Filter Response 
+    uint8_t result;
+    uint8_t portNum;
+    uint8_t filterNum;
+    uint32_t filterID;
+    uint32_t filterMask;
+    uint8_t filterMode;
+    uint8_t checknum;
+});
+
+
 
 class Can2serial
 {
@@ -42,9 +82,11 @@ public:
 
 	bool clearCanFilter(uint8_t filterNum=0xff);
 
-	int inquireBaudrate(uint8_t port =0x01);
+	void inquireBaudrate(uint8_t port =0x01);
 
 	bool getCanMsg(CanMsg_t &msg);
+	
+	void inquireFilter(uint8_t filterNum ,uint8_t port=0x01);
 	
 	
 private:
@@ -80,6 +122,8 @@ private:
 	
 	boost::mutex mutex_;
 	
+	const inquireFilterResponsePkg_t * const inquire_filter_response_ptr_;
+	
 	
 	
 	enum{HeaderByte0=0x66,HeaderByte1=0xCC};
@@ -88,7 +132,8 @@ private:
 		CanMsgCmd = 0xB1,
 		BaudrateInquireResponseCmd = 0x93,
 		FilterSetResponseCmd = 0x98,
-		FilterClearResponseCmd = 0x99
+		FilterClearResponseCmd = 0x99,
+		InquireFilterResponse = 0x9D
 	};
 	
 	enum BaudRateCofigStatus_t

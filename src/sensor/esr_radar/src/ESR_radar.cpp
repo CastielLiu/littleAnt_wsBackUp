@@ -18,6 +18,8 @@ ESR_RADAR::ESR_RADAR(int argc,char ** argv):
 	out_can2serial = new Can2serial;
 	objects.header.frame_id = std::string("esr_radar");
 	lastMsgId = 0x000;
+	
+	vehicleSpeed_ = 0.0;
 }
 
 ESR_RADAR::~ESR_RADAR()
@@ -82,8 +84,13 @@ bool ESR_RADAR::init()
 	
 	in_can2serial->configBaudrate(500);
 		
+	usleep(10000);
 	in_can2serial->StartReading();
 	
+	for(uint8_t i=0;i<13;i++)
+	{
+		in_can2serial->inquireFilter(i); 
+	}
 	
 	ROS_INFO("esr radar initialization complete");
 
@@ -95,6 +102,9 @@ bool ESR_RADAR::init()
 void ESR_RADAR::run()
 {
 	boost::thread parse_thread(boost::bind(&ESR_RADAR::handleCanMsg,this));
+	
+	
+	
 	if(is_pubBoundingBox_)
 		this->start_publishBoundingBoxArray_thread();
 	
@@ -147,20 +157,31 @@ void ESR_RADAR::pubBoundingBoxArray()
 void ESR_RADAR::handleCanMsg()
 {
 	CanMsg_t can_msg;
-	while(1)
+	while(ros::ok())
 	{
-		usleep(10);
-		if(!in_can2serial->getCanMsg(can_msg)) continue;
+		usleep(1000);
 		
+		if(!in_can2serial->getCanMsg(can_msg)) 
+		{
+			//ROS_ERROR("nothing");
+			continue;
+		}
 		parse_msg(can_msg);
+		
 	}
 }
 
 
 void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 {
-	cout << "ID:" << hex << can_msg.ID <<endl;
 	static uint16_t scan_index;
+	cout << "ID:" << hex << can_msg.ID <<endl;
+/*	
+	for(size_t i=0;i<can_msg.len;i++)
+	 printf("%x\t",can_msg.data[i]);
+	 printf("\n");
+*/	
+	
 	if(can_msg.ID == 0x4E0 || can_msg.ID < lastMsgId)
 	{
 		if(can_msg.ID == 0x4E0)
@@ -187,12 +208,10 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 			return ;
 		}
 		
-		int measurementStatus = (can_msg.data[1]&0xE0) >> 5;
+		uint8_t measurementStatus = (can_msg.data[1]&0xE0) >> 5;
 		
 		//if(measurementStatus !=1 && measurementStatus !=3 && measurementStatus !=4)
 		//	return;
-			
-		uint8_t g_trackStatus = ((can_msg.data[1]&0xE0) >> 5);
 		
 		uint16_t u16_tempAngle = (can_msg.data[1] &0x1F);
 		u16_tempAngle <<=5;
@@ -233,22 +252,25 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		
 		objects.objects.push_back(object);
 		
-		/*
+		
 		switch(measurementStatus)
 		{	
 			case 1: //new target
-				cout <<"ID :" << hex << can_msg.ID << "   new     target ----> angle:" <<angle << "\t range:" <<distance <<"\tspeed:" <<speed << endl;
+				cout <<"ID :" << hex << can_msg.ID << "   new     target ----> angle:" <<object.azimuth << "\t range:" 
+					 <<object.distance <<"\tspeed:" <<object.speed << endl;
 				break;
 			case 3: //update target
-				cout <<"ID :" << hex << can_msg.ID << "   update  target ----> angle:" <<angle << "\t range:" <<distance <<"\tspeed:" <<speed << endl;
+				cout <<"ID :" << hex << can_msg.ID << "   update  target ----> angle:" <<object.azimuth << "\t range:" 
+					 <<object.distance <<"\tspeed:" <<object.speed << endl;
 				break;
 			case 4: //coasted target
-				cout <<"ID :" << hex << can_msg.ID << "   coasted target ----> angle:" <<angle << "\t range:" <<distance <<"\tspeed:" <<speed << endl;
+				cout <<"ID :" << hex << can_msg.ID << "   coasted target ----> angle:" <<object.azimuth << "\t range:" 
+					 <<object.distance <<"\tspeed:" <<object.speed << endl;
 				break;
 					
 			default:
 				break;
-		}*/
+		}
 	}
 	lastMsgId = can_msg.ID;
 }
@@ -293,7 +315,18 @@ void ESR_RADAR::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& m
 }
 
 
-
+int main(int argc,char **argv)
+{
+	
+	ESR_RADAR radar(argc,argv);
+	
+	if(!radar.init())
+		return 1;
+		
+	radar.run();
+	
+	return 0;
+}
 
 
 

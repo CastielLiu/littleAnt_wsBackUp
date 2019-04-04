@@ -126,7 +126,7 @@ include_directories(
 )
 
 	
-add_executable(esr_radar src/ESR_radar.cpp src/main.cpp src/can2serial/can2serial.cpp)
+add_executable(esr_radar src/ESR_radar.cpp src/can2serial/can2serial.cpp)
 add_dependencies(esr_radar  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(esr_radar ${catkin_LIBRARIES})
 
