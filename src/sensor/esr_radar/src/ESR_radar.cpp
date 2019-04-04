@@ -17,7 +17,7 @@ ESR_RADAR::ESR_RADAR(int argc,char ** argv):
 	in_can2serial =new Can2serial;
 	out_can2serial = new Can2serial;
 	objects.header.frame_id = std::string("esr_radar");
-	lastMsgId = 0x7ff;
+	lastMsgId = 0x000;
 }
 
 ESR_RADAR::~ESR_RADAR()
@@ -48,6 +48,8 @@ bool ESR_RADAR::init()
 	ROS_INFO("is_sendMsgToEsr:%d",is_sendMsgToEsr_ );
 	
 	esr_pub = nh.advertise<esr_radar_msgs::Objects>("/esr_radar",10);
+	
+	sub_vehicleSpeed_ = nh.subscribe<little_ant_msgs::State2>("/vehicleState2",2,&ESR_RADAR::vehicleSpeed_callback,this);
 	
 	if(is_sendMsgToEsr_ )
 	{
@@ -99,7 +101,7 @@ void ESR_RADAR::run()
 	if(is_sendMsgToEsr_)
 	{
 		ros::NodeHandle nh;
-		timer_50ms = nh.createTimer(ros::Duration(0.05),&ESR_RADAR::send_installHeight_callback,this);
+		timer_50ms = nh.createTimer(ros::Duration(0.05),&ESR_RADAR::send_vehicleMsg_callback,this);
 	}
 		
 	ros::spin();
@@ -158,10 +160,14 @@ void ESR_RADAR::handleCanMsg()
 void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 {
 	cout << "ID:" << hex << can_msg.ID <<endl;
-	uint16_t scan_index;
+	static uint16_t scan_index;
 	if(can_msg.ID == 0x4E0 || can_msg.ID < lastMsgId)
 	{
-		scan_index = can_msg.data[3]*256 + can_msg.data[4];
+		if(can_msg.ID == 0x4E0)
+			scan_index = can_msg.data[3]*256 + can_msg.data[4];
+		else
+			scan_index +=1;
+			
 		objects.sequence = scan_index;
 		objects.size = objects.objects.size();
 		
@@ -171,10 +177,11 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		
 		objects.objects.clear();
 	}
-	else if(can_msg.ID <= 0x53f && can_msg.ID >=0x500)
+	
+	if(can_msg.ID <= 0x53f && can_msg.ID >=0x500)
 	{
 				
-		if(objects.objects.size() > 62)
+		if(objects.objects.size() > 63)
 		{
 			objects.objects.clear();
 			return ;
@@ -246,18 +253,58 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 	lastMsgId = can_msg.ID;
 }
 
-void ESR_RADAR::send_installHeight_callback(const ros::TimerEvent&)
-{
-	this->send_installHeight(0.2);
-}
-
-void ESR_RADAR::send_installHeight(uint8_t installHeight)
+void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 {
 	CanMsg_t canMsg5F2 = {0x5F2,8};
-	canMsg5F2.type = 0x03;
+	canMsg5F2.type = 0x03; //std can msg
+	uint8_t installHeight = 20;
 	 
 	canMsg5F2.data[4] &=0x80; //clear low 7bits
 	canMsg5F2.data[4] |= installHeight & 0x7f;//install_height
 	
 	out_can2serial->sendCanMsg(canMsg5F2);
+	
+	CanMsg_t canMsg4F0 = {0x4F0,8};
+	canMsg4F0.type = 0x03;//std can msg
+	
+	uint16_t speed = vehicleSpeed_/0.0625 ; 
+	canMsg4F0.data[0] = (speed>>3)&0xff;
+	canMsg4F0.data[1] |= (speed%8)<<5 ;
+	
+	canMsg4F0.data[1] &= 0xef;  // speed direction 0=forward
+	out_can2serial->sendCanMsg(canMsg4F0);
+	
+	CanMsg_t canMsg4F1 = {0x4F1,8};
+	canMsg4F1.type = 0x03;//std can msg
+	
+	canMsg4F1.data[7] |= 0x20 ; //speed valid
+	out_can2serial->sendCanMsg(canMsg4F1);
+	
 }
+
+void ESR_RADAR::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
+{
+	static int i=0;
+	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
+
+	i++;
+	if(i%20==0)
+		ROS_INFO("callback speed:%f ",vehicleSpeed_);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+

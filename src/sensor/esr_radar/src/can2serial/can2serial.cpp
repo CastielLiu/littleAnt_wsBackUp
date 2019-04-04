@@ -54,7 +54,7 @@ bool Can2serial::configure_port(std::string port,int baud_rate)
 	catch (std::exception &e) 
 	{
 	    std::stringstream output;
-	    output << "Error connecting to gps on com port " << port << ": " << e.what();
+	    output << "Error  " << port << ": " << e.what();
 	    std::cout << output.str() <<std::endl;
 	    return false;
 	}
@@ -188,15 +188,19 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
 		case CanMsgCmd:
             	
             	if(0==(data_buffer_[12] >>5)) break;                           //data[1] esr_radar object status
+            																//just used in esr_radar to filter invalid objects
             	canMsg_.type = data_buffer_[5];
                 canMsg_.ID = (data_buffer_[6]<<24)+(data_buffer_[7]<<16)+(data_buffer_[8]<<8)+(data_buffer_[9]);
                 canMsg_.len = data_buffer_[10];
                 
                 for(size_t i=0;i<canMsg_.len;i++)
                 	canMsg_.data[i] = data_buffer_[11+i];
-                	
-                canMsgBuf_[writeIndex_] = canMsg_;
-                canMsgStatus[writeIndex_] = true;
+                
+                {	
+                	boost::mutex::scoped_lock lock(mutex_);
+		            canMsgBuf_[writeIndex_] = canMsg_;
+		            canMsgStatus[writeIndex_] = true;
+		        }
                 writeIndex_++;
                 if(writeIndex_==MAX_MSG_BUF_SIZE)
                 	writeIndex_=0;
@@ -440,11 +444,14 @@ int Can2serial::inquireBaudrate(uint8_t port)
 
 bool Can2serial::getCanMsg(CanMsg_t &msg)
 {
-	//boost::mutex::scoped_lock lock(mutex_);
+	
 	if(canMsgStatus[readIndex_]==false || readIndex_==writeIndex_)
 		return false;
-	msg = canMsgBuf_[readIndex_];
-	canMsgStatus[readIndex_]=false;
+	{	
+		boost::mutex::scoped_lock lock(mutex_);
+		msg = canMsgBuf_[readIndex_];
+		canMsgStatus[readIndex_]=false;
+	}
 	readIndex_++;
 	if(readIndex_==MAX_MSG_BUF_SIZE)
 		readIndex_= 0;
