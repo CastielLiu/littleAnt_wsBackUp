@@ -130,6 +130,10 @@ add_executable(esr_radar src/ESR_radar.cpp src/main.cpp src/can2serial/can2seria
 add_dependencies(esr_radar  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(esr_radar ${catkin_LIBRARIES})
 
+add_executable(test_can2serial src/can2serial/can2serial.cpp src/can2serial/main.cpp)
+add_dependencies(test_can2serial  ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_can2serial ${catkin_LIBRARIES})
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/esr_radar.cpp

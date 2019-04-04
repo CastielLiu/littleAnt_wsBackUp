@@ -10,7 +10,7 @@
 
 #define MAX_NOUT_SIZE  2000  //read from serial per time
 #define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity
-#define MAX_PKG_BUF_LEN 50   // can2serial max pkg len
+#define MAX_PKG_BUF_LEN 200   // can2serial max pkg len
 
 typedef struct
 {

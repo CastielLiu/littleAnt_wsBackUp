@@ -35,8 +35,8 @@ bool ESR_RADAR::init()
 	ros::init(argc_,argv_,"esr_radar");
 	ros::NodeHandle nh_private("~");
 	ros::NodeHandle nh;
-	nh_private.param<std::string>("in_port_name", in_port_name_, "/dev/ttyUSB0");
-	nh_private.param<std::string>("out_port_name", out_port_name_, "/dev/ttyUSB1");
+	nh_private.param<std::string>("in_port_name", in_port_name_, "/dev/ttyUSB1");
+	nh_private.param<std::string>("out_port_name", out_port_name_, "/dev/ttyUSB2");
 	
 	nh_private.param<bool>("is_pubBoundingBox",is_pubBoundingBox_,false);
 	
