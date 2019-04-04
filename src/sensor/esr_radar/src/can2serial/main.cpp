@@ -5,19 +5,23 @@ int main()
 {
 
 	Can2serial can2serial;
-	can2serial.configure_port("/dev/ttyUSB2",460800);
+	can2serial.configure_port("/dev/ttyUSB0",460800);
 	can2serial.StartReading();
 	CanMsg_t can_msg;
 	
 	usleep(100000);
 	can2serial.clearCanFilter();
-	can2serial.clearCanFilter();
+
+
 	can2serial.configBaudrate(500);
 	
-	can2serial.setCanFilter_alone(0x01,0x4E0); usleep(1000);
-	can2serial.setCanFilter_alone(0x02,0x4E1); usleep(1000);
-	//can2serial.setCanFilter(0x02,0x500,0x7c0); //500-53f
 	
+	//can2serial.setCanFilter_alone(0x01,0x4E0); usleep(1000);
+	can2serial.setCanFilter(0x02,0x4E0,0x7ff); //500-53f
+	can2serial.setCanFilter(0x03,0x500,0x7c0);
+	
+	can2serial.inquireFilter(2);
+	can2serial.inquireFilter(3);
 	//can2serial.setCanFilter(0x01,0x123,0x7ff);
 	
 	

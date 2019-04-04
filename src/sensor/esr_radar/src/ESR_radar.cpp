@@ -80,7 +80,8 @@ bool ESR_RADAR::init()
 
 	
 	in_can2serial->setCanFilter_alone(0x01,0x4E0); usleep(1000);
-	in_can2serial->setCanFilter(0x02,0x500,0x7c0); //500-53f
+	//in_can2serial->setCanFilter(0x02,0x500,0x7c0); //500-53f
+	in_can2serial->setCanFilter(0x03,0x500,0x7C0);
 	
 	in_can2serial->configBaudrate(500);
 		
@@ -126,7 +127,6 @@ void ESR_RADAR::pubBoundingBoxArray()
 {
 	ros::NodeHandle nh;
 	boundingBox_pub = nh.advertise<jsk_recognition_msgs::BoundingBoxArray>("/esr_box",2);
-	
 	this->boxes.header.frame_id = "esr_radar";
 	
 	jsk_recognition_msgs::BoundingBox box;
@@ -145,7 +145,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 		{
 			box.pose.position.x = last_frame_objects.objects[i].x;
 			box.pose.position.y = last_frame_objects.objects[i].y;
-			box.pose.position.z = 0.5;  //install_height
+			box.pose.position.z = 0.0;  //install_height
 			boxes.boxes.push_back(box);
 		}
 		mutex_.unlock();
@@ -175,7 +175,7 @@ void ESR_RADAR::handleCanMsg()
 void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 {
 	static uint16_t scan_index;
-	cout << "ID:" << hex << can_msg.ID <<endl;
+	//cout << "ID:" << hex << can_msg.ID <<endl;
 /*	
 	for(size_t i=0;i<can_msg.len;i++)
 	 printf("%x\t",can_msg.data[i]);
@@ -240,6 +240,9 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		object.azimuth = s16_angle*0.1;  //left is negative(-)
 
 		object.distance = u16_distance*0.1;
+		
+		if(object.distance>50.0)
+			return;
 		
 		object.x = object.distance*sin(object.azimuth*M_PI/180.0);
 		object.y = object.distance*cos(object.azimuth*M_PI/180.0);

@@ -88,7 +88,7 @@ void Can2serial::ReadSerialPort()
 	// continuously read data from serial port
 	while (reading_status_) 
 	{
-		usleep(1000);
+		usleep(10000);
 		try 
 		{
 			// read data
@@ -108,9 +108,9 @@ void Can2serial::ReadSerialPort()
 		//ROS_INFO("read length :%d\r\n",len);
 		BufferIncomingData(buffer, len);
 		
-		/*
+		
 		std::cout << std::dec<< "length:" <<len <<std::endl;
-		for(size_t i=0;i<len;i++)
+		/*for(size_t i=0;i<len;i++)
 			printf("%x\t",buffer[i]);
 		printf("\n\n");
 		*/
