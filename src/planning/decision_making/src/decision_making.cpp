@@ -7,7 +7,7 @@ DecisionMaking::DecisionMaking()
 		cmdMsg_[i].status = false;
 	}
 	
-	gps_cmd_speed_ = 5.0;
+	//gps_cmd_speed_ = 5.0;
 }
 
 DecisionMaking::~DecisionMaking()
@@ -63,10 +63,25 @@ void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 	{
 		if(cmdMsg_[i].status == true)
 		{
+			//when the lidar send just_decelerate cmd, the obstacle is in vehicle's dangerous area now,
+			//according to lidar's speed cmd and other sensor's steer angle cmd to control vehicle
 			if((_LIDAR==i)&& cmdMsg_[i].cmd.just_decelerate)
 			{
 				cmd2_.set_brake = cmdMsg_[i].cmd.cmd2.set_brake;
 				cmd2_.set_speed = cmdMsg_[i].cmd.cmd2.set_speed;
+				for(size_t j=i;j<SENSOR_NUM;j++)
+				{
+					if(cmdMsg_[j].status == true)
+					{
+						cmd2_.set_steeringAngle = cmdMsg_[j].cmd.cmd2.set_steeringAngle;
+						break;
+					}
+				}
+			}
+			//when the vehicle is in accMode ,close the avoiding function!
+			else if((_LIDAR==i) && cmdMsg_[_ESR_RADAR].status)
+			{
+				cmd2_ = cmdMsg_[_ESR_RADAR].cmd.cmd2;
 			}
 			else
 			{

@@ -159,4 +159,17 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg)
 
 }
 
- 
+int main(int argc,char**argv)
+{
+	ros::init(argc,argv,"path_tracking");
+	ros::NodeHandle nh;
+	ros::NodeHandle nh_private("~");
+	
+	PathTracking path_tracking;
+	if(!path_tracking.init(nh,nh_private))
+		return 1;
+	
+	path_tracking.run();
+
+	return 0;
+}

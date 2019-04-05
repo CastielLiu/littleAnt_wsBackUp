@@ -63,20 +63,3 @@ target_link_libraries(calculate_deceleration_node ${catkin_LIBRARIES})
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
