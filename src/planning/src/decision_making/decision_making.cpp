@@ -2,9 +2,10 @@
 
 DecisionMaking::DecisionMaking()
 {
-	gps_cmd_status_ = false;
-	lidar_cmd_status_ = false;
-	telecontrol_cmd_status_ = false;
+	for(size_t i=0;i<SENSOR_NUM;i++)
+	{	
+		cmdMsg_[i].status = false;
+	}
 	
 	gps_cmd_speed_ = 5.0;
 }
@@ -25,72 +26,66 @@ void DecisionMaking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_sensors_decision_ = nh.subscribe(sensors_decision_topic_,2,&DecisionMaking::sensor_decision_callback,this);
 	
 	sendCmd1Timer_20ms_ = nh.createTimer(ros::Duration(0.02), &DecisionMaking::sendCmd1_callback,this);
-	sendCmd2Timer_10ms_ = nh.createTimer(ros::Duration(0.02), &DecisionMaking::sendCmd2_callback,this);
+	sendCmd2Timer_10ms_ = nh.createTimer(ros::Duration(0.01), &DecisionMaking::sendCmd2_callback,this);
+	updateCmdStatus_300ms_ = nh.createTimer(ros::Duration(0.30),&DecisionMaking::updateCmdStatus_callback,this);
 	
 	pub_final_decision1_ = nh.advertise<little_ant_msgs::ControlCmd1>(final_decision_topic1_,2);
 	pub_final_decision2_ = nh.advertise<little_ant_msgs::ControlCmd2>(final_decision_topic2_,2);
 }
 
-void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd::ConstPtr& msg)
+void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd::ConstPtr& cmd)
 {
-	//printf("msg->origin:%d\n",msg->origin);
-	switch(msg->origin)
-	{
-		case little_ant_msgs::ControlCmd::_GPS:
-			//ROS_INFO("GPS: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			gps_cmd_status_ = msg->status;
-			gps_cmd_speed_ = msg->cmd2.set_speed;
-			
-			if(telecontrol_cmd_status_ || lidar_cmd_status_ || (!gps_cmd_status_))
-				break;
-				
-			cmd1_ = msg->cmd1;
-			cmd2_ = msg->cmd2;
-			break;
-			
-		
-		case little_ant_msgs::ControlCmd::_LIDAR:
-			//ROS_INFO("_LIDAR: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			lidar_cmd_status_ = msg->status;
-			if(telecontrol_cmd_status_ ||(!lidar_cmd_status_))
-				break;
-				
-			cmd1_ = msg->cmd1;
-			cmd2_ = msg->cmd2;
-			
-			if(msg->cmd2.set_speed > gps_cmd_speed_) //雷达避障速度超过gps跟踪速度时，以跟踪速度为准
-				cmd2_.set_speed = gps_cmd_speed_;
-			break;	
-		
-		case little_ant_msgs::ControlCmd::_TELECONTROL:
-			//ROS_INFO("_TELECONTROL: status:%d\t speed:%f\t brake:%f",msg->status,msg->cmd2.set_speed,msg->cmd2.set_brake);
-			telecontrol_cmd_status_ =msg->status;
-			if(!telecontrol_cmd_status_) break;
-			if(msg->just_decelerate)
-			{
-				cmd2_.set_speed = msg->cmd2.set_speed;
-				cmd2_.set_brake = msg->cmd2.set_brake;
-			}
-			else
-			{
-				cmd1_ = msg->cmd1;
-				cmd2_ = msg->cmd2;
-			}
-			break;
-		
-		default:
-			break;
-	}
+	
+	cmdMsg_[cmd->origin].status =cmd->status;
+	if(!cmd->status) return;
+	
+	cmdMsg_[cmd->origin].time = ros::Time::now().toSec();
+	
+	cmdMsg_[cmd->origin].cmd = *cmd;
+
 }
 
 void DecisionMaking::sendCmd1_callback(const ros::TimerEvent&)
 {
-	pub_final_decision1_.publish(cmd1_);
+	for(size_t i=0;i<SENSOR_NUM;i++)
+	{
+		if(cmdMsg_[i].status == true)
+		{
+			pub_final_decision1_.publish(cmdMsg_[i].cmd.cmd1);
+		}
+		break;
+	}
 }
 
 void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 {
-	pub_final_decision2_.publish(cmd2_);
+	for(size_t i=0;i<SENSOR_NUM;i++)
+	{
+		if(cmdMsg_[i].status == true)
+		{
+			if((_LIDAR==i)&& cmdMsg_[i].cmd.just_decelerate)
+			{
+				cmd2_.set_brake = cmdMsg_[i].cmd.cmd2.set_brake;
+				cmd2_.set_speed = cmdMsg_[i].cmd.cmd2.set_speed;
+			}
+			else
+			{
+				cmd2_ = cmdMsg_[i].cmd.cmd2;
+			}
+			pub_final_decision2_.publish(cmd2_);
+			break;
+		}
+	}
+}
+
+void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)
+{
+	double current_time = ros::Time::now().toSec();
+	for(size_t i=0;i<SENSOR_NUM;i++)
+	{
+		if((cmdMsg_[i].status==true)&& (current_time-cmdMsg_[i].time > 0.3)) //over 300ms;
+			cmdMsg_[i].status = false;
+	}
 }
 
 

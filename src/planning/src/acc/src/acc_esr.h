@@ -28,6 +28,9 @@ private:
 	ros::Publisher pub_cmd_;
 	
 	little_ant_msgs::ControlCmd cmd_;
+	
+	float vehicleSpeed_;
+	float tracking_distance_;
 };
 
 
@@ -40,6 +43,7 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	cmd.cmd2.set_gear =1;
 	
 	cmd.cmd1.set_driverlessMode =1;
+	vehicleSpeed_ = 0.0;
 	
 }
 
@@ -79,7 +83,9 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 
 	i++;
 	if(i%20==0)
-		ROS_INFO("callback speed:%f ",vehicleSpeed_);
+		ROS_INFO("vehicle speed:%f ",vehicleSpeed_);
+		
+	tracking_distance_ = vehicleSpeed_
 }
 
 void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& msg)

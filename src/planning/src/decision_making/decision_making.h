@@ -5,6 +5,15 @@
 #include<little_ant_msgs/ControlCmd1.h>
 #include<little_ant_msgs/ControlCmd2.h>
 
+
+#define SENSOR_NUM 4
+
+#define _TELECONTROL  little_ant_msgs::ControlCmd::_TELECONTROL
+#define _LIDAR        little_ant_msgs::ControlCmd::_LIDAR
+#define _GPS          little_ant_msgs::ControlCmd::_GPS
+#define _ESR_RADAR    little_ant_msgs::ControlCmd::_ESR_RADAR
+
+
 class DecisionMaking
 {
 public:
@@ -19,6 +28,8 @@ private:
 	void sendCmd1_callback(const ros::TimerEvent&);
 
 	void sendCmd2_callback(const ros::TimerEvent&);
+	
+	void updateCmdStatus_callback(const ros::TimerEvent&);
 
 
 private:
@@ -29,6 +40,7 @@ private:
 	
 	ros::Timer sendCmd1Timer_20ms_;
 	ros::Timer sendCmd2Timer_10ms_;
+	ros::Timer updateCmdStatus_300ms_;
 	
 	std::string sensors_decision_topic_;
 	std::string final_decision_topic1_;
@@ -37,9 +49,12 @@ private:
 	little_ant_msgs::ControlCmd1 cmd1_;
 	little_ant_msgs::ControlCmd2 cmd2_;
 	
-	bool gps_cmd_status_;
-	bool lidar_cmd_status_;
-	bool telecontrol_cmd_status_;
+	struct cmd_msg_t
+	{
+		bool status;
+		double time;
+		little_ant_msgs::ControlCmd cmd;
+	}cmdMsg_[SENSOR_NUM];
 	
 	float gps_cmd_speed_;
 	
