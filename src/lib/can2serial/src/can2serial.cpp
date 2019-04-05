@@ -1,4 +1,4 @@
-#include "can2serial.h"
+#include "can2serial/can2serial.h"
 #include<cstring>
 
 
@@ -145,7 +145,7 @@ void Can2serial::BufferIncomingData(unsigned char *message, unsigned int length)
 				if(message[ii]==HeaderByte1)
 				{
 					data_buffer_[buffer_index_++]=message[ii];
-					bytes_remaining_ =2;
+					bytes_remaining_ =2; //2 bytes pkgLen
 				}
 				else
 				{
@@ -161,6 +161,11 @@ void Can2serial::BufferIncomingData(unsigned char *message, unsigned int length)
 				{
 					package_len_ = (data_buffer_[buffer_index_-2] << 8)+data_buffer_[buffer_index_-1] ;
 					bytes_remaining_ = package_len_;
+					if(bytes_remaining_ > 16 || bytes_remaining_<2)
+					{
+						buffer_index_ = 0;
+						break;
+					}
 					//printf("\t%x\t%x\n",data_buffer_[buffer_index_-2],data_buffer_[buffer_index_-1]);
 				}
 				break;
@@ -185,7 +190,7 @@ void Can2serial::parse(uint8_t * message,uint16_t length)
 {
 	if(generateCheckNum(message,length)!= message[length-1])
 	{
-		printf("check failed !!!\r\n");
+		//printf("check failed !!!\r\n");
 		return;
 	}
 	

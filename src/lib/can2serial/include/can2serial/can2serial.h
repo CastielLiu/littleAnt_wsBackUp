@@ -11,8 +11,8 @@
 #include <arpa/inet.h> 
 
 #define MAX_NOUT_SIZE  2000  //read from serial per time
-#define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity
-#define MAX_PKG_BUF_LEN 200   // can2serial max pkg len
+#define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity  ring storage area
+#define MAX_PKG_BUF_LEN 100   // can2serial max pkg len  >20 to avoid data overflow
 
 #ifdef _MSC_VER // using MSVC
 	#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
