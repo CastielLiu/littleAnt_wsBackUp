@@ -1,7 +1,0 @@
-<!-- -->
-<launch>
-
-	<include file= "$(find little_ant)/launch/driverless.launch"/>
- 
-	
-</launch>

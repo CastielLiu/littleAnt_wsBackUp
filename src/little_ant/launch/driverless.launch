@@ -2,14 +2,9 @@
 <launch>
 
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
-	<arg name="gps_port" default="/dev/ttyS3"/>		    <!-- GPS-->
+	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="telecontrol_port" default="/dev/U4"/>    <!--遥控器 STM32-->
-
-<!--聚类      -->
-	<include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch" output="screen"/>
-<!-- 激光雷达 -->
-<!--	<include file="$(find hesi__)/launch/p40p.launch"  />   -->
-	
+	 
 <!--遥控-->
 	<node name="telecontrol" pkg="little_ant" type ="telecontrol_stm32" >
 		<param name ="port_name" value="$(arg telecontrol_port)"/>
@@ -18,11 +13,27 @@
 	<node name="base_control" pkg="little_ant" type="base_control">
 		<param name ="port_name" value="$(arg base_control_port)"/>
 	</node>
-	
-	<node name="path_tracking_node" pkg="planning" type="path_tracking_node"  >
-		<param name="path_points_file" value="$(find planning)/data/gps.txt"/>
+
+<!--避障-->	
+	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
+
+		<param name="avoid_speed" value="3.0" />						 <!-- 避障时的车速  -->
+		<param name="objects_topic" value="/detected_bounding_boxs" />
+		<param name="deceleration_cofficient" value="40" />              <!--系数越大  表明车辆制动性能越差  -->
+																		<!-- 应与实际值保持一致 -->
+		
+		<param name="safety_distance_side" value="2.0"/>    <!--   两侧安全距离（参照雷达中心）       -->
+		<param name="pedestrian_detection_area_side" value="2.6" />   <!--  行人检测区宽度（参照雷达）   -->
+		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
+		
+	</node>
+
+<!-- 跟踪   -->
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node"  >
+		<param name="path_points_file" value="$(find little_ant)/../data/2.txt"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
-		<param name="speed" value="10.0"/>						 <!-- 跟踪速度  -->
+		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
+		<param name="speed" value="14.0"/>						<!-- 跟踪速度  -->
 	
 	</node>
 	
@@ -40,30 +51,18 @@
 		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
 		<param name="gps_default_logs_period" value="0.0" />
 		<param name="span_default_logs_period" value="0.0" />
-		
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
 	
 <!--调试-->	
-	<node name="record_gps_data" pkg="planning" type="record_gps_data">
-		<param name="file_path" value="$(find planning)/data/debug.txt"/>
+	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
+		<param name="file_path" value="$(find little_ant)/../data/debug.txt"/>
 	</node>
 
-<!--避障-->	
-	<node type="avoiding_node" pkg="planning"  name="avoiding_node"  >
 
-		<param name="avoid_speed" value="10.0" />						 <!-- 避障时的车速  -->
-		<param name="objects_topic" value="/detected_bounding_boxs" />
-		<param name="deceleration_cofficient" value="16" />              <!--系数越大  表明车辆制动性能越差  -->
-		
-		<param name="safety_distance_side" value="2.0"/>    <!--   两侧安全距离（参照雷达中心）       -->
-		<param name="pedestrian_detection_area_side" value="3.0" />   <!--  行人检测区宽度（参照雷达）   -->
-		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
-		
-	</node>
 
  <!--总决策-->
-	<node  type="decision_making_node" pkg ="planning" name="decision_making_node"  />  
+	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node"  />  
 	
 	
 

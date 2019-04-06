@@ -16,6 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   can2serial
 )
 
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp  
+)
+
 #include_directories(${can2serial_INCLUDE_DIRS})
 
 include_directories(

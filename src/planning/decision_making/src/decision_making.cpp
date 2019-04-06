@@ -52,8 +52,9 @@ void DecisionMaking::sendCmd1_callback(const ros::TimerEvent&)
 		if(cmdMsg_[i].status == true)
 		{
 			pub_final_decision1_.publish(cmdMsg_[i].cmd.cmd1);
+			break;
 		}
-		break;
+		
 	}
 }
 
@@ -69,7 +70,7 @@ void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 			{
 				cmd2_.set_brake = cmdMsg_[i].cmd.cmd2.set_brake;
 				cmd2_.set_speed = cmdMsg_[i].cmd.cmd2.set_speed;
-				for(size_t j=i;j<SENSOR_NUM;j++)
+				for(size_t j=i+1;j<SENSOR_NUM;j++)
 				{
 					if(cmdMsg_[j].status == true)
 					{
@@ -98,7 +99,7 @@ void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)
 	double current_time = ros::Time::now().toSec();
 	for(size_t i=0;i<SENSOR_NUM;i++)
 	{
-		if((cmdMsg_[i].status==true)&& (current_time-cmdMsg_[i].time > 0.3)) //over 300ms;
+		if((cmdMsg_[i].status==true)&& (current_time-cmdMsg_[i].time > 0.1)) //over 100ms;
 			cmdMsg_[i].status = false;
 	}
 }
