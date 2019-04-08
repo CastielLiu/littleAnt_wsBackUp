@@ -8,15 +8,15 @@
 <!--毫米波雷达-->
 	<node name="esr_radar" pkg="esr_radar" type ="esr_radar"   >
 		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
-		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
+		<param name ="is_sendMsgToEsr"  type ="bool"  value="True"/>
 		<param name ="in_port_name"  value="$(arg esr_radar_receive_port)"/>
 		<param name ="out_port_name" value="$(arg esr_radar_send_port)"/>
 	</node>
 
 <!-- acc -->
 	<node name="acc_node" pkg="acc" type ="acc_node"  output="screen">
-		<param name ="trackTargetAngle_range" type ="double" value="5.0"/>
-		<param name ="deceleration_cofficient" type ="double" value="40.0"/>  <!--small good -->
+		<param name ="trackTargetAngle_range" type ="double" value="8.0"/>
+		<param name ="deceleration_cofficient" type ="double" value="30.0"/>  <!--small good -->
 		
 	</node>
 	

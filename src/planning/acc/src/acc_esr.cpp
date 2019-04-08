@@ -140,6 +140,7 @@ void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 	{
 		ROS_INFO("Acc mode exited...");
 		cmd_.status = false;
+		lastTime_of_seekTarget_ = 0.0;
 	}
 	else if(!is_acc_ && state->data)	
 	{
@@ -153,12 +154,14 @@ void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 
 void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 {
-	if(is_acc_ && (acc_targetId_!=0xff) && (ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.5 && lastTime_of_seekTarget_ >10.0) //overtime
+	if(is_acc_ && (acc_targetId_!=0xff) && 
+		(ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.8 && 
+		lastTime_of_seekTarget_ >10.0) //overtime
 	{
 		is_acc_ = false;
 		acc_targetId_ = 0xff;
 		first_time_find_target_flag_ = true;
-		ROS_ERROR("acc target losed! acc has to exited !!");
+		ROS_ERROR("acc target lost! acc has to exited !!");
 		lastTime_of_seekTarget_ = 0.0;
 	}
 }
