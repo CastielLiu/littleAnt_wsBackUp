@@ -1,12 +1,12 @@
 <!-- -->
 <launch>
 
-	<arg name="esr_radar_receive_port" default="/dev/U5"/>   <!--毫米波雷达-->
-	<arg name="esr_radar_send_port" default="/dev/ttyS2"/>	 <!--毫米波雷达-车辆信息-->
+	<arg name="esr_radar_receive_port" default="/dev/ttyUSB0"/>   <!--毫米波雷达-->
+	<arg name="esr_radar_send_port" default="/dev/ttyUSB1"/>	 <!--毫米波雷达-车辆信息-->
 	<arg name="telecontrol_port" default="/dev/U4"/>    <!--遥控器 STM32-->
 	 
 <!--毫米波雷达-->
-	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" >
+	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
 		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
 		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
 		<param name ="in_port_name"  value="$(arg esr_radar_receive_port)"/>
@@ -14,8 +14,8 @@
 	</node>
 
 <!-- acc -->
-	<node name="acc_node" pkg="acc" type ="acc_node" >
-		<param name ="trackTargetAngle_range" type ="double" value="0.8"/>
+	<node name="acc_node" pkg="acc" type ="acc_node"  output="screen">
+		<param name ="trackTargetAngle_range" type ="double" value="2.0"/>
 		<param name ="deceleration_cofficient" type ="double" value="40.0"/>
 		
 	</node>

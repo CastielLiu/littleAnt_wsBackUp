@@ -57,6 +57,8 @@ private:
 	
 	float deceleration_cofficient_;
 	
+	bool first_time_find_target_flag_;
+	
 
 };
 

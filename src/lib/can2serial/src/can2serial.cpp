@@ -109,7 +109,7 @@ void Can2serial::ReadSerialPort()
 		BufferIncomingData(buffer, len);
 		
 		
-		std::cout << std::dec<< "length:" <<len <<std::endl;
+	//	std::cout << std::dec<< "length:" <<len <<std::endl;
 		/*for(size_t i=0;i<len;i++)
 			printf("%x\t",buffer[i]);
 		printf("\n\n");

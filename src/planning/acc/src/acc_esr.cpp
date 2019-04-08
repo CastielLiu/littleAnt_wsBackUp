@@ -15,12 +15,14 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	
 	acc_targetId_ = 0xff; //no target
 	lastTime_of_seekTarget_ = 0.0;
+	tracking_distance_ = 20.0;
+	first_time_find_target_flag_ = true;
 	
 }
 
 bool Acc_esr::init()
 {
-	sub_esrObjects_ = nh_.subscribe("/esr_objects",2,&Acc_esr::object_callback,this);
+	sub_esrObjects_ = nh_.subscribe("/esr_radar",2,&Acc_esr::object_callback,this);
 	sub_vehicleSpeed_ = nh_.subscribe("/vehicleState2",2,&Acc_esr::vehicleSpeed_callback,this);
 	sub_start_acc_ = nh_.subscribe("/is_acc",2,&Acc_esr::is_acc_callback,this);
 	
@@ -29,7 +31,7 @@ bool Acc_esr::init()
 	nh_private_.param<float>("trackTargetAngle_range",trackTargetAngle_range_,1.0);
 	nh_private_.param<float>("deceleration_cofficient",deceleration_cofficient_,50.0);
 	
-	updateTargetStatus_300ms_ = nh_.createTimer(ros::Duration(0.30),&Acc_esr::updateTargetStatus_callback,this);
+	updateTargetStatus_300ms_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
 }
 
 void Acc_esr::run()
@@ -64,28 +66,40 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 	
 	if(acc_targetId_==0xff) //no track target
 	{
-		for(size_t i=0,potentialTarget_num_=0;i<objects->size;i++)
+		ROS_INFO("finding target....");
+		potentialTarget_num_=0;  //cannot locate in for cycle!! can can NB
+		for(size_t i=0;i<objects->size;i++)
 		{
+			//ROS_INFO("angle:%f  anglerange:%f",objects->objects[i].azimuth,trackTargetAngle_range_);
 			if((objects->objects[i].azimuth <trackTargetAngle_range_) &&
 				(objects->objects[i].azimuth >-trackTargetAngle_range_))
 			{
 				potentialTarget_index_[potentialTarget_num_++] = i; 
+				//ROS_ERROR("!!!!!");
 			}
 		}
+		//ROS_INFO("objects->size:%d \tpotentialTarget_num_:%d",objects->size,potentialTarget_num_);
 		for(size_t i=0;i<potentialTarget_num_;i++)
 		{
 			if(objects->objects[potentialTarget_index_[i]].distance < min_distance)
 			{
 				min_distance = objects->objects[potentialTarget_index_[i]].distance;
 				acc_targetId_ = objects->objects[potentialTarget_index_[i]].id;
+					
 			}
-				
 		}
+		//ROS_INFO("target locked distance:%f  azimuth:%f",
+		//		objects->objects[potentialTarget_index_[i]].distance,
+		//		objects->objects[potentialTarget_index_[i]].azimuth);
 		//acc_targetId_ = objects->
 	}
 	else
 	{
-		ROS_INFO("target id:0x%x",acc_targetId_);
+		if(first_time_find_target_flag_)
+		{
+			ROS_INFO("target id:0x%x",acc_targetId_);
+			first_time_find_target_flag_ = false;
+		}
 		for(size_t i=0;i<objects->size;i++)
 		{
 			if(objects->objects[i].id == acc_targetId_)
@@ -110,14 +124,19 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 {
 	is_acc_ = state->data;
+	if(is_acc_)
+		ROS_INFO("Acc mode started...");
+	else
+		ROS_INFO("Acc mode exited...");
 }
 
 void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 {
-	if(is_acc_ && (acc_targetId_!=0xff) && (ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.2) //overtime
+	if(is_acc_ && (acc_targetId_!=0xff) && (ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.5 && lastTime_of_seekTarget_ >10.0) //overtime
 	{
 		is_acc_ = false;
 		acc_targetId_ = 0xff;
+		first_time_find_target_flag_ = true;
 		ROS_ERROR("acc target losed! acc has to exited !!");
 	}
 		

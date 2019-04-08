@@ -77,13 +77,15 @@ bool ESR_RADAR::init()
 	}
 	
 	in_can2serial->clearCanFilter(); usleep(10000);
+	in_can2serial->clearCanFilter(); usleep(10000);
 
 	
 	in_can2serial->setCanFilter_alone(0x01,0x4E0); usleep(1000);
+	in_can2serial->setCanFilter_alone(0x01,0x4E0); usleep(1000);
 	//in_can2serial->setCanFilter(0x02,0x500,0x7c0); //500-53f
-	in_can2serial->setCanFilter(0x03,0x500,0x7C0);
+	//in_can2serial->setCanFilter(0x03,0x500,0x7C0);
 	
-	in_can2serial->configBaudrate(500);
+	//in_can2serial->configBaudrate(500);
 		
 	usleep(10000);
 	in_can2serial->StartReading();
@@ -149,7 +151,8 @@ void ESR_RADAR::pubBoundingBoxArray()
 			boxes.boxes.push_back(box);
 		}
 		mutex_.unlock();
-		boundingBox_pub.publish(boxes);
+		if(last_frame_objects.size) 
+			boundingBox_pub.publish(boxes);
 		r.sleep();
 	}
 }
@@ -191,8 +194,8 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 			
 		objects.sequence = scan_index;
 		objects.size = objects.objects.size();
-		
-		esr_pub.publish(objects);
+		if(objects.size)
+			esr_pub.publish(objects);
 		
 		last_frame_objects = objects;
 		
@@ -241,11 +244,13 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 
 		object.distance = u16_distance*0.1;
 		
-		if(object.distance>50.0)
+		if(object.distance>100.0)
 			return;
 		
 		object.x = object.distance*sin(object.azimuth*M_PI/180.0);
 		object.y = object.distance*cos(object.azimuth*M_PI/180.0);
+		
+		if(!object.x && !object.y) return;
 
 		object.speed = s16_targetSpeed*0.01;
 		
@@ -255,7 +260,7 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		
 		objects.objects.push_back(object);
 		
-		
+		/*
 		switch(measurementStatus)
 		{	
 			case 1: //new target
@@ -273,7 +278,7 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 					
 			default:
 				break;
-		}
+		}*/
 	}
 	lastMsgId = can_msg.ID;
 }
