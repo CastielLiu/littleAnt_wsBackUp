@@ -105,6 +105,8 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			if(objects->objects[i].id == acc_targetId_)
 			{
 				trackTargetMsg_ = objects->objects[i];
+				ROS_INFO("target Id:%x  angle:%f  distance:%f",trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance);
+				
 				lastTime_of_seekTarget_ = ros::Time::now().toSec();
 				break;
 			}

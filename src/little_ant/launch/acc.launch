@@ -6,7 +6,7 @@
 	<arg name="telecontrol_port" default="/dev/U4"/>    <!--遥控器 STM32-->
 	 
 <!--毫米波雷达-->
-	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
+	<node name="esr_radar" pkg="esr_radar" type ="esr_radar"  >
 		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
 		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
 		<param name ="in_port_name"  value="$(arg esr_radar_receive_port)"/>
@@ -15,7 +15,7 @@
 
 <!-- acc -->
 	<node name="acc_node" pkg="acc" type ="acc_node"  output="screen">
-		<param name ="trackTargetAngle_range" type ="double" value="2.0"/>
+		<param name ="trackTargetAngle_range" type ="double" value="7.0"/>
 		<param name ="deceleration_cofficient" type ="double" value="40.0"/>
 		
 	</node>
