@@ -241,7 +241,7 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		
 		esr_radar_msgs::Object object;
 		
-		object.azimuth = s16_angle*0.1;  //left is negative(-)
+		object.azimuth = s16_angle*0.1 - 1.2;  //left is negative(-)  //subtract the offset
 
 		object.distance = u16_distance*0.1;
 		

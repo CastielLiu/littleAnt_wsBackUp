@@ -8,14 +8,14 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 {
 	cmd_.cmd2.set_gear =1;
 	cmd_.cmd1.set_driverlessMode =true;
-	
+	cmd_.origin = little_ant_msgs::ControlCmd::_ESR_RADAR;
 	
 	vehicleSpeed_ = 0.0;
 	is_acc_ = false;
 	
 	acc_targetId_ = 0xff; //no target
 	lastTime_of_seekTarget_ = 0.0;
-	tracking_distance_ = 20.0;
+	tracking_distance_ = 10.0;
 	first_time_find_target_flag_ = true;
 	
 }
@@ -50,7 +50,7 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 		ROS_INFO("vehicle speed:%f ",vehicleSpeed_);
 		
 	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;
-	tracking_distance_ *= 3.0;  //wait debug..
+	tracking_distance_ *= 2.0;  //wait debug..
 }
 
 float Acc_esr::brakingAperture_2_deceleration(const float & brakingAperture)
@@ -114,27 +114,41 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 				break;
 			}
 		}
-		float speed = trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *1.0;
+		float speed = vehicleSpeed_ + trackTargetMsg_.speed + 
+			(trackTargetMsg_.distance -tracking_distance_) *1.0;
 		if(speed >=0.0)
+		{
 			cmd_.cmd2.set_speed = speed;
+			cmd_.cmd2.set_brake = 0.0;
+		}
 		else
 		{
 			cmd_.cmd2.set_speed = 0.0;
 			cmd_.cmd2.set_brake = -speed * 1.0;
 		}
-		float steeringRadius = trackTargetMsg_.distance/(2*sin_deg(trackTargetMsg_.azimuth)) ;
-		cmd_.cmd2.set_steeringAngle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steeringRadius),15.0);
-		ROS_INFO("cmd_speed:%f\t cmd_angle:%f",cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle);
+		float steeringRadius = trackTargetMsg_.distance/(2.5*2*sin_deg(trackTargetMsg_.azimuth)) ;
+		cmd_.cmd2.set_steeringAngle = -limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steeringRadius),15.0) *350.0/20.0;
+		ROS_INFO("cmd_speed:%f\t cmd_angle:%f tracking_distance:%f",
+			cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle,tracking_distance_);
+		pub_cmd_.publish(cmd_);
 	}
 }
 
 void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 {
-	is_acc_ = state->data;
-	if(is_acc_)
-		ROS_INFO("Acc mode started...");
-	else
+	if(is_acc_ && !state->data)
+	{
 		ROS_INFO("Acc mode exited...");
+		cmd_.status = false;
+	}
+	else if(!is_acc_ && state->data)	
+	{
+		ROS_INFO("Acc mode started...");
+		cmd_.status = true;
+	}
+		
+	is_acc_ = state->data;
+	
 }
 
 void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
@@ -145,8 +159,8 @@ void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 		acc_targetId_ = 0xff;
 		first_time_find_target_flag_ = true;
 		ROS_ERROR("acc target losed! acc has to exited !!");
+		lastTime_of_seekTarget_ = 0.0;
 	}
-		
 }
 
 
