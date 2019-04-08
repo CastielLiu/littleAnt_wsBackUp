@@ -62,12 +62,14 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 {
 	if(!is_acc_) return;
 	
-	float min_distance=500.0; //a big num
-	
 	if(acc_targetId_==0xff) //no track target
 	{
+		float min_distance=500.0; //a big num
+		
 		ROS_INFO("finding target....");
+		
 		potentialTarget_num_=0;  //cannot locate in for cycle!! can can NB
+		
 		for(size_t i=0;i<objects->size;i++)
 		{
 			//ROS_INFO("angle:%f  anglerange:%f",objects->objects[i].azimuth,trackTargetAngle_range_);
@@ -105,7 +107,8 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			if(objects->objects[i].id == acc_targetId_)
 			{
 				trackTargetMsg_ = objects->objects[i];
-				ROS_INFO("target Id:%x  angle:%f  distance:%f",trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance);
+				ROS_INFO("target Id:%x  angle:%f  distance:%f speed:%f",
+						trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
 				
 				lastTime_of_seekTarget_ = ros::Time::now().toSec();
 				break;
@@ -119,7 +122,9 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			cmd_.cmd2.set_speed = 0.0;
 			cmd_.cmd2.set_brake = -speed * 1.0;
 		}
-			
+		float steeringRadius = trackTargetMsg_.distance/(2*sin_deg(trackTargetMsg_.azimuth)) ;
+		cmd_.cmd2.set_steeringAngle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steeringRadius),15.0);
+		ROS_INFO("cmd_speed:%f\t cmd_angle:%f",cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle);
 	}
 }
 
