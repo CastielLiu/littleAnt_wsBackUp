@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   little_ant_msgs
+  serial
+  can2serial
   jsk_recognition_msgs
 )
 
@@ -33,8 +35,7 @@ catkin_package(
 add_subdirectory(src/lib)
 
 
-AUX_SOURCE_DIRECTORY(src/base_control/. SRC_BASE_CONTROL_1)
-add_executable(base_control    ${SRC_BASE_CONTROL_1} )
+add_executable(base_control  src/base_control/base_control.cpp)
 add_dependencies(base_control  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(base_control ${catkin_LIBRARIES} littleAnt_utils)
 
