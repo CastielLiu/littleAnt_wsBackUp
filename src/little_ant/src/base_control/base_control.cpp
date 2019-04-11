@@ -36,6 +36,8 @@ static bool openSerial(serial::Serial *port_ptr, std::string port_name,int baud_
 
 BaseControl::BaseControl()
 {
+	is_driverlessMode_ = false;
+	
 	canMsg_cmd1.ID = ID_CMD_1;
     canMsg_cmd1.len = 8;
     *(long *)canMsg_cmd1.data = 0;
@@ -45,6 +47,7 @@ BaseControl::BaseControl()
     *(long *)canMsg_cmd2.data = 0;
     canMsg_cmd2.data[4] = 0xFF;
     canMsg_cmd2.data[5] = 0xFF; //set the steer angle value invalid
+    
 }
 
 BaseControl::~BaseControl()
@@ -205,7 +208,7 @@ void BaseControl::read_stm32_port()
 		usleep(10000);
 		try 
 		{
-			len = serial_port_->read(stm32_data_buf, STM32_MAX_NOUT_SIZE);
+			len = stm32_serial_port_->read(stm32_data_buf, STM32_MAX_NOUT_SIZE);
 		} 
 		catch (std::exception &e) 
 		{
@@ -232,7 +235,6 @@ void BaseControl::Stme32BufferIncomingData(unsigned char *message, unsigned int 
 			buffer_index = 0;
 			  printf("Overflowed receive buffer. Buffer cleared.");
 		}
-		//std::cout << "bytes_remaining_...:" <<bytes_remaining_  <<std::endl;
 		switch(buffer_index)
 		{
 			case 0: //nothing
@@ -240,7 +242,7 @@ void BaseControl::Stme32BufferIncomingData(unsigned char *message, unsigned int 
 				{
 					stm32_pkg_buf[buffer_index++] = message[ii];
 				}
-				bytes_remaining_ = 0;
+				bytes_remaining = 0;
 				break;
 			case 1:
 				if(message[ii]==Stm32MsgHeaderByte1)
@@ -256,14 +258,14 @@ void BaseControl::Stme32BufferIncomingData(unsigned char *message, unsigned int 
 				break;
 			case 2:
 			case 3:
-				stm32_pkg_buf[buffer_index_++]=message[ii];
+				stm32_pkg_buf[buffer_index++]=message[ii];
 				bytes_remaining --;
 				if(bytes_remaining == 0)
 				{
 					bytes_remaining = (stm32_pkg_buf[2] << 8) + stm32_pkg_buf[3] ;
 					
 					//根据实际发送的包长最大小值进行限定(多重数据正确保障) 
-					if(bytes_remaining > 9 || bytes_remaining_ < 2)  
+					if(bytes_remaining > 9 || bytes_remaining < 2)  
 					{
 						buffer_index = 0;
 						break;
@@ -280,22 +282,63 @@ void BaseControl::Stme32BufferIncomingData(unsigned char *message, unsigned int 
 				}
 				break;
 		}
-	}	// end for
+	}// end for
 }
 
 void BaseControl::parse_stm32_msgs(unsigned char *msg)
 {
 	unsigned char pkgId = msg[4];
-	switch(pkgId)
+	if(pkgId == 0x01)
 	{
-		case 
+		stm32Msg1_t *msg = (stm32Msg1_t *)stm32_pkg_buf;
+		if(msg->checkNum != generateCheckNum(stm32_pkg_buf,msg->pkgLen+4))
+			return ;
+			
+		mutex_.lock();
+		stm32_msg1_ = *msg;
+		if(stm32_msg1_.is_start && !stm32_msg1_.is_emergency_brake && !is_driverlessMode_)
+		{
+			this->setDriverlessMode();//启动无人驾驶模式
+			
+			stm32_serial_port_->flushInput();
+			this->is_driverlessMode_ = true;
+		}
+		else if(!stm32_msg1_.is_start)
+			this->is_driverlessMode_ = false;
+		
+		mutex_.unlock();
 	}
+}
 
-
+//先发送启动无人驾驶模式指令，一段时间之后再发送换挡指令
+void BaseControl::setDriverlessMode()
+{
+	int count = 0;
+	for(int i=0;i<8;i++)
+	{
+		canMsg_cmd1.data[i] = 0;
+		canMsg_cmd2.data[i] = 0;
+	}
+	canMsg_cmd1.data[0] |= 0x01; //driverless_mode
+	canMsg_cmd2.data[0] |= 0x01; //set_gear drive
+		
+	while(ros::ok())
+	{
+		can2serial.sendCanMsg(canMsg_cmd1);
+		usleep(20000);
+		count ++ ;
+		if(count >20)
+			can2serial.sendCanMsg(canMsg_cmd2);
+		if(count >30)
+			return;
+	}
 }
 
 void BaseControl::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 {
+	if(!is_driverlessMode_)
+		return ;
+		
 	if(msg->set_driverlessMode)
 		canMsg_cmd1.data[0] |= 0x01;
 	else
@@ -342,14 +385,24 @@ void BaseControl::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 		canMsg_cmd1.data[2] &= 0xfd;
 	
 	can2serial.sendCanMsg(canMsg_cmd1);
-	
 }
 
 
 void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 {
+	if(!is_driverlessMode_)
+		return ;
+		
 	float set_speed = msg->set_speed;
 	float set_brake = msg->set_brake;
+	
+	// 事实是：一旦紧急制动 自动驾驶模式已经退出，执行不到这里 
+	if(stm32_msg1_.is_emergency_brake)
+	{
+		set_brake = 40.0;
+		set_speed = 0.0;
+	}
+		
 
 	static float last_set_steeringAngle = 0;
 
@@ -360,13 +413,14 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	}
 	else if(set_brake >0.0) 
 		set_speed = 0.0;
-	else if(set_speed >14.5) 
-		set_speed =14.5;
+	else if(set_speed > MAX_SPEED-1) 
+		set_speed = MAX_SPEED-1;
+		
 	float currentSpeed = (state2.wheel_speed_FR + state2.wheel_speed_FL)/2;
 	if(set_speed-currentSpeed>5.0)
 		set_speed = currentSpeed+5.0;
 		
-	canMsg_cmd2.data[0] &= 0xf0;
+	canMsg_cmd2.data[0] &= 0xf0; //clear least 4bits
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
 	
 	canMsg_cmd2.data[1] = uint8_t(set_speed * 10);
@@ -396,7 +450,28 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	can2serial.sendCanMsg(canMsg_cmd2);
 	
+	if(msg->set_brake > 40)
+	{
+		if(msg->set_brake >100)
+			send_to_stm32_buf[5] = 255;
+		else
+			send_to_stm32_buf[5] = 1.0*(msg->set_brake-40)/60 * 255;
+		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
+		stm32_serial_port_->write(send_to_stm32_buf,8);
+	}
 	
+	
+}
+
+uint8_t BaseControl::generateCheckNum(const uint8_t* ptr,size_t len)
+{
+    uint8_t sum=0;
+
+    for(int i=2; i<len-1 ; i++)
+    {
+        sum += ptr[i];
+    }
+    return sum;
 }
 
 

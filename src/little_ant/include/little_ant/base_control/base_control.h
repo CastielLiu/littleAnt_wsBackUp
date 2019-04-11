@@ -28,6 +28,11 @@
 #define ID_STATE3 0x4D1
 #define ID_STATE4 0x1D5
 
+#define MAX_SPEED 15.0
+
+#ifndef PACK
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
 
 //for stm32
 #define STM32_MAX_NOUT_SIZE 200
@@ -35,15 +40,25 @@
 
 static unsigned char stm32_data_buf[STM32_MAX_NOUT_SIZE+1];
 static unsigned char stm32_pkg_buf[STM32_MAX_PKG_BUF_LEN];
+static unsigned char send_to_stm32_buf[8] = {0x66,0xCC,0x00,0x04,0x5A};
 
-static enum{Stm32MsgHeaderByte0=0x66,Stm32MsgHeaderByte1=0xCC};
+enum{Stm32MsgHeaderByte0=0x66,Stm32MsgHeaderByte1=0xCC};
 
-typedef struct
+PACK(
+typedef struct 
 {
-	float set_brake;
-	bool is_start;
-	bool is_emergency_brake;
-}stm32_msg_t;
+	uint8_t header0;
+	uint8_t header1;
+	uint16_t pkgLen;
+	uint8_t id;
+	uint8_t is_start :1;
+	uint8_t is_emergency_brake :1;
+	
+	uint8_t checkNum;
+	
+}) stm32Msg1_t;
+
+
 // end for stm32
 
 
@@ -64,10 +79,17 @@ public:
 private:
 	void Stme32BufferIncomingData(unsigned char *message, unsigned int length);
 	void parse_stm32_msgs(unsigned char *msg);
+	uint8_t generateCheckNum(const uint8_t* ptr,size_t len);
+	void setDriverlessMode();
 	
 private:
 	Can2serial can2serial;
 	serial::Serial * stm32_serial_port_;
+	
+	stm32Msg1_t stm32_msg1_;
+	
+	bool is_driverlessMode_;
+	
 	boost::shared_ptr<boost::thread> readFromStm32_thread_ptr_; //智能指针 
 	
 	ros::Subscriber cmd1_sub;
@@ -93,6 +115,8 @@ private:
 	little_ant_msgs::State2 state2;
 	little_ant_msgs::State3 state3;
 	little_ant_msgs::State4 state4;
+	
+	boost::mutex mutex_;
 
 };
 
