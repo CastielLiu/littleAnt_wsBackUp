@@ -5,6 +5,7 @@
 
 float generate_steeringAngle_by_steeringRadius(float radius)
 {
+	assert(radius!=0);
 	return asin(AXIS_DISTANCE /radius)*180/M_PI;
 }
 
