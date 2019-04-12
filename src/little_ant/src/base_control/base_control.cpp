@@ -43,10 +43,14 @@ BaseControl::BaseControl()
 	
 	canMsg_cmd1.ID = ID_CMD_1;
     canMsg_cmd1.len = 8;
+    canMsg_cmd1.type = Can2serial::STD_DATA_FRAME; //standard frame;
+    
     *(long *)canMsg_cmd1.data = 0;
 
     canMsg_cmd2.ID = ID_CMD_2;
     canMsg_cmd2.len = 8;
+    canMsg_cmd2.type = Can2serial::STD_DATA_FRAME;//standard frame;
+    
     *(long *)canMsg_cmd2.data = 0;
     canMsg_cmd2.data[4] = 0xFF;
     canMsg_cmd2.data[5] = 0xFF; //set the steer angle value invalid
@@ -225,9 +229,9 @@ void BaseControl::read_stm32_port()
     	}
     	if(len == 0) continue;
     	
-    	//for(int i=0;i<len;i++)
-    	//	printf("%x\t",stm32_data_buf[i]);
-    	//std::cout << std::endl;
+    	// for(int i=0;i<len;i++)
+    	// 	printf("%x\t",stm32_data_buf[i]);
+    	// std::cout << std::endl;
     	
 		Stm32BufferIncomingData(stm32_data_buf, len);
 	}
@@ -320,7 +324,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 		else if(!stm32_msg1_.is_start)
 			this->is_driverlessMode_ = false;
 			
-		printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
+		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
 		mutex_.unlock();
 	}
 }
@@ -328,19 +332,21 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 //先发送启动无人驾驶模式指令，一段时间之后再发送换挡指令
 void BaseControl::setDriverlessMode()
 {
-	int count = 0;
-	for(int i=0;i<8;i++)
-	{
-		canMsg_cmd1.data[i] = 0;
-		canMsg_cmd2.data[i] = 0;
-	}
-	canMsg_cmd1.data[0] |= 0x01; //driverless_mode
-	canMsg_cmd2.data[0] |= 0x01; //set_gear drive
-		
+	ROS_INFO("set driverless mode ing ............");
+	
+	
+	*(long int*)canMsg_cmd1.data = 0;
+	*(long int*)canMsg_cmd2.data = 0;
+
+	canMsg_cmd1.data[0] = 0x01; //driverless_mode
+	canMsg_cmd2.data[0] = 0x01; //set_gear drive
+	
+	int count = 0;	
 	while(ros::ok())
 	{
+		usleep(10000);
 		can2serial.sendCanMsg(canMsg_cmd1);
-		usleep(20000);
+		usleep(10000);
 		count ++ ;
 		if(count >20)
 			can2serial.sendCanMsg(canMsg_cmd2);

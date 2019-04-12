@@ -35,9 +35,9 @@ void DecisionMaking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd::ConstPtr& cmd)
 {
+	if(!cmd->status) return;
 	
 	cmdMsg_[cmd->origin].status =cmd->status;
-	if(!cmd->status) return;
 	
 	cmdMsg_[cmd->origin].time = ros::Time::now().toSec();
 	
@@ -45,6 +45,8 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 
 }
 
+//包含无人驾驶模式以及附件开关
+//
 void DecisionMaking::sendCmd1_callback(const ros::TimerEvent&)
 {
 	for(size_t i=0;i<SENSOR_NUM;i++)

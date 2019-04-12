@@ -10,6 +10,7 @@
 
 #include <arpa/inet.h> 
 
+
 #define MAX_NOUT_SIZE  2000  //read from serial per time
 #define MAX_MSG_BUF_SIZE 200  //complete can msg max capacity  ring storage area
 #define MAX_PKG_BUF_LEN 50   // can2serial max pkg len  >20 to avoid data overflow
@@ -19,6 +20,7 @@
 #else
 	#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
+
 
 static unsigned char buffer[MAX_NOUT_SIZE];
 
@@ -87,6 +89,14 @@ public:
 	bool getCanMsg(CanMsg_t &msg);
 	
 	void inquireFilter(uint8_t filterNum ,uint8_t port=0x01);
+	
+	enum
+	{
+		STD_DATA_FRAME = 0x03,
+		STD_REMOTE_FRAME =  0x01,
+		EXT_REMOTE_FRAME = 0x00,
+		EXT_DATA_FRAME = 0x02 
+	};
 	
 	
 private:

@@ -1,6 +1,14 @@
 #include "can2serial/can2serial.h"
 #include<cstring>
 
+static void printf_buf(const unsigned char *buf,int len)
+{
+	for(size_t i=0;i<len;i++)
+	{
+		printf("%x   ",buf[i]);
+	}
+	printf("\n");
+}
 
 Can2serial::Can2serial() :
 	inquire_filter_response_ptr_((inquireFilterResponsePkg_t *)data_buffer_)
@@ -264,22 +272,24 @@ uint8_t Can2serial::generateCheckNum(const uint8_t* ptr,size_t len)
         sum += ptr[i];
         //printf("%x\t",ptr[i]);
     }
-   // printf("-----------\n");
+    //printf("-----------sum:%x\n",sum);
     return sum;
 }
 
+
 bool Can2serial::sendCanMsg(const CanMsg_t &can_msg)
 {
-	uint16_t send_pkg_len = 12 + can_msg.len;
+	uint16_t bufLen = 12 + can_msg.len;
 	
-	uint8_t *sendBuf = new uint8_t;
+	uint8_t *sendBuf = new uint8_t[bufLen];
 	
 	sendBuf[0] = 0x66;
 	sendBuf[1] = 0xCC;
 	
-	uint16_t length = send_pkg_len-4;
-	sendBuf[2] = length >>8;
-	sendBuf[3] = length;
+	uint16_t pkgLen = bufLen - 4;
+	
+	sendBuf[2] = pkgLen >>8;
+	sendBuf[3] = pkgLen;
 	
 	sendBuf[4] = 0x30;
 	sendBuf[5] = can_msg.type;
@@ -293,11 +303,13 @@ bool Can2serial::sendCanMsg(const CanMsg_t &can_msg)
 	for( size_t i=0; i<can_msg.len;i++)
 		sendBuf[11+i] = can_msg.data[i];
 		
-	sendBuf[send_pkg_len-1] = generateCheckNum(sendBuf,send_pkg_len);
+	sendBuf[bufLen-1] = generateCheckNum(sendBuf,bufLen);
+	
+	//printf_buf(sendBuf,bufLen);
 
 	try
 	{
-		serial_port_->write(sendBuf,send_pkg_len);
+		serial_port_->write(sendBuf,bufLen);
 		delete [] sendBuf;
 	}
     	

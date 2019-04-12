@@ -37,21 +37,21 @@ add_subdirectory(src/lib)
 
 add_executable(base_control  src/base_control/base_control.cpp)
 add_dependencies(base_control  ${catkin_EXPORTED_TARGETS})
-target_link_libraries(base_control ${catkin_LIBRARIES} littleAnt_utils)
+target_link_libraries(base_control ${catkin_LIBRARIES})
 
 
-add_executable(key_control src/keyControl/keyControl.cpp)
-add_dependencies(key_control  ${catkin_EXPORTED_TARGETS})
-target_link_libraries(key_control ${catkin_LIBRARIES})
+#add_executable(key_control src/keyControl/keyControl.cpp)
+#add_dependencies(key_control  ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(key_control ${catkin_LIBRARIES})
 
-add_executable(telecontrol src/telecontrol/telecontrol.cpp )
-add_dependencies(telecontrol  ${catkin_EXPORTED_TARGETS})
-target_link_libraries(telecontrol ${catkin_LIBRARIES} littleAnt_utils)
+#add_executable(telecontrol src/telecontrol/telecontrol.cpp )
+#add_dependencies(telecontrol  ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(telecontrol ${catkin_LIBRARIES} littleAnt_utils)
 
 
-add_executable(telecontrol_stm32 src/telecontrol/telecontrol_stm32.cpp)
-add_dependencies(telecontrol_stm32  ${catkin_EXPORTED_TARGETS})
-target_link_libraries(telecontrol_stm32 ${catkin_LIBRARIES} littleAnt_utils)
+#add_executable(telecontrol_stm32 src/telecontrol/telecontrol_stm32.cpp)
+#add_dependencies(telecontrol_stm32  ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(telecontrol_stm32 ${catkin_LIBRARIES} littleAnt_utils)
 
 
 add_executable(calculate_deceleration_node src/test/test.cpp)

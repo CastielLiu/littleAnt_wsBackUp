@@ -54,9 +54,7 @@ typedef struct
 	uint8_t id;
 	uint8_t is_start :1;
 	uint8_t is_emergency_brake :1;
-	
 	uint8_t reserved;
-	
 	uint8_t checkNum;
 	
 }) stm32Msg1_t;

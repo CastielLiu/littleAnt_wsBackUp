@@ -6,9 +6,8 @@
 #include<little_ant_msgs/ControlCmd2.h>
 
 
-#define SENSOR_NUM 4
+#define SENSOR_NUM 3
 
-#define _TELECONTROL  little_ant_msgs::ControlCmd::_TELECONTROL
 #define _LIDAR        little_ant_msgs::ControlCmd::_LIDAR
 #define _GPS          little_ant_msgs::ControlCmd::_GPS
 #define _ESR_RADAR    little_ant_msgs::ControlCmd::_ESR_RADAR
