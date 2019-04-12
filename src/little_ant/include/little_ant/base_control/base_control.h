@@ -6,6 +6,7 @@
 #include <iostream>
 #include<can2serial/can2serial.h>
 #include<serial/serial.h>
+#include<arpa/inet.h>
 
 #include<boost/thread.hpp>
 #include<boost/bind.hpp>
@@ -49,10 +50,12 @@ typedef struct
 {
 	uint8_t header0;
 	uint8_t header1;
-	uint16_t pkgLen;
+	unsigned short pkgLen;
 	uint8_t id;
 	uint8_t is_start :1;
 	uint8_t is_emergency_brake :1;
+	
+	uint8_t reserved;
 	
 	uint8_t checkNum;
 	
@@ -77,7 +80,7 @@ public:
 	void callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg);
 	
 private:
-	void Stme32BufferIncomingData(unsigned char *message, unsigned int length);
+	void Stm32BufferIncomingData(unsigned char *message, unsigned int length);
 	void parse_stm32_msgs(unsigned char *msg);
 	uint8_t generateCheckNum(const uint8_t* ptr,size_t len);
 	void setDriverlessMode();

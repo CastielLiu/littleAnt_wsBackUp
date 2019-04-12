@@ -1,7 +1,7 @@
 #include<base_control/base_control.h>
 #include<assert.h>
 
-static bool openSerial(serial::Serial *port_ptr, std::string port_name,int baud_rate)
+static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int baud_rate)
 {
 	try 
 	{
@@ -31,12 +31,15 @@ static bool openSerial(serial::Serial *port_ptr, std::string port_name,int baud_
 	    std::cout << output.str() <<std::endl;
 	    return false;
 	}
+	
+	return true;
 
 }
 
 BaseControl::BaseControl()
 {
 	is_driverlessMode_ = false;
+	stm32_serial_port_ = NULL;
 	
 	canMsg_cmd1.ID = ID_CMD_1;
     canMsg_cmd1.len = 8;
@@ -88,8 +91,10 @@ bool BaseControl::init(int argc,char**argv)
 	if(!can2serial.configure_port(obd_can_port_name_.c_str()))
 	{
 		ROS_INFO("open port %s failed",obd_can_port_name_.c_str());
-		return 0;
+		return false;
 	}
+	else
+		ROS_INFO("open port %s successfully",obd_can_port_name_.c_str());
 	
 	can2serial.clearCanFilter();
 	
@@ -109,7 +114,7 @@ bool BaseControl::init(int argc,char**argv)
 	//usleep(1500000);
 	
 	//can2serial.clearCanFilter();
-	return 1;
+	return true;
 }
 
 void BaseControl::run()
@@ -128,7 +133,7 @@ void BaseControl::parse_obdCanMsg()
 
 	while(ros::ok())
 	{
-		//ROS_INFO("ing.....");
+		//ROS_INFO("parse_obdCanMsg  ing.....");
 		usleep(3000);
 		if(!can2serial.getCanMsg(canMsg))
 		{
@@ -205,10 +210,12 @@ void BaseControl::read_stm32_port()
 	size_t len;
 	while(ros::ok())
 	{
+		//ROS_INFO("read_stm32_port  ing.....");
 		usleep(10000);
 		try 
 		{
 			len = stm32_serial_port_->read(stm32_data_buf, STM32_MAX_NOUT_SIZE);
+			//ROS_INFO("read_stm32_port get %d bytes",len);
 		} 
 		catch (std::exception &e) 
 		{
@@ -216,13 +223,17 @@ void BaseControl::read_stm32_port()
 	        output << "Error reading from serial port: " << e.what();
 	        std::cout << output.str() <<std::endl;
     	}
-    	if(len==0) continue;
+    	if(len == 0) continue;
     	
-		Stme32BufferIncomingData(stm32_data_buf, len);
+    	//for(int i=0;i<len;i++)
+    	//	printf("%x\t",stm32_data_buf[i]);
+    	//std::cout << std::endl;
+    	
+		Stm32BufferIncomingData(stm32_data_buf, len);
 	}
 }
 
-void BaseControl::Stme32BufferIncomingData(unsigned char *message, unsigned int length)
+void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int length)
 {
 	static int buffer_index = 0;
 	static int bytes_remaining =0;
@@ -291,8 +302,11 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 	if(pkgId == 0x01)
 	{
 		stm32Msg1_t *msg = (stm32Msg1_t *)stm32_pkg_buf;
-		if(msg->checkNum != generateCheckNum(stm32_pkg_buf,msg->pkgLen+4))
+		if(msg->checkNum != generateCheckNum(stm32_pkg_buf,ntohs(msg->pkgLen)+4))
+		{
+			//ROS_ERROR("check error %x != %x",msg->checkNum,generateCheckNum(stm32_pkg_buf,ntohs(msg->pkgLen)+4));
 			return ;
+		}
 			
 		mutex_.lock();
 		stm32_msg1_ = *msg;
@@ -305,7 +319,8 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 		}
 		else if(!stm32_msg1_.is_start)
 			this->is_driverlessMode_ = false;
-		
+			
+		printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
 		mutex_.unlock();
 	}
 }
@@ -482,7 +497,7 @@ int main(int argc,char**argv)
 	if(base_control.init(argc,argv))
 		base_control.run();
 	
-	
+	ROS_INFO("base_control_node has exited");
 	return 0;
 }
 
