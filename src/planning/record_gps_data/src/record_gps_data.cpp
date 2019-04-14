@@ -53,9 +53,15 @@ bool Record::init()
 	ros::NodeHandle nh;
 	ros::NodeHandle private_nh("~");
 	
-	private_nh.param<std::string>("file_path",file_path_,"/home/wendao/gps_data.txt");
+	private_nh.param<std::string>("file_path",file_path_,"/home/wendao/projects/littleAnt_ws/a.txt");
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
 	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
+    
+    if(file_path_.empty())
+    {
+    	ROS_ERROR("no input file...");
+    	return false;
+    }
     
 	fp = fopen(file_path_.c_str(),"w");
 	

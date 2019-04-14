@@ -8,6 +8,10 @@
 #include"gps_msgs/Inspvax.h"
 #include<std_msgs/Bool.h>
 
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <thread>
+
 
 typedef struct
 {
@@ -36,8 +40,8 @@ public:
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	void avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg);
-
-	
+	bool is_lon_lat_valid(gpsMsg_t& point);
+	void rosSpinThread();
 	
 private:
 	ros::Subscriber sub_gps_;
@@ -49,6 +53,7 @@ private:
 	ros::Publisher pub_gps_cmd_;
 	FILE * fp;
 	
+	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
 	std::string path_points_file_;
 	

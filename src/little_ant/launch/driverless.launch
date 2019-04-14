@@ -5,6 +5,8 @@
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U4"/>          <!-- STM32-->
 	
+	<arg name="pathTracking_file_name" default="$(find data)/data/2.txt"/>
+	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
@@ -30,7 +32,7 @@
 
 <!-- 跟踪   -->
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node"  >
-		<param name="path_points_file" value="$(find little_ant)/../data/2.txt"/>
+		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
 		<param name="speed" value="14.0"/>						<!-- 跟踪速度  -->
@@ -56,7 +58,7 @@
 	
 <!--调试-->	
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
-		<param name="file_path" value="$(find little_ant)/../data/debug.txt"/>
+		<param name="file_path" value="$(find data)/data/debug.txt"/>
 	</node>
 
  <!--总决策-->
@@ -65,15 +67,6 @@
 	
 
 </launch>
-
-
-
-
-
-
-
-
-
 
 
 
