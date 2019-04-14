@@ -23,3 +23,6 @@ float limit_steeringAngle(float angle,float limit)
 		angle = -limit;
 	return angle;
 }
+
+//方向盘最大转角/前轮最大转角
+const float g_steering_gearRatio = 540.0/40.0;

@@ -6,7 +6,7 @@
 #include<little_ant_msgs/ControlCmd2.h>
 
 
-#define SENSOR_NUM 3
+#define SENSOR_NUM little_ant_msgs::ControlCmd::SENSOR_NUM
 
 #define _LIDAR        little_ant_msgs::ControlCmd::_LIDAR
 #define _GPS          little_ant_msgs::ControlCmd::_GPS

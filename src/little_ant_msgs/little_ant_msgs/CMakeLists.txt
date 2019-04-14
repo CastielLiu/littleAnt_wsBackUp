@@ -23,6 +23,7 @@ add_message_files(
    State2.msg
    State3.msg
    State4.msg
+   Lane.msg
  )
 
 

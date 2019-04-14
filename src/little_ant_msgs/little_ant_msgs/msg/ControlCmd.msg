@@ -9,11 +9,16 @@ bool just_decelerate
 
 uint8 origin
 
-#priority
 
+
+uint8 SENSOR_NUM = 4
+
+#priority
 uint8 _LIDAR = 0
 uint8 _ESR_RADAR = 1
-uint8 _GPS = 2
+uint8 _LANE_KEEPING = 2
+uint8 _GPS = 3
+
 
 
 

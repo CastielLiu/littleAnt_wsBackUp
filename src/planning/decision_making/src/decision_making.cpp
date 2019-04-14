@@ -107,8 +107,6 @@ void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)
 }
 
 
-
-
 int main(int argc,char ** argv)
 {
 	ros::init(argc,argv,"decision_making_node");

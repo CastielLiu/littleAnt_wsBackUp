@@ -174,6 +174,17 @@ void BaseControl::parse_obdCanMsg()
 				state2.wheel_speed_RR_valid = !(canMsg.data[6] >>6);
 				state2.wheel_speed_RR = ((canMsg.data[6]&0x3f)*256+canMsg.data[7])*0.0625;
 				
+				{
+				size_t i =0;
+				float speed = 0.0;
+				if(state2.wheel_speed_FL_valid==true) {i++; speed += state2.wheel_speed_FL;}
+				if(state2.wheel_speed_FR_valid==true) {i++; speed += state2.wheel_speed_FR;}
+				if(state2.wheel_speed_RL_valid==true) {i++; speed += state2.wheel_speed_RL;}
+				if(state2.wheel_speed_RR_valid==true) {i++; speed += state2.wheel_speed_RR;}
+				
+				state2.vehicle_speed = speed/i /3.6; //m/s
+				}
+				
 				state2_pub.publish(state2);  //speed km/h
 				break;
 				

@@ -25,15 +25,18 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
 	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
-	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",2,&PathTracking::avoiding_flag_callback,this);
+	
+	//sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",2,&PathTracking::avoiding_flag_callback,this);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",5);
 	
 	nh_private.param<float>("vehicle_axis_dis",vehicle_axis_dis_,1.50);
-	nh_private.param<std::string>("path_points_file",path_points_file_,std::string("/home/wendao/projects/littleAnt_ws/src/data/data/2.txt"));
-	nh_private.param<float>("disThreshold",disThreshold_,5.0);
+	nh_private.param<std::string>("path_points_file",path_points_file_,
+									std::string("/home/wendao/projects/littleAnt_ws/src/data/data/2.txt"));
+									
+	nh_private.param<float>("disThreshold",disThreshold_,6.0);
 	nh_private.param<float>("speed",speed_,3.0);
 	
 	nh_private.param<float>("avoiding_disThreshold",avoiding_disThreshold_,15.0);

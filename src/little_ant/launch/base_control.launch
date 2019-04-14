@@ -2,7 +2,7 @@
 
 <launch>
 	<arg name="base_control_port" default="/dev/ttyUSB0"/>   <!--底层can分析仪-->
-	<arg name="stm32_port" default="/dev/ttyUSB2"/>          <!-- STM32-->
+	<arg name="stm32_port" default="/dev/ttyUSB1"/>          <!-- STM32-->
 	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
