@@ -8,7 +8,7 @@ def talker():
 	rospy.init_node('talker', anonymous=True)
 
 	pub = rospy.Publisher('/lane', Lane, queue_size=10)
-	rate = rospy.Rate(10) # 10hz
+	rate = rospy.Rate(20) # 10hz
 	
 	lane_msg = Lane()
 	
@@ -21,12 +21,14 @@ def talker():
 		
 		lane_msg.distance_from_center = distance_from_center
 		
-		distance_from_center = distance_from_center + 0.01 * sign
+		distance_from_center = distance_from_center + 0.001 * sign
 		
-		if(distance_from_center>0.2):
+		if(distance_from_center>0.5):
 			sign = -1
-		elif(distance_from_center < -0.2):
+		elif(distance_from_center < -0.5):
 			sign = 1
+		
+		#distance_from_center = -0.3
 		
 		pub.publish(lane_msg)
 		

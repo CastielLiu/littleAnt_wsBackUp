@@ -22,7 +22,7 @@ public:
 	void laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 
-
+	
 private:
 	typedef struct
 	{
@@ -30,6 +30,8 @@ private:
 		float vehicle_speed;
 		
 	}status_msgs_t;
+	
+	int get_steeringDir(float err,float theta,float alpha);
 	
 private:
 	ros::Subscriber sub_laneMsg_;

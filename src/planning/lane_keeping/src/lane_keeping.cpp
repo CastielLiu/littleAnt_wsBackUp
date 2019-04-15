@@ -1,5 +1,6 @@
 #include "lane_keeping/lane_keeping.h"
 #include<assert.h>
+#include<cmath>
 
 LaneKeeping::LaneKeeping():
 	current_lane_msg_index(0),
@@ -43,28 +44,28 @@ void LaneKeeping::pub_cmd_callback(const ros::TimerEvent&)
 	//float alpha = asin(lane_msg_.distance_from_center / foresight_distance_) ;//distance_from_center =OA
 	
 	//distance_from_center =OB
-	float alpha = asin(lane_msg_.distance_from_center *sin(lane_msg_.included_angle) / foresight_distance_) ;
+	float alpha = asin(lane_msg_.distance_from_center *cos(lane_msg_.included_angle) / foresight_distance_) ;
 	
-	float theta = M_PI/4 - fabs(lane_msg_.included_angle) - fabs(alpha);
+	float delta = fabs(lane_msg_.included_angle) - fabs(alpha);
 	
-	assert(theta > 0);
+	//ROS_INFO("alpha:%f\t theta:%f \t delta:%f",alpha*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI,delta*180.0/M_PI);
 	
-	float steering_radius = 0.5*foresight_distance_ / sin(theta);
+	float steering_radius = 0.5*foresight_distance_ / sin(delta) *sign(lane_msg_.included_angle);
 	
-	float targetPoint_x = foresight_distance_*cos(theta);
-	
-	cmd_.cmd2.set_steeringAngle = 
-		-limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steering_radius),15.0) * g_steering_gearRatio;
+	float angle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steering_radius),15.0) * g_steering_gearRatio;
+		
+	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.distance_from_center, lane_msg_.included_angle,alpha);
 	
 	cmd_.cmd2.set_speed = lane_keeping_Speed_;
 	
-	ROS_INFO("vehicle_speed:%f\t steerAngle:%f\t included_angle:%f ",
+	/*
+	ROS_INFO("vehicle_speed:%f\t steerAngle:%f\t included_angle:%f\t err:%f",
 				mean_vehicleSpeed_,
-				generate_steeringAngle_by_steeringRadius(steering_radius),
-				lane_msg_.included_angle*180.0/M_PI);
-	
+				cmd_.cmd2.set_steeringAngle,
+				lane_msg_.included_angle*180.0/M_PI,
+				lane_msg_.distance_from_center);
+	*/
 	pub_controlCmd_.publish(cmd_);
-
 }
 
 
@@ -109,8 +110,6 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 			
 			//lane_msg_.included_angle = asin(diff_of_lateralErr/distance_between_twoTime) ; //distance_from_center = OA
 			 lane_msg_.included_angle = atan(diff_of_lateralErr/distance_between_twoTime) ;  //distance_from_center = OB
-			
-			//ROS_INFO("mean_vehicleSpeed:%f\t included_angle = %f",mean_vehicleSpeed_, lane_msg_.included_angle*180.0/M_PI);
 		}
 	}
 	
@@ -123,32 +122,27 @@ void LaneKeeping::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr&
 	vehicle_speed_ = msg->vehicle_speed;
 }
 
-//left 0 ; right 1
-bool LaneKeeping::get_steeringDir()
+//left -1 ; right 1
+int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 {
-	float err = lane_msg_.distance_from_center;
-	float theta = lane_msg_.included_angle;
-	
-	if(err<0 && theta<0)
-		return 0;
-	else if(err >0 && theta >0)
+	if(err<= 0 && theta<0)
+		return -1;
+	else if(err >=0 && theta >0)
 		return 1;
-	else if(err <0) //err<0 && theta >0
+	else if(theta==0 && err >0)
+		return 1;
+	else if(theta ==0 && err <0)
+		return -1;
+	else if(err <0) // err<0 && theta >0
 	{
-		float alpha1 = acos(err*cos(theta)/foresight_distance_);
-		if(M_PI - theta - alpha1 > M_PI/2)
-			return 0;
-		else
-			return 1;
+		return fabs(theta) > fabs(alpha) ? 1:-1;
 	}
-	else //err> 0 && theta < 0
+	else if(err >0)
 	{
-		float alpha1 = acos(err*cos(theta)/foresight_distance_);
-		if(M_PI/2 + theta - alpha1 > M_PI/2)
-			retun 0;
-		else
-			return 1;
+		return fabs(theta) > fabs(alpha) ? -1:1;
 	}
+	else
+		return 0;
 }
 
 int main(int argc, char** argv)
