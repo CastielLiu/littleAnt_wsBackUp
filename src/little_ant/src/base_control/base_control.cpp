@@ -223,10 +223,13 @@ void BaseControl::parse_obdCanMsg()
 void BaseControl::read_stm32_port()
 {
 	size_t len;
+	
+	stm32_serial_port_->flushInput();
+	
 	while(ros::ok())
 	{
 		//ROS_INFO("read_stm32_port  ing.....");
-		usleep(10000);
+		usleep(5000);
 		try 
 		{
 			len = stm32_serial_port_->read(stm32_data_buf, STM32_MAX_NOUT_SIZE);
@@ -240,9 +243,9 @@ void BaseControl::read_stm32_port()
     	}
     	if(len == 0) continue;
     	
-    	// for(int i=0;i<len;i++)
-    	// 	printf("%x\t",stm32_data_buf[i]);
-    	// std::cout << std::endl;
+    	 //for(int i=0;i<len;i++)
+    	 //	printf("%x\t",stm32_data_buf[i]);
+    	 //std::cout << std::endl;
     	
 		Stm32BufferIncomingData(stm32_data_buf, len);
 	}
@@ -332,8 +335,12 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 			stm32_serial_port_->flushInput();
 			this->is_driverlessMode_ = true;
 		}
-		else if(!stm32_msg1_.is_start)
+		else if(!stm32_msg1_.is_start && is_driverlessMode_)
+		{
 			this->is_driverlessMode_ = false;
+			this->exitDriverlessMode();
+		}
+			
 			
 		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
 		mutex_.unlock();
@@ -345,12 +352,16 @@ void BaseControl::setDriverlessMode()
 {
 	ROS_INFO("set driverless mode ing ............");
 	
-	
 	*(long int*)canMsg_cmd1.data = 0;
 	*(long int*)canMsg_cmd2.data = 0;
 
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	canMsg_cmd2.data[0] = 0x01; //set_gear drive
+	
+	uint16_t steeringAngle = 10800; //middle
+	
+	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
 	int count = 0;	
 	while(ros::ok())
@@ -361,9 +372,33 @@ void BaseControl::setDriverlessMode()
 		count ++ ;
 		if(count >20)
 			can2serial.sendCanMsg(canMsg_cmd2);
-		if(count >30)
-			return;
+		if(count >50)
+			break;
 	}
+	stm32_serial_port_->flushInput();
+}
+void BaseControl::exitDriverlessMode()
+{
+	ROS_INFO("driverless mode exited ............");
+	*(long int*)canMsg_cmd1.data = 0;
+	*(long int*)canMsg_cmd2.data = 0;
+
+	canMsg_cmd1.data[0] = 0x00; //driverless_mode
+	canMsg_cmd2.data[0] = 0x00; //set_gear 0
+	
+	uint16_t steeringAngle = 10800; //middle
+	
+	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
+	
+	for(int i=0;i<5;i++)
+	{
+		usleep(10000);
+		can2serial.sendCanMsg(canMsg_cmd1);
+		usleep(20000);
+		can2serial.sendCanMsg(canMsg_cmd2);
+	}
+	stm32_serial_port_->flushInput();
 }
 
 void BaseControl::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)

@@ -82,6 +82,7 @@ private:
 	void parse_stm32_msgs(unsigned char *msg);
 	uint8_t generateCheckNum(const uint8_t* ptr,size_t len);
 	void setDriverlessMode();
+	void exitDriverlessMode();
 	
 private:
 	Can2serial can2serial;
