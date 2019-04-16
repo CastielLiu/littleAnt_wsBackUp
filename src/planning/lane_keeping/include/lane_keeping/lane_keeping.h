@@ -8,7 +8,9 @@
 #include<little_ant_msgs/ControlCmd2.h>
 #include<ant_math/ant_math.h>
 
-
+#include<nav_msgs/Odometry.h>
+#include<geometry_msgs/Quaternion.h>
+#include <tf/transform_datatypes.h>
 
 
 class LaneKeeping
@@ -21,7 +23,8 @@ public:
 	void pub_cmd_callback(const ros::TimerEvent&);
 	void laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
-
+	
+	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 	
 private:
 	typedef struct
@@ -36,6 +39,8 @@ private:
 private:
 	ros::Subscriber sub_laneMsg_;
 	ros::Subscriber sub_vehicleSpeed_;
+	ros::Subscriber sub_cartesian_gps_;
+	
 	ros::Timer pub_cmd_20ms_;
 	
 	ros::Publisher pub_controlCmd_;
@@ -58,6 +63,8 @@ private:
 	int current_lane_msg_index;
 	
 	int system_delay_;
+	
+	gpsMsg_t current_point_;
 };
 
 
