@@ -47,8 +47,8 @@
 		<param name="port" value="$(arg gps_port)" />
 		<param name="baudrate" value="115200" />
 		<param name="odom_topic" value="/gps_odom" />
-		<param name="log_commands" value="inspvaxb ontime 0.05" />
-		<!-- <param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />-->
+		<!-- <param name="log_commands" value="inspvaxb ontime 0.05" />-->
+		<param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />
 		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
 		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
 		<param name="gps_default_logs_period" value="0.0" />

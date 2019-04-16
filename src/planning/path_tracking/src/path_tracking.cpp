@@ -23,11 +23,11 @@ PathTracking::~PathTracking()
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-#if GPS_POLAR_COORDINATE == 1
+
 	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
-#else
+
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);
-#endif
+
 
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
 	
@@ -58,7 +58,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		return false;
 	}
 	
-	float last_distance = 99999;
+	float last_distance = 999999999999;
 	float current_distance = 0;
 	
 	while(ros::ok() && !feof(fp))
@@ -66,7 +66,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		if(!is_gps_data_valid(current_point_))
 		{
 			ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
-			usleep(20000);
+			usleep(100000);
 			continue;
 		}
 		
@@ -126,11 +126,11 @@ void PathTracking::run()
 					current_point_.longitude,current_point_.latitude,current_point_.yaw,
 					target_point_.longitude,target_point_.latitude,dis_yaw.second);
 			printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
-					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
+					dis_yaw.first,yaw_err*180/M_PI,turning_radius,t_roadWheelAngle);
 		}
 		i++;
 		
-		t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle, 20.0);
+		t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle, 25.0);
 		
 		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;
 		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;
@@ -172,14 +172,14 @@ void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& ms
 {
 	current_point_.x = msg->pose.pose.position.x;
 	current_point_.y = msg->pose.pose.position.y;
-	
+	/*
 	tf::Quaternion quat;
 	tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
 	
 	double roll,pitch;
 	
 	tf::Matrix3x3(quat).getRPY(roll, pitch, current_point_.yaw);
-
+*/
 }
 
 void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)

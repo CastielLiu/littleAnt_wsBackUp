@@ -1,9 +1,9 @@
 <!-- -->
 <launch>
 
-	<arg name="base_control_port" default="/dev/U1"/>   <!--底层can分析仪-->
-	<arg name="gps_port" default="/dev/U2"/>		    <!-- GPS-->
-	<arg name="stm32_port" default="/dev/U4"/>          <!-- STM32-->
+	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
+	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
+	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control">
@@ -15,10 +15,10 @@
 	</node>
 	
 	
-	<node name="path_tracking_node" pkg="planning" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find data)/data/gps.txt"/>
-		<param name="disThreshold" value="10.0"/>
-		<param name="speed" value="10.0"/>
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
+		<param name="path_points_file" value="$(find data)/data/path.txt"/>
+		<param name="disThreshold" value="6.0"/>
+		<param name="speed" value="5.0"/>
 	
 	</node>
 	
@@ -27,8 +27,8 @@
 		<param name="port" value="$(arg gps_port)" />
 		<param name="baudrate" value="115200" />
 		<param name="odom_topic" value="/gps_odom" />
-		<param name="log_commands" value="inspvaxb ontime 0.05" />
-		<!-- <param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />-->
+		<!--<param name="log_commands" value="inspvaxb ontime 0.05" /> -->
+		<param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />
 		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
 		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
 		<param name="gps_default_logs_period" value="0.0" />
@@ -38,12 +38,12 @@
 	</node>
 	
 	
-	<node name="record_gps_data" pkg="planning" type="record_gps_data">
+	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node">
 		<param name="file_path" value="$(find data)/data/debug.txt"/>
 	</node>
 	
 
-	<node  type="decision_making_node" pkg ="planning" name="decision_making_node" />   <!--                   -->
+	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" />   <!--                   -->
 	
 	
 
