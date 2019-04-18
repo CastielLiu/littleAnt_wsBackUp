@@ -17,7 +17,7 @@
 #include <boost/bind.hpp>
 #include <thread>
 
-#define GPS_POLAR_COORDINATE 0
+#define IS_POLAR_COORDINATE_GPS 0
 
 typedef struct
 {
@@ -29,8 +29,6 @@ typedef struct
 	double y;
 	
 }gpsMsg_t;
-
-
 
 
 class PathTracking
@@ -86,6 +84,8 @@ private:
 	little_ant_msgs::ControlCmd gps_controlCmd_;
 	
 	float path_tracking_speed_;
+	
+	uint8_t gps_status_;
 
 };
 

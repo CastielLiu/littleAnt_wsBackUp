@@ -1,7 +1,8 @@
 #include"path_tracking.h"
 
 
-PathTracking::PathTracking()
+PathTracking::PathTracking():
+	gps_status_(0x00)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -162,6 +163,8 @@ void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 
 void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
+	gps_status_ |= 0x01;
+	
 	current_point_.longitude = msg->longitude;
 	current_point_.latitude = msg->latitude;
 	current_point_.yaw = deg2rad(msg->azimuth);
@@ -170,6 +173,8 @@ void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 
 void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+	gps_status_ |= 0x02;
+	
 	current_point_.x = msg->pose.pose.position.x;
 	current_point_.y = msg->pose.pose.position.y;
 	/*
@@ -201,10 +206,11 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg)
 	}
 }
 
-#if GPS_POLAR_COORDINATE ==1
+#if IS_POLAR_COORDINATE_GPS ==1
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(point.longitude >10.0 && point.longitude < 170.0 && 
+	if(	gps_status_ > 0 &&
+		point.longitude >10.0 && point.longitude < 170.0 && 
 		point.latitude >15.0 && point.latitude <70.0)
 		return true;
 	return false;
@@ -234,7 +240,7 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 #else
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(point.x !=0 && point.y !=0)
+	if(gps_status_ == 0x03 && point.x !=0 && point.y !=0)
 		return true;
 	return false;
 }

@@ -9,7 +9,6 @@
 #include <tf/tf.h>
 #include <cmath>
 
-
 typedef struct
 {
 	double longitude;
@@ -35,8 +34,8 @@ void gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 	
 	current_point.longitude -= first_point.longitude;
 	current_point.latitude -= first_point.latitude;
-	current_point.longitude *=100000;
-	current_point.latitude *=100000;
+	current_point.longitude *= 100000;
+	current_point.latitude *= 100000;
 }
 
 int main (int argc, char **argv)

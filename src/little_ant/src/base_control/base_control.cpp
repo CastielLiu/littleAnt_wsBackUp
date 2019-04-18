@@ -490,7 +490,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	canMsg_cmd2.data[0] &= 0xf0; //clear least 4bits
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
 	
-	canMsg_cmd2.data[1] = uint8_t(set_speed * 10);
+	canMsg_cmd2.data[1] = uint8_t(set_speed * 10 * 15.0 / MAX_SPEED);
 	
 	canMsg_cmd2.data[2] = uint8_t(msg->set_brake *2.5);
 	
