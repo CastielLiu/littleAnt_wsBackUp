@@ -7,7 +7,7 @@ LaneKeeping::LaneKeeping():
 	system_delay_(20),
 	mean_vehicleSpeed_(0),
 	gps_status_(0x00),
-	changeLane_status_(ChangeLine_None)
+	system_status_(KeepLine_status)
 {
 	cmd_.origin = little_ant_msgs::ControlCmd::_LANE_KEEPING;
 	cmd_.status = true;
@@ -26,7 +26,8 @@ bool LaneKeeping::init()
 	ros::NodeHandle nh_private("~");
 	
 	nh_private.param<float>("foresight_distance",foresight_distance_,10.0);
-	nh_private.param<float>("lane_keeping_Speed",lane_keeping_Speed_,10.0);
+	nh_private.param<float>("lane_keeping_speed",lane_keeping_speed_,10.0);
+	nh_private.param<float>("changeLane_speed",changeLane_speed_,10.0);
 	
 	sub_laneMsg_ = nh.subscribe("/lane",1,&LaneKeeping::laneDetect_callback,this);
 	
@@ -50,7 +51,7 @@ bool LaneKeeping::init()
 
 void LaneKeeping::run()
 {
-	boost::shared_ptr changeLane_thread_Ptr = 
+	boost::shared_ptr<boost::thread> changeLane_thread_Ptr = 
 		boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&LaneKeeping::changeLane_thread, this)));
 		
 	ros::spin();
@@ -62,17 +63,16 @@ void LaneKeeping::changeLane_thread()
 	
 	while(ros::ok())
 	{
-		if(changeLane_status_ == ChangeLine_Left)
+		if(system_status_ == ChangeLine_Left_status)
 		{
-			changeLane(-1);
-			changeLane_status_ = ChangeLine_Ok;
+			changeLane(-1,3.0);
+			system_status_ = KeepLine_status;
 		}
-		else if(changeLane_status_ == ChangeLine_Right)
+		else if(system_status_ == ChangeLine_Right_status)
 		{
-			changeLane(1);
-			changeLane_status_ = ChangeLine_Ok;
+			changeLane(1,3.0);
+			system_status_ = KeepLine_status;
 		}
-	
 		loop_rate.sleep();
 	}
 
@@ -83,7 +83,17 @@ void LaneKeeping::pub_cmd_callback(const ros::TimerEvent&)
 {
 	if(system_delay_ >0)
 		return;
-		
+	
+	if(system_status_ == KeepLine_status)
+		keepLane();
+	
+	//需要换道时，直接将 system_status_ 置为 ChangeLine_Left_status  or ChangeLine_Right_status
+	
+	pub_controlCmd_.publish(cmd_);
+}
+
+void LaneKeeping::keepLane()
+{
 	//float alpha = asin(lane_msg_.distance_from_center / foresight_distance_) ;//distance_from_center =OA
 	
 	//distance_from_center =OB
@@ -99,7 +109,7 @@ void LaneKeeping::pub_cmd_callback(const ros::TimerEvent&)
 		
 	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.distance_from_center, lane_msg_.included_angle,alpha);
 	
-	cmd_.cmd2.set_speed = lane_keeping_Speed_;
+	cmd_.cmd2.set_speed = lane_keeping_speed_;
 	
 	/*
 	ROS_INFO("vehicle_speed:%f\t steerAngle:%f\t included_angle:%f\t err:%f",
@@ -108,7 +118,7 @@ void LaneKeeping::pub_cmd_callback(const ros::TimerEvent&)
 				lane_msg_.included_angle*180.0/M_PI,
 				lane_msg_.distance_from_center);
 	*/
-	pub_controlCmd_.publish(cmd_);
+
 }
 
 
@@ -196,9 +206,8 @@ int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 		return 0;
 }
 
-void LaneKeeping::generate_laneChange_points(int dir)
+void LaneKeeping::generate_laneChange_points(int dir,float widthOfLane)
 {
-	float widthOfLane = 3.0;
 	//车辆离目标车道中心点的距离
 	float dis2targetLane = -dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
 		
@@ -228,30 +237,48 @@ void LaneKeeping::generate_laneChange_points(int dir)
 	}
 }
 
-void LaneKeeping::changeLane(int dir)
+void LaneKeeping::changeLane(int dir,float widthOfLane)
 {
-	generate_laneChange_points(dir);
+	generate_laneChange_points(dir ,widthOfLane);
 	
-	//path_tracking////////////////////////////////////////////////
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
+	float x,y,distance,t_yaw,yaw_err,turning_radius,t_roadWheelAngle;
 	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	
-	
+	for(int i=0;i<temp_targetArray_.size(); )
+	{  //path_tracking 
+		x = temp_targetArray_[i].x - current_point_.x;
+		y = temp_targetArray_[i].y - current_point_.y;
+		distance = sqrt(x*x+y*y);
+		
+		if(distance < foresight_distance_)
+		{
+			i++;
+			continue;
+		}
+		
+		t_yaw = atan2(x,y);
+		if(t_yaw <0)
+			t_yaw += 2*M_PI;
+		
+		yaw_err = t_yaw - current_point_.yaw;
+		if(yaw_err==0.0) continue;
+		
+		turning_radius = (-0.5 * distance)/sin(yaw_err);
+		
+		t_roadWheelAngle = generate_steeringAngle_by_steeringRadius(turning_radius);
+		
+		t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle, 25.0);
+		
+		cmd_.cmd2.set_speed = changeLane_speed_;
+		cmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;
+	}
 }
 
 void LaneKeeping::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
 	gps_status_ |= 0x01;
 	
-	current_point_.longitude = msg->longitude;
-	current_point_.latitude = msg->latitude;
+	//current_point_.longitude = msg->longitude;
+	//current_point_.latitude = msg->latitude;
 	current_point_.yaw = deg2rad(msg->azimuth);
 	//std::cout << "call_back ID: "<< std::this_thread::get_id()  << std::endl;
 }

@@ -13,6 +13,8 @@
 
 #include<geometry_msgs/Quaternion.h>
 #include <tf/transform_datatypes.h>
+#include<boost/thread.hpp>
+#include<boost/bind.hpp>
 
 #include<vector>
 
@@ -31,6 +33,7 @@ public:
 	
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
+	void changeLane_thread();
 	
 	
 	
@@ -43,17 +46,17 @@ private:
 	}status_msgs_t;
 	
 	int get_steeringDir(float err,float theta,float alpha);
-	void changeLane(int dir);
-	void generate_laneChange_points(int dir);
+	void changeLane(int dir,float widthOfLane);
+	void keepLane();
+	void generate_laneChange_points(int dir,float widthOfLane);
 	
 	typedef enum
 	{
-		ChangeLine_None = 0,
-		ChangeLine_Left = 1,
-		ChangeLine_Right = 2,
-		ChangeLine_Ok = 3
+		KeepLine_status = 0,
+		ChangeLine_Left_status = 1,
+		ChangeLine_Right_status = 2,
 		
-	} change_lane_status_t;
+	} system_status_t;
 	
 private:
 	ros::Subscriber sub_laneMsg_;
@@ -70,7 +73,8 @@ private:
 	little_ant_msgs::ControlCmd1 cmd2_;
 	
 	float foresight_distance_;
-	float lane_keeping_Speed_;
+	float lane_keeping_speed_;
+	float changeLane_speed_;
 	
 	float vehicle_speed_;
 	float mean_vehicleSpeed_;
@@ -89,7 +93,7 @@ private:
 	
 	uint8_t gps_status_;
 	
-	change_lane_status_t changeLane_status_;
+	system_status_t system_status_;
 
 };
 
