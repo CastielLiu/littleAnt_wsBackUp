@@ -9,8 +9,12 @@
 #include<ant_math/ant_math.h>
 
 #include<nav_msgs/Odometry.h>
+#include<gps_msgs/Inspvax.h>
+
 #include<geometry_msgs/Quaternion.h>
 #include <tf/transform_datatypes.h>
+
+#include<vector>
 
 
 class LaneKeeping
@@ -24,7 +28,10 @@ public:
 	void laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	
+	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
+	
+	void generate_laneChange_points(int dir);
 	
 private:
 	typedef struct
@@ -40,6 +47,7 @@ private:
 	ros::Subscriber sub_laneMsg_;
 	ros::Subscriber sub_vehicleSpeed_;
 	ros::Subscriber sub_cartesian_gps_;
+	ros::Subscriber sub_polar_gps_;
 	
 	ros::Timer pub_cmd_20ms_;
 	
@@ -64,7 +72,12 @@ private:
 	
 	int system_delay_;
 	
+	std::vector<gpsMsg_t> temp_targetArray_;
+	
 	gpsMsg_t current_point_;
+	
+	uint8_t gps_status_;
+
 };
 
 

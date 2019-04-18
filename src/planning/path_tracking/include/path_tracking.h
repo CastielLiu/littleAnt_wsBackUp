@@ -19,16 +19,7 @@
 
 #define IS_POLAR_COORDINATE_GPS 0
 
-typedef struct
-{
-	double longitude;
-	double latitude;
-	double yaw;
-	
-	double x;
-	double y;
-	
-}gpsMsg_t;
+
 
 
 class PathTracking
@@ -38,7 +29,6 @@ public:
 	~PathTracking();
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
-	float deg2rad(float deg);
 	void limitRoadWheelAngle(float& angle);
 	
 	void read_a_point_from_pathFile(gpsMsg_t& point);

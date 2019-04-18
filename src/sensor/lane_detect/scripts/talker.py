@@ -3,6 +3,7 @@
 import rospy
 from std_msgs.msg import String
 from little_ant_msgs.msg import Lane
+import math
 
 def talker():
 	rospy.init_node('talker', anonymous=True)
@@ -20,7 +21,9 @@ def talker():
 		lane_msg.header.stamp = rospy.Time.now()
 		
 		lane_msg.distance_from_center = distance_from_center
+		lane_msg.included_angle = 0.0*math.pi/180.0
 		
+		"""
 		distance_from_center = distance_from_center + 0.001 * sign
 		
 		if(distance_from_center>0.5):
@@ -29,7 +32,7 @@ def talker():
 			sign = 1
 		
 		#distance_from_center = -0.3
-		
+		"""
 		pub.publish(lane_msg)
 		
 		rate.sleep()

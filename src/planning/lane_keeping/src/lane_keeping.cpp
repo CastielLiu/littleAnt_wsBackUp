@@ -5,7 +5,8 @@
 LaneKeeping::LaneKeeping():
 	current_lane_msg_index(0),
 	system_delay_(20),
-	mean_vehicleSpeed_(0)
+	mean_vehicleSpeed_(0),
+	gps_status_(0x00)
 {
 	cmd_.origin = little_ant_msgs::ControlCmd::_LANE_KEEPING;
 	cmd_.status = true;
@@ -35,6 +36,15 @@ bool LaneKeeping::init()
 	pub_cmd_20ms_ = nh.createTimer(ros::Duration(0.02), &LaneKeeping::pub_cmd_callback,this);
 	
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",1,&LaneKeeping::cartesian_gps_callback,this);
+	
+	sub_polar_gps_ = nh.subscribe("/gps",1,&LaneKeeping::gps_callback,this);
+	
+	while(ros::ok() && gps_status_!= 0x03)
+	{
+		ros::spinOnce();
+		ROS_INFO("gps status is %x ,waiting for gps initial .....",gps_status_);
+		usleep(100000);
+	}
 }
 
 
@@ -116,6 +126,12 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 	}
 	
 	current_lane_msg_index = (current_lane_msg_index+1 == Max_history_size) ? 0: current_lane_msg_index+1;
+	
+	
+	lane_msg_.included_angle = msg->included_angle;
+	ROS_INFO("distance_from_center:%f\t angle:%f",lane_msg_.distance_from_center,lane_msg_.included_angle);
+	this->generate_laneChange_points(1);
+	
 }
 
 
@@ -147,38 +163,65 @@ int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 		return 0;
 }
 
-void LaneKeeping::generate_laneChange_points()
+void LaneKeeping::generate_laneChange_points(int dir)
 {
 	float widthOfLane = 3.0;
-	//车辆离目标车道的距离
-	float dis2targetLane = lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
+	//车辆离目标车道中心点的距离
+	float dis2targetLane = -dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
+	
+		
+	//车道的方向角
 	float yawOfLane = current_point_.yaw - lane_msg_.included_angle;
 	
 	//目标车道中心点相对车辆的坐标
-	float x0 = dis2targetLane * cos(lane_msg_.included_angle);
-	float y0 = dis2targetLane * sin(lan2_msg_.included_angle);
+	float x0 = dir * dis2targetLane * cos(lane_msg_.included_angle);
+	float y0 = dir * dis2targetLane * sin(lane_msg_.included_angle);
 	
+	ROS_INFO("target lane center x0:%f\t y0:%f",x0,y0);
 	//目标车道中心点绝对坐标
-	float x = x0 * cos(current_point_.yaw) - y0 * sin(current_point_.yaw);
-	float y = x0 * sin(current_point_.yaw) + y0 * cos(current_point_.yaw);
+	float x =  x0 * cos(-current_point_.yaw) + y0 * sin(-current_point_.yaw) + current_point_.x;
+	float y = -x0 * sin(-current_point_.yaw) + y0 * cos(-current_point_.yaw) + current_point_.y;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
+	temp_targetArray_.clear();
 	
+	gpsMsg_t target ;
 	
+	for(int i=0; i<30;i++)
+	{
+		target.x = x + (foresight_distance_ + i*1.0)*sin(yawOfLane);
+		target.y = y + (foresight_distance_ + i*1.0)*cos(yawOfLane);
+		temp_targetArray_.push_back(target);
+		std::cout << target.x <<"\t" << target.y << std::endl;
+	}
+}
+
+void LaneKeeping::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
+{
+	gps_status_ |= 0x01;
+	
+	current_point_.longitude = msg->longitude;
+	current_point_.latitude = msg->latitude;
+	current_point_.yaw = deg2rad(msg->azimuth);
+	//std::cout << "call_back ID: "<< std::this_thread::get_id()  << std::endl;
 }
 
 void LaneKeeping::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+	gps_status_ |= 0x02;
+	
 	current_point_.x = msg->pose.pose.position.x;
 	current_point_.y = msg->pose.pose.position.y;
-	
+	/*
 	tf::Quaternion quat;
 	tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
 	
 	double roll,pitch;
 	
 	tf::Matrix3x3(quat).getRPY(roll, pitch, current_point_.yaw);
+*/
 }
+
 
 int main(int argc, char** argv)
 {

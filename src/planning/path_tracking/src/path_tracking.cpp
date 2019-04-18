@@ -142,12 +142,6 @@ void PathTracking::run()
 }
 
 
-float PathTracking::deg2rad(float deg)
-{
-	return  (deg/180.0)*M_PI;
-}
-
-
 float PathTracking::point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2)
 {
 	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);

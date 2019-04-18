@@ -9,10 +9,20 @@ float generate_steeringAngle_by_steeringRadius(float radius);
 double sin_deg(double deg); 
 float limit_steeringAngle(float angle,float limit);
 int sign(float num);
+float deg2rad(float deg);
 
 extern const float g_steering_gearRatio;
 
-
+typedef struct
+{
+	double longitude;
+	double latitude;
+	double yaw;
+	
+	double x;
+	double y;
+	
+}gpsMsg_t;
 
 
 #endif
