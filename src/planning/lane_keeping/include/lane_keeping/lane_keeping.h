@@ -24,6 +24,7 @@ public:
 	~LaneKeeping();
 	
 	bool init();
+	void run();
 	void pub_cmd_callback(const ros::TimerEvent&);
 	void laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
@@ -31,7 +32,7 @@ public:
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 	
-	void generate_laneChange_points(int dir);
+	
 	
 private:
 	typedef struct
@@ -42,6 +43,17 @@ private:
 	}status_msgs_t;
 	
 	int get_steeringDir(float err,float theta,float alpha);
+	void changeLane(int dir);
+	void generate_laneChange_points(int dir);
+	
+	typedef enum
+	{
+		ChangeLine_None = 0,
+		ChangeLine_Left = 1,
+		ChangeLine_Right = 2,
+		ChangeLine_Ok = 3
+		
+	} change_lane_status_t;
 	
 private:
 	ros::Subscriber sub_laneMsg_;
@@ -52,7 +64,6 @@ private:
 	ros::Timer pub_cmd_20ms_;
 	
 	ros::Publisher pub_controlCmd_;
-	
 	
 	little_ant_msgs::ControlCmd cmd_;
 	little_ant_msgs::ControlCmd1 cmd1_;
@@ -77,6 +88,8 @@ private:
 	gpsMsg_t current_point_;
 	
 	uint8_t gps_status_;
+	
+	change_lane_status_t changeLane_status_;
 
 };
 

@@ -24,7 +24,6 @@ PathTracking::~PathTracking()
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-
 	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
 
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);

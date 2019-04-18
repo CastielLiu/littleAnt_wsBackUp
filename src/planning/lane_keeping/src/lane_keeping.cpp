@@ -6,7 +6,8 @@ LaneKeeping::LaneKeeping():
 	current_lane_msg_index(0),
 	system_delay_(20),
 	mean_vehicleSpeed_(0),
-	gps_status_(0x00)
+	gps_status_(0x00),
+	changeLane_status_(ChangeLine_None)
 {
 	cmd_.origin = little_ant_msgs::ControlCmd::_LANE_KEEPING;
 	cmd_.status = true;
@@ -45,6 +46,36 @@ bool LaneKeeping::init()
 		ROS_INFO("gps status is %x ,waiting for gps initial .....",gps_status_);
 		usleep(100000);
 	}
+}
+
+void LaneKeeping::run()
+{
+	boost::shared_ptr changeLane_thread_Ptr = 
+		boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&LaneKeeping::changeLane_thread, this)));
+		
+	ros::spin();
+}
+
+void LaneKeeping::changeLane_thread()
+{
+	ros::Rate loop_rate(20);
+	
+	while(ros::ok())
+	{
+		if(changeLane_status_ == ChangeLine_Left)
+		{
+			changeLane(-1);
+			changeLane_status_ = ChangeLine_Ok;
+		}
+		else if(changeLane_status_ == ChangeLine_Right)
+		{
+			changeLane(1);
+			changeLane_status_ = ChangeLine_Ok;
+		}
+	
+		loop_rate.sleep();
+	}
+
 }
 
 
@@ -128,9 +159,11 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 	current_lane_msg_index = (current_lane_msg_index+1 == Max_history_size) ? 0: current_lane_msg_index+1;
 	
 	
-	lane_msg_.included_angle = msg->included_angle;
-	ROS_INFO("distance_from_center:%f\t angle:%f",lane_msg_.distance_from_center,lane_msg_.included_angle);
-	this->generate_laneChange_points(1);
+	//lane_msg_.included_angle = msg->included_angle;
+	ROS_INFO("distance_from_center:%f\t angle1:%f\t angle2:%f",
+			lane_msg_.distance_from_center,msg->included_angle*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI);
+			
+	//this->generate_laneChange_points(1);
 	
 }
 
@@ -168,7 +201,6 @@ void LaneKeeping::generate_laneChange_points(int dir)
 	float widthOfLane = 3.0;
 	//车辆离目标车道中心点的距离
 	float dis2targetLane = -dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
-	
 		
 	//车道的方向角
 	float yawOfLane = current_point_.yaw - lane_msg_.included_angle;
@@ -194,6 +226,24 @@ void LaneKeeping::generate_laneChange_points(int dir)
 		temp_targetArray_.push_back(target);
 		std::cout << target.x <<"\t" << target.y << std::endl;
 	}
+}
+
+void LaneKeeping::changeLane(int dir)
+{
+	generate_laneChange_points(dir);
+	
+	//path_tracking////////////////////////////////////////////////
+	float x = point1.x - point2.x;
+	float y = point1.y - point2.y;
+	
+	std::pair<float, float> dis_yaw;
+	dis_yaw.first = sqrt(x * x + y * y);
+	dis_yaw.second = atan2(x,y);
+	
+	if(dis_yaw.second <0)
+		dis_yaw.second += 2*M_PI;
+	
+	
 }
 
 void LaneKeeping::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
@@ -229,10 +279,9 @@ int main(int argc, char** argv)
 	
 	LaneKeeping lane_keeping;
 	
-	lane_keeping.init();
+	if(lane_keeping.init())
+		lane_keeping.run();
 	
-	
-	ros::spin();
 	
 	return 0;
 
