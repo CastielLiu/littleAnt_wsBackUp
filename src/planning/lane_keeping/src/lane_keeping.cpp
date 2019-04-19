@@ -4,7 +4,7 @@
 
 LaneKeeping::LaneKeeping():
 	current_lane_msg_index(0),
-	system_delay_(20),
+	system_delay_(50),
 	mean_vehicleSpeed_(0),
 	gps_status_(0x00),
 	system_status_(KeepLine_status)
@@ -51,13 +51,13 @@ bool LaneKeeping::init()
 
 void LaneKeeping::run()
 {
-	boost::shared_ptr<boost::thread> changeLane_thread_Ptr = 
-		boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&LaneKeeping::changeLane_thread, this)));
+	boost::shared_ptr<boost::thread> new_thread_ptr = 
+		boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&LaneKeeping::generate_cmd_thread, this)));
 		
 	ros::spin();
 }
 
-void LaneKeeping::changeLane_thread()
+void LaneKeeping::generate_cmd_thread()
 {
 	ros::Rate loop_rate(20);
 	
@@ -73,9 +73,11 @@ void LaneKeeping::changeLane_thread()
 			changeLane(1,3.0);
 			system_status_ = KeepLine_status;
 		}
+		else if(system_status_ == KeepLine_status)
+			keepLane();
+			
 		loop_rate.sleep();
 	}
-
 }
 
 
@@ -84,12 +86,8 @@ void LaneKeeping::pub_cmd_callback(const ros::TimerEvent&)
 	if(system_delay_ >0)
 		return;
 	
-	if(system_status_ == KeepLine_status)
-		keepLane();
-	
-	//需要换道时，直接将 system_status_ 置为 ChangeLine_Left_status  or ChangeLine_Right_status
-	
-	pub_controlCmd_.publish(cmd_);
+	if(system_status_ != None_status)
+		pub_controlCmd_.publish(cmd_);
 }
 
 void LaneKeeping::keepLane()
@@ -103,7 +101,7 @@ void LaneKeeping::keepLane()
 	
 	//ROS_INFO("alpha:%f\t theta:%f \t delta:%f",alpha*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI,delta*180.0/M_PI);
 	
-	float steering_radius = 0.5*foresight_distance_ / sin(delta) *sign(lane_msg_.included_angle);
+	float steering_radius = 0.5*foresight_distance_ / sin(delta) * sign(lane_msg_.included_angle);
 	
 	float angle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
@@ -125,6 +123,7 @@ void LaneKeeping::keepLane()
 void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg)
 {
 	lane_msg_ = *msg;
+	
 	history_status_msgs_[current_lane_msg_index].lane_msg = *msg;
 	history_status_msgs_[current_lane_msg_index].vehicle_speed = vehicle_speed_;
 	
@@ -169,14 +168,13 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 	current_lane_msg_index = (current_lane_msg_index+1 == Max_history_size) ? 0: current_lane_msg_index+1;
 	
 	
-	//lane_msg_.included_angle = msg->included_angle;
+	lane_msg_.included_angle = msg->included_angle;///
 	ROS_INFO("distance_from_center:%f\t angle1:%f\t angle2:%f",
 			lane_msg_.distance_from_center,msg->included_angle*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI);
-			
-	//this->generate_laneChange_points(1);
 	
-}
+	generate_laneChange_points(-1,3.0);		
 
+}
 
 void LaneKeeping::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
@@ -186,22 +184,16 @@ void LaneKeeping::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr&
 //left -1 ; right 1
 int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 {
-	if(err<= 0 && theta<0)
+	if(err==0 && theta==0)
+		return 0;
+	else if(err<=0 && theta<=0)
 		return -1;
-	else if(err >=0 && theta >0)
+	else if(err>=0 && theta>=0)
 		return 1;
-	else if(theta==0 && err >0)
-		return 1;
-	else if(theta ==0 && err <0)
-		return -1;
-	else if(err <0) // err<0 && theta >0
-	{
+	else if(err<0)
 		return fabs(theta) > fabs(alpha) ? 1:-1;
-	}
-	else if(err >0)
-	{
+	else if(err>0)
 		return fabs(theta) > fabs(alpha) ? -1:1;
-	}
 	else
 		return 0;
 }
@@ -209,14 +201,19 @@ int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 void LaneKeeping::generate_laneChange_points(int dir,float widthOfLane)
 {
 	//车辆离目标车道中心点的距离
-	float dis2targetLane = -dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
+	float dis2targetLane = dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
 		
 	//车道的方向角
-	float yawOfLane = current_point_.yaw - lane_msg_.included_angle;
+	float yawOfLane = current_point_.yaw + lane_msg_.included_angle;
 	
 	//目标车道中心点相对车辆的坐标
-	float x0 = dir * dis2targetLane * cos(lane_msg_.included_angle);
-	float y0 = dir * dis2targetLane * sin(lane_msg_.included_angle);
+	//float x0 = dir * dis2targetLane * cos(lane_msg_.included_angle);
+	//float y0 = dir * dis2targetLane * sin(lane_msg_.included_angle);
+	
+	float x0 = dir*dis2targetLane;
+	float y0 = 0.0;
+	
+	
 	
 	ROS_INFO("target lane center x0:%f\t y0:%f",x0,y0);
 	//目标车道中心点绝对坐标

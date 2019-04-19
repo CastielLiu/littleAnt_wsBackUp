@@ -33,7 +33,7 @@ public:
 	
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
-	void changeLane_thread();
+	void generate_cmd_thread();
 	
 	
 	
@@ -52,9 +52,10 @@ private:
 	
 	typedef enum
 	{
-		KeepLine_status = 0,
-		ChangeLine_Left_status = 1,
-		ChangeLine_Right_status = 2,
+		None_status = 0,
+		KeepLine_status = 1,
+		ChangeLine_Left_status = 2,
+		ChangeLine_Right_status = 3,
 		
 	} system_status_t;
 	
