@@ -246,7 +246,7 @@ def calculate_curv_and_pos(binary_warped, left_fit, right_fit):
     distance_from_center = cen_pos - veh_pos
     global lane_msg
     #lane_msg.curvature=curvature
-    lane_msg.err = distance_from_center
+    lane_msg.err = -distance_from_center
     lane_msg.theta = angle
     #lane_msg.right_angle=right_angle
     return distance_from_center,angle

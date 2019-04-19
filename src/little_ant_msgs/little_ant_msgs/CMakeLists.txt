@@ -24,6 +24,7 @@ add_message_files(
    State3.msg
    State4.msg
    Lane.msg
+   ChangLane.msg
  )
 
 

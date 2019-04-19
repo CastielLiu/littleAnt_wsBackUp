@@ -7,6 +7,7 @@
 #include<little_ant_msgs/ControlCmd1.h>
 #include<little_ant_msgs/ControlCmd2.h>
 #include<ant_math/ant_math.h>
+#include<little_ant_msgs/ChangLane.h>
 
 #include<nav_msgs/Odometry.h>
 #include<gps_msgs/Inspvax.h>
@@ -33,6 +34,7 @@ public:
 	
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
+	void change_lane_callback(const little_ant_msgs::ChangLane::ConstPtr& msg);
 	void generate_cmd_thread();
 	
 	
@@ -64,6 +66,7 @@ private:
 	ros::Subscriber sub_vehicleSpeed_;
 	ros::Subscriber sub_cartesian_gps_;
 	ros::Subscriber sub_polar_gps_;
+	ros::Subscriber sub_start_change_lane_;
 	
 	ros::Timer pub_cmd_20ms_;
 	
@@ -95,6 +98,8 @@ private:
 	uint8_t gps_status_;
 	
 	system_status_t system_status_;
+	
+	float widthOfLane_;
 
 };
 
