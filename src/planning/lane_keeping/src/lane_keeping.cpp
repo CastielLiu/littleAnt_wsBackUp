@@ -95,17 +95,17 @@ void LaneKeeping::keepLane()
 	//float alpha = asin(lane_msg_.distance_from_center / foresight_distance_) ;//distance_from_center =OA
 	
 	//distance_from_center =OB
-	float alpha = asin(lane_msg_.distance_from_center *cos(lane_msg_.included_angle) / foresight_distance_) ;
+	float alpha = asin(lane_msg_.err *cos(lane_msg_.theta) / foresight_distance_) ;
 	
-	float delta = fabs(lane_msg_.included_angle) - fabs(alpha);
+	float delta = fabs(lane_msg_.theta) - fabs(alpha);
 	
 	//ROS_INFO("alpha:%f\t theta:%f \t delta:%f",alpha*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI,delta*180.0/M_PI);
 	
-	float steering_radius = 0.5*foresight_distance_ / sin(delta) * sign(lane_msg_.included_angle);
+	float steering_radius = 0.5*foresight_distance_ / sin(delta) ;
 	
 	float angle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
-	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.distance_from_center, lane_msg_.included_angle,alpha);
+	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.err, lane_msg_.theta,alpha);
 	
 	cmd_.cmd2.set_speed = lane_keeping_speed_;
 	
@@ -135,8 +135,8 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 		float time_interval = history_status_msgs_[current_lane_msg_index].lane_msg.header.stamp.toSec() -
 							  history_status_msgs_[lastIndex].lane_msg.header.stamp.toSec();
 							   
-		float diff_of_lateralErr = history_status_msgs_[current_lane_msg_index].lane_msg.distance_from_center - 
-										history_status_msgs_[lastIndex].lane_msg.distance_from_center;
+		float diff_of_lateralErr = history_status_msgs_[current_lane_msg_index].lane_msg.err - 
+										history_status_msgs_[lastIndex].lane_msg.err;
 		
 		mean_vehicleSpeed_ = 0.0;
 		for(size_t i=0; i<Max_history_size; i++)
@@ -161,16 +161,16 @@ void LaneKeeping::laneDetect_callback(const little_ant_msgs::Lane::ConstPtr& msg
 			distance_between_twoTime = mean_vehicleSpeed_ * time_interval;
 			
 			//lane_msg_.included_angle = asin(diff_of_lateralErr/distance_between_twoTime) ; //distance_from_center = OA
-			 lane_msg_.included_angle = atan(diff_of_lateralErr/distance_between_twoTime) ;  //distance_from_center = OB
+			 lane_msg_.theta = atan(diff_of_lateralErr/distance_between_twoTime) ;  //distance_from_center = OB
 		}
 	}
 	
 	current_lane_msg_index = (current_lane_msg_index+1 == Max_history_size) ? 0: current_lane_msg_index+1;
 	
 	
-	lane_msg_.included_angle = msg->included_angle;///
+	lane_msg_.theta = msg->theta;///
 	ROS_INFO("distance_from_center:%f\t angle1:%f\t angle2:%f",
-			lane_msg_.distance_from_center,msg->included_angle*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI);
+			lane_msg_.err,msg->theta*180.0/M_PI,lane_msg_.theta*180.0/M_PI);
 	
 	generate_laneChange_points(-1,3.0);		
 
@@ -201,10 +201,10 @@ int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
 void LaneKeeping::generate_laneChange_points(int dir,float widthOfLane)
 {
 	//车辆离目标车道中心点的距离
-	float dis2targetLane = dir * lane_msg_.distance_from_center*cos(lane_msg_.included_angle) + widthOfLane;
+	float dis2targetLane = dir * lane_msg_.err*cos(lane_msg_.theta) + widthOfLane;
 		
 	//车道的方向角
-	float yawOfLane = current_point_.yaw + lane_msg_.included_angle;
+	float yawOfLane = current_point_.yaw + lane_msg_.theta;
 	
 	//目标车道中心点相对车辆的坐标
 	//float x0 = dir * dis2targetLane * cos(lane_msg_.included_angle);

@@ -17,7 +17,6 @@ Avoiding::Avoiding()
 	danger_distance_front_ = 5.0;
 	safety_distance_front_=20.0;
 	vehicleSpeed_ = 5.0;
-	
 }
 
 void Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
@@ -38,12 +37,10 @@ void Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",2,&Avoiding::vehicleSpeed_callback,this);
 	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
 	pub_avoid_to_gps_ = nh.advertise<std_msgs::Int8>("/start_avoiding",2);
-	
 }
 
 void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
 {
-
 	//printf("danger_distance_front_:%f\tsafety_distance_front_:%f\t",danger_distance_front_,safety_distance_front_);
 	//printf("danger_distance_side_:%f\tsafety_distance_side:%f\n\n",danger_distance_side_,safety_distance_side_);
 	
