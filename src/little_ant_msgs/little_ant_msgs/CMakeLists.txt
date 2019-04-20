@@ -25,6 +25,9 @@ add_message_files(
    State4.msg
    Lane.msg
    ChangLane.msg
+   
+   DetectedObject.msg
+   DetectedObjectArray.msg
  )
 
 

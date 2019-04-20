@@ -4,6 +4,7 @@
 #include<little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/ControlCmd1.h>
 #include<little_ant_msgs/ControlCmd2.h>
+#include<little_ant_msgs/DetectedObjectArray.h>
 
 
 #define SENSOR_NUM little_ant_msgs::ControlCmd::SENSOR_NUM
@@ -19,7 +20,7 @@ public:
 	DecisionMaking();
 	~DecisionMaking();
 	
-	void init(ros::NodeHandle nh,ros::NodeHandle nh_private);
+	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 
 private:
 	void sensor_decision_callback(const little_ant_msgs::ControlCmd::ConstPtr& msg);
@@ -29,10 +30,13 @@ private:
 	void sendCmd2_callback(const ros::TimerEvent&);
 	
 	void updateCmdStatus_callback(const ros::TimerEvent&);
+	
+	void traffic_mark_callback(const little_ant_msgs::DetectedObjectArray::ConstPtr& msg);
 
 
 private:
 	ros::Subscriber sub_sensors_decision_;
+	ros::Subscriber sub_traffic_mark_;
 	
 	ros::Publisher pub_final_decision1_;
 	ros::Publisher pub_final_decision2_;
@@ -44,6 +48,7 @@ private:
 	std::string sensors_decision_topic_;
 	std::string final_decision_topic1_;
 	std::string final_decision_topic2_;
+	std::string traffic_mark_topic_;
 	
 	little_ant_msgs::ControlCmd1 cmd1_;
 	little_ant_msgs::ControlCmd2 cmd2_;
@@ -54,6 +59,16 @@ private:
 		double time;
 		little_ant_msgs::ControlCmd cmd;
 	}cmdMsg_[SENSOR_NUM];
+	
+	enum 
+	{
+		TrafficLight_stop,
+		TrafficLight_go
+		
+	}traffic_light_status_;
+	
+	float speed_limit_sign_;
+	double speed_limit_time_; //限速时刻
 	
 	float gps_cmd_speed_;
 	
