@@ -185,7 +185,7 @@ void BaseControl::parse_obdCanMsg()
 				state2.vehicle_speed = speed/i /3.6; //m/s
 				}
 				
-				state2_pub.publish(state2);  //speed km/h
+				state2_pub.publish(state2);
 				break;
 				
 			case ID_STATE3:

@@ -10,6 +10,7 @@ double sin_deg(double deg);
 float limit_steeringAngle(float angle,float limit);
 int sign(float num);
 float deg2rad(float deg);
+float generate_max_steering_angle_by_speed(float speed);
 
 extern const float g_steering_gearRatio;
 

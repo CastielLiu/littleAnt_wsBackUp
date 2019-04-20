@@ -2,7 +2,8 @@
 #define PATH_TRACKING_H_
 #include<ros/ros.h>
 #include<little_ant_msgs/ControlCmd.h>
-#include<std_msgs/Int8.h>
+#include<std_msgs/Float32.h>
+#include<std_msgs/UInt32.h>
 #include<vector>
 
 #include<little_ant_msgs/State2.h>  //speed
@@ -43,7 +44,7 @@ public:
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 	
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
-	void avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg);
+	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread();
 	
@@ -60,6 +61,8 @@ private:
 	
 	ros::Publisher pub_gps_cmd_;
 	
+	ros::Publisher pub_tracking_target_index_;
+	
 	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
@@ -67,20 +70,24 @@ private:
 	
 	std::vector<gpsMsg_t> path_points_;
 	
-	int target_index_;
+	uint32_t target_index_;
 	
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;
 	
 	float disThreshold_;
-	float vehicle_axis_dis_;
-	float avoiding_disThreshold_;
+	
+	float avoiding_flag_;
 	
 	little_ant_msgs::ControlCmd gps_controlCmd_;
 	
 	float path_tracking_speed_;
 	
 	uint8_t gps_status_;
+	
+	float vehicle_speed_;
+	
+	float max_steering_angle_;
 
 };
 
