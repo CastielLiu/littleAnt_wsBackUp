@@ -19,11 +19,6 @@
 #include <boost/bind.hpp>
 #include <thread>
 
-#define IS_POLAR_COORDINATE_GPS 0
-
-
-
-
 class PathTracking
 {
 public:
@@ -32,8 +27,6 @@ public:
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
 	void limitRoadWheelAngle(float& angle);
-	
-	bool load_path_points(std::string );
 	
 	float point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2);
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
@@ -70,7 +63,7 @@ private:
 	
 	std::vector<gpsMsg_t> path_points_;
 	
-	uint32_t target_index_;
+	uint32_t target_point_index_;
 	
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;

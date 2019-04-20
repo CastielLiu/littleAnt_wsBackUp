@@ -3,7 +3,7 @@
 
 PathTracking::PathTracking():
 	gps_status_(0x00),
-	target_index_(0),
+	target_point_index_(0),
 	avoiding_flag_(0.0),
 	disThreshold_(6.0),
 	max_steering_angle_(25.0)
@@ -42,22 +42,27 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	pub_tracking_target_index_ = nh.advertise<std_msgs::UInt32>("/track_target_index",1);
 	
-	nh_private.param<std::string>("path_points_file",path_points_file_,
-									std::string("/home/wendao/projects/littleAnt_ws/src/data/data/2.txt"));
+	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 									
 	nh_private.param<float>("speed",path_tracking_speed_,3.0);
 	
+	if(path_points_file_.empty())
+	{
+		ROS_ERROR("no input path points file !!");
+		return false;
+	}
 	
 	//start the ros::spin() thread
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
 	
-	if(!load_path_points(path_points_file_))
+	if(!load_path_points(path_points_file_, path_points_))
 		return false;
+
 	
 	float last_distance = 999999999999;
 	float current_distance = 0;
 	
-	for(target_index_=0; target_index_<path_points_.size(); )
+	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
 	{
 		if(!is_gps_data_valid(current_point_))
 		{
@@ -66,7 +71,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 			continue;
 		}
 		
-		target_point_ = path_points_[target_index_];
+		target_point_ = path_points_[target_point_index_];
 		
 		current_distance = get_dis_yaw(current_point_,target_point_).first;
 		
@@ -77,10 +82,10 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		
 		last_distance = current_distance;
 		
-		target_index_++;
+		target_point_index_++;
 	}
 	
-	if(target_index_ == path_points_.size())
+	if(target_point_index_ == path_points_.size())
 	{
 		ROS_ERROR("file read over, No target was found");
 		return false;
@@ -99,9 +104,9 @@ void PathTracking::run()
 	
 	ros::Rate loop_rate(20);
 	
-	while(ros::ok() && target_index_ < path_points_.size())
+	while(ros::ok() && target_point_index_ < path_points_.size())
 	{
-		std_msgs::UInt32 index;   index.data = target_index_;
+		std_msgs::UInt32 index;   index.data = target_point_index_;
 		pub_tracking_target_index_.publish(index);
 		
 		if(avoiding_flag_ != 0.0)
@@ -115,7 +120,7 @@ void PathTracking::run()
 		
 		if( dis_yaw.first < disThreshold_)
 		{
-			target_point_ = path_points_[target_index_++];
+			target_point_ = path_points_[target_point_index_++];
 			continue;
 		}
 		
@@ -194,7 +199,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	if(disThreshold_ < 3.0) 
 		disThreshold_  = 3.0;
 		
-	max_steering_angle_ = generate_max_steering_angle_by_speed(vehicle_speed);
+	max_steering_angle_ = generate_max_steering_angle_by_speed(vehicle_speed_);
 }
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
@@ -213,7 +218,6 @@ bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 	return false;
 }
 
-
 std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
 {
 	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
@@ -228,28 +232,6 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	if(dis_yaw.second <0)
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
-}
-
-bool PathTracking::load_path_points(std::string file_path)
-{
-	FILE *fp = fopen(file_path.c_str(),"r");
-	
-	if(fp==NULL)
-	{
-		ROS_ERROR("open %s failed",file_path.c_str());
-		return false;
-	}
-	
-	gpsMsg_t point;
-	
-	while(!feof(fp))
-	{
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,point.yaw);
-		path_points_.push_back(point);
-	}
-	fclose(fp);
-	
-	return true;
 }
 
 #else
@@ -275,26 +257,6 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	return dis_yaw;
 }
 
-bool PathTracking::load_path_points(std::string file_path)
-{
-	FILE *fp = fopen(file_path.c_str(),"r");
-	
-	if(fp==NULL)
-	{
-		ROS_ERROR("open %s failed",file_path.c_str());
-		return false;
-	}
-	
-	gpsMsg_t point;
-	
-	while(!feof(fp))
-	{
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
-		path_points_.push_back(point);
-	}
-	fclose(fp);
-	return true;
-}
 #endif
 
 

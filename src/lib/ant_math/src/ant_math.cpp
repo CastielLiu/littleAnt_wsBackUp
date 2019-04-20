@@ -1,8 +1,4 @@
 #include "ant_math/ant_math.h"
-#include<cstring>
-#include<cmath>
-#include<assert.h>
-
 
 #define MAX_STEERING_ANGLE 540.0
 #define MAX_ROAD_WHEEL_ANGLE 40.0
@@ -58,6 +54,35 @@ float deg2rad(float deg)
 {
 	return  (deg/180.0)*M_PI;
 }
+
+bool load_path_points(std::string file_path,std::vector<gpsMsg_t>& points)
+{
+	FILE *fp = fopen(file_path.c_str(),"r");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+#if IS_POLAR_COORDINATE_GPS == 1
+		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,&point.yaw);
+#else
+		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
+#endif			
+		points.push_back(point);
+	}
+	fclose(fp);
+	
+	return true;
+}
+
+
+
 
 
 

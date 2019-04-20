@@ -10,14 +10,11 @@
 #endif
 
 
-#define GPS_POLAR_COORDINATE 0
-
-
 class Record
 {
 	private:
 		void gps_callback(const gps_msgs::Inspvax::ConstPtr& gpsMsg);
-#if GPS_POLAR_COORDINATE==0
+#if IS_POLAR_COORDINATE_GPS==0
 		void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 #endif
 		void timerCallback(const ros::TimerEvent&);
@@ -63,7 +60,7 @@ bool Record::init()
 
 
 	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
-#if GPS_POLAR_COORDINATE==0
+#if IS_POLAR_COORDINATE_GPS==0
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&Record::cartesian_gps_callback,this);
 #endif    
     if(file_path_.empty())
@@ -91,7 +88,7 @@ void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
 	current_point.yaw = gps->azimuth;
 }
 
-#if GPS_POLAR_COORDINATE ==1
+#if IS_POLAR_COORDINATE_GPS ==1
 float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 {
 	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude * M_PI/180.);

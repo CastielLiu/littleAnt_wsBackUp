@@ -4,10 +4,12 @@ project(ant_math)
 # Find catkin
 find_package(catkin REQUIRED COMPONENTS 
 	#serial
+	roscpp
+	rospy
 )
 
-
 catkin_package(
+	CATKIN_DEPENDS roscpp rospy
 	LIBRARIES ${PROJECT_NAME}
 	INCLUDE_DIRS include
 	#CATKIN_DEPENDS serial #
@@ -27,7 +29,7 @@ add_library(${PROJECT_NAME} ${ant_math_SRCS})
 #target_link_libraries(${PROJECT_NAME} boost)
 
 ## Include headers
-include_directories(include)
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Install executable
 install(TARGETS ${PROJECT_NAME}

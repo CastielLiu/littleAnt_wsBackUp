@@ -6,7 +6,10 @@
 #include<jsk_recognition_msgs/BoundingBoxArray.h>
 #include<jsk_recognition_msgs/BoundingBox.h>
 #include<iostream>
-#include<std_msgs/Int8.h>
+#include<std_msgs/Float32.h>
+#include<ant_math/ant_math.h>
+#include<std_msgs/UInt32.h>
+#include<vector>
 
 typedef enum
 {
@@ -22,7 +25,8 @@ class Avoiding
 public:
 	Avoiding();
 	~Avoiding(){}
-	void init(ros::NodeHandle nh,ros::NodeHandle nh_private);
+	
+	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 
 private:
 	
@@ -35,9 +39,16 @@ private:
 	};
 	
 	void objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects);
+	
+	void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
 
-	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,size_t objectIndex,whatArea_t *obstacleArea,
-										float ** obstacleVertex_x_y,float *obstacleDistance, size_t *obstacleIndex,size_t &obstacleSequence);
+	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
+						  size_t objectIndex,
+						  whatArea_t *obstacleArea,
+						  float ** obstacleVertex_x_y,
+						  float *obstacleDistance, 
+						  size_t *obstacleIndex,
+						  size_t &obstacleSequence);
 
 	whatArea_t which_area(float& x,float& y);
 
@@ -49,19 +60,18 @@ private:
 
 	void bubbleSort(float * const distance, size_t * index, size_t length);
 	 
-	float deg2rad(float deg);
-
-	void limitRoadWheelAngle(float& angle);
-
 
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
+	ros::Subscriber sub_target_point_index_;
+	
 	ros::Publisher pub_avoid_cmd_;
-	ros::Publisher pub_avoid_to_gps_; //temp
+	ros::Publisher pub_avoid_msg_to_gps_; 
 	
 	little_ant_msgs::ControlCmd avoid_cmd_;
-	std_msgs::Int8 start_avoidingFlag_;
+	
+	std_msgs::Float32 start_avoidingFlag_;
 	
 	float avoid_speed_;
 	
@@ -78,6 +88,12 @@ private:
 	float vehicleSpeed_; //m/s
 	float vehicle_axis_dis_ ;
 	float deceleration_cofficient_;
+	
+	std::vector<gpsMsg_t> path_points_;
+	std::string path_points_file_;
+	
+	uint32_t target_point_index_;
+	
 	
 
 };

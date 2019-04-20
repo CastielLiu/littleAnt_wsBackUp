@@ -19,7 +19,7 @@ Avoiding::Avoiding()
 	vehicleSpeed_ = 5.0;
 }
 
-void Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
+bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
 	nh_private.param<float>("avoid_speed",avoid_speed_,10.0);
 	nh_private.param<std::string>("objects_topic",objects_topic_,"/detected_bounding_boxs");
@@ -31,12 +31,30 @@ void Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<float>("pedestrian_detection_area_side",pedestrian_detection_area_side_,safety_distance_side_+1.0);
 	
 	nh_private.param<float>("danger_distance_side",danger_distance_side_,1.2);
-
 	
+	nh_private.param<std::string>("path_points_file",path_points_file_,"");
+	
+	if(path_points_file_.empty())
+	{
+		ROS_ERROR("no input path points file !!");
+		return false;
+	}
+
 	sub_objects_msg_ = nh.subscribe(objects_topic_,2,&Avoiding::objects_callback,this);
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",2,&Avoiding::vehicleSpeed_callback,this);
-	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
-	pub_avoid_to_gps_ = nh.advertise<std_msgs::Int8>("/start_avoiding",2);
+	sub_target_point_index_ = nh.subscribe("/track_target_index",1,&Avoiding::target_point_index_callback,this);
+	
+	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
+	pub_avoid_msg_to_gps_ = nh.advertise<std_msgs::Float32>("/start_avoiding",1);
+	
+	if(!load_path_points(path_points_file_, path_points_))
+		return false;
+	return true;
+}
+
+void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg)
+{
+	target_point_index_ = msg->data;
 }
 
 void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
@@ -52,13 +70,9 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	{
 		avoid_cmd_.status = false;
 		avoid_cmd_.just_decelerate = false;
-		//ROS_ERROR("set_brake:%f\t set_speed:%f\t speed:%f\t safety_distance_front_:%f\t danger_distance_front_:%f\n",
-		//		avoid_cmd_.cmd2.set_brake,avoid_cmd_.cmd2.set_speed,vehicleSpeed_,safety_distance_front_,danger_distance_front_);
 		pub_avoid_cmd_.publish(avoid_cmd_);
-		//ROS_ERROR("...............................................................................");
 		return;
 	}
-		
 	
 	float *obstacleDistances = new float[n_object]; //存放障碍物的距离
 	
@@ -76,7 +90,6 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	
 	for(size_t i=0;i<n_object;i++)
 	{
-		//this->get_obstacle_msg(objects,i,obstacleAreas,obstacleVertex_x_y,is_vetex_and_core_sameSide_,obstacleDistances,obstacleIndices,obstacleSequence);
 		this->get_obstacle_msg(objects,i,obstacleAreas,obstacleVertex_x_y,obstacleDistances,obstacleIndices,obstacleSequence);
 		
 	}
@@ -91,7 +104,6 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 //ROS_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 		goto Delete_memory;
 	}
-		
 	
 	//size_t nearest_obstacleIndex = obstacleIndices[0];
 	
@@ -125,7 +137,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 			else //other obstacle ,start to avoiding
 			{
 				start_avoidingFlag_.data = 1;
-				pub_avoid_to_gps_.publish(start_avoidingFlag_);
+				///////////////pub_avoid_msg_to_gps_.publish(start_avoidingFlag_);
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate  = false;
 		//ROS_ERROR("avoid_speed_:%f",avoid_speed_);
@@ -147,7 +159,8 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 					t_roadWheelAngle = 5.0;
 				}
 				
-				this->limitRoadWheelAngle(t_roadWheelAngle);
+				t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle,15.0);
+				
 				avoid_cmd_.cmd2.set_speed = avoid_speed_;
 				if(objects->boxes[obstacleIndices[i]].pose.position.y > 0.5) //障碍物在左侧
 				{
@@ -199,10 +212,12 @@ Delete_memory:
 	//ROS_INFO("end");
 }
 
-//void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray& objects,size_t objectIndex,whatArea_t *obstacleArea,
-//									float ** obstacleVertex_x_y,bool* is_vetex_and_core_sameSide_,float *obstacleDistance, size_t *obstacleIndex,size_t &obstacleSequence)
-void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,size_t objectIndex,whatArea_t *obstacleArea,
-									float ** obstacleVertex_x_y,float *obstacleDistance, size_t *obstacleIndex,size_t &obstacleSequence)
+void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
+								size_t objectIndex,whatArea_t *obstacleArea,
+								float ** obstacleVertex_x_y,
+								float *obstacleDistance, 
+								size_t *obstacleIndex,
+								size_t &obstacleSequence)
 {
 	
 	float core_x = objects->boxes[objectIndex].pose.position.x;
@@ -239,12 +254,6 @@ void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::Co
 
 	if( area != SafetyArea)
 	{
-	/*
-		if((core_x>0&&x>0)||(core_x<0&&x<0))
-			is_vetex_and_core_sameSide_[obstacleSequence] = true;
-		else
-			is_vetex_and_core_sameSide_[obstacleSequence] =false;
-	*/		
 		obstacleVertex_x_y[obstacleSequence][0] = x;
 		obstacleVertex_x_y[obstacleSequence][1] = y;
 		obstacleArea[obstacleSequence] = area;
@@ -277,7 +286,9 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 {
 	static int i=0;
 	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
-	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;  //最大减速度->最短制动距离 + 防撞距离
+	//最大减速度->最短制动距离 + 防撞距离
+	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;  
+	
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
 	safety_distance_front_ = danger_distance_front_ *(3.2);  // 安全距离 随危险距离变化
@@ -314,18 +325,25 @@ void Avoiding::bubbleSort(float * const distance, size_t * index, size_t length)
 		}
 	}
 }
- 
-float Avoiding::deg2rad(float deg)
-{
-	return  (deg/180.0)*M_PI;
-}
 
-void Avoiding::limitRoadWheelAngle(float& angle)
+void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
 {
-	if(angle>15.0) angle =15.0;
-	else if(angle<-15.0) angle =-15.0;
-}
+	float x,y;
+	double X,Y;
+	for(size_t i=0; i<objects.boxes.size(); i++)
+	{
+		//object position in vehicle coordination
+		x = objects.boxes[i].pose.position.x;
+		y = objects.boxes[i].pose.position.y;
+		
+		//object position in world coordination
+		X = 
+		
+		
+	}
+	
 
+}
 
 int main(int argc,char **argv)
 {
@@ -334,9 +352,8 @@ int main(int argc,char **argv)
 	ros::NodeHandle nh_private("~");
 	
 	Avoiding avoiding;
-	avoiding.init(nh,nh_private);
-	
-	ros::spin();
+	if(avoiding.init(nh,nh_private))
+		ros::spin();
 
 	return 0;
 }
