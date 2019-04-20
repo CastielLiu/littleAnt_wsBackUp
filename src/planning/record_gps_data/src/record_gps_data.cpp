@@ -103,7 +103,7 @@ void Record::timerCallback(const ros::TimerEvent&)
 {
 	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
-		fprintf(fp,"%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);
+		fprintf(fp,"%.8f\t%.8f\t%.3f\r\n",current_point.longitude,current_point.latitude,current_point.azimuth);
 		fflush(fp);
 		
 		ROS_INFO("%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);

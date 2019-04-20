@@ -2,7 +2,8 @@
 
 
 PathTracking::PathTracking():
-	gps_status_(0x00)
+	gps_status_(0x00),
+	target_index_(0)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -19,7 +20,6 @@ PathTracking::PathTracking():
 
 PathTracking::~PathTracking()
 {
-	fclose(fp);
 }
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
@@ -50,18 +50,13 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	//start the ros::spin() thread
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
 	
-	fp = fopen(path_points_file_.c_str(),"r");
-	
-	if(fp==NULL)
-	{
-		ROS_ERROR("open %s failed",path_points_file_.c_str());
+	if(!load_path_points(path_points_file_))
 		return false;
-	}
 	
 	float last_distance = 999999999999;
 	float current_distance = 0;
 	
-	while(ros::ok() && !feof(fp))
+	for(target_index_=0; target_index_<path_points_.size(); )
 	{
 		if(!is_gps_data_valid(current_point_))
 		{
@@ -70,23 +65,21 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 			continue;
 		}
 		
-		//std::cout << "main_Id: "<< std::this_thread::get_id()  << std::endl;
+		target_point_ = path_points_[target_index_];
 		
-		read_a_point_from_pathFile(target_point_);
-		
-		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
-		
-		current_distance = dis_yaw.first;
+		current_distance = get_dis_yaw(current_point_,target_point_).first;
 		
 		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
 		
 		if(current_distance - last_distance > 0)
 			break;
 		
-		//ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);	
 		last_distance = current_distance;
+		
+		target_index_++;
 	}
-	if(feof(fp))
+	
+	if(target_index_ == path_points_.size())
 	{
 		ROS_ERROR("file read over, No target was found");
 		return false;
@@ -102,13 +95,13 @@ void PathTracking::rosSpinThread()
 void PathTracking::run()
 {
 	size_t i =0;
-	while(ros::ok() && !feof(fp))
+	while(ros::ok() && target_index_ < path_points_.size())
 	{
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
 		if( dis_yaw.first < disThreshold_)
 		{
-			read_a_point_from_pathFile(target_point_);
+			target_point_ = path_points_[target_index_++];
 			continue;
 		}
 		
@@ -187,16 +180,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Int8::ConstPtr& msg)
 {
-	if(msg->data== 1)
-	{
-		while(ros::ok() && !feof(fp))
-		{
-			fscanf(fp,"%lf\t%lf\n",&target_point_.longitude,&target_point_.latitude);
-			std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
-			if( dis_yaw.first >= avoiding_disThreshold_)
-				break;
-		}
-	}
+	////
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1
@@ -209,10 +193,6 @@ bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 	return false;
 }
 
-void PathTracking::read_a_point_from_pathFile(gpsMsg_t& point)
-{
-	fscanf(fp,"%lf\t%lf\n",&point.longitude,&point.latitude);
-}
 
 std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
 {
@@ -230,6 +210,28 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	return dis_yaw;
 }
 
+bool PathTracking::load_path_points(std::string file_path)
+{
+	FILE *fp = fopen(file_path.c_str(),"r");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,point.yaw);
+		path_points_.push_back(point);
+	}
+	fclose(fp);
+	
+	return true;
+}
+
 #else
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 {
@@ -238,10 +240,6 @@ bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 	return false;
 }
 
-void PathTracking::read_a_point_from_pathFile(gpsMsg_t& point)
-{
-	fscanf(fp,"%lf\t%lf\n",&point.x,&point.y);
-}
 
 std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
 {
@@ -256,7 +254,31 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
 }
+
+bool PathTracking::load_path_points(std::string file_path)
+{
+	FILE *fp = fopen(file_path.c_str(),"r");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
+		path_points_.push_back(point);
+	}
+	fclose(fp);
+	return true;
+}
+
 #endif
+
+
 
 
 int main(int argc,char**argv)
@@ -268,7 +290,6 @@ int main(int argc,char**argv)
 	PathTracking path_tracking;
 	if(!path_tracking.init(nh,nh_private))
 		return 1;
-	
 	path_tracking.run();
 
 	return 0;
