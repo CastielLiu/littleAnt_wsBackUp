@@ -11,6 +11,8 @@
 #include<std_msgs/UInt32.h>
 #include<vector>
 
+#include<gps_msgs/Utm.h>
+
 typedef enum
 {
 	SafetyArea = 0,
@@ -65,6 +67,7 @@ private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
 	ros::Subscriber sub_target_point_index_;
+	ros::Subscriber sub_utm_gps_;
 	
 	ros::Publisher pub_avoid_cmd_;
 	ros::Publisher pub_avoid_msg_to_gps_; 
@@ -90,11 +93,14 @@ private:
 	float deceleration_cofficient_;
 	
 	std::vector<gpsMsg_t> path_points_;
+	
 	std::string path_points_file_;
 	
 	uint32_t target_point_index_;
 	
+	gpsMsg_t current_point_,target_point_;
 	
+	bool gps_status_;
 
 };
 

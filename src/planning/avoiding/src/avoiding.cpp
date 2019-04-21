@@ -1,7 +1,8 @@
 #include"avoiding.h"
 
 
-Avoiding::Avoiding()
+Avoiding::Avoiding():
+	gps_status_(false)
 {
 	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR; //_TELECONTROL  //_LIDAR
 	avoid_cmd_.status = false;
@@ -43,6 +44,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_objects_msg_ = nh.subscribe(objects_topic_,2,&Avoiding::objects_callback,this);
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",2,&Avoiding::vehicleSpeed_callback,this);
 	sub_target_point_index_ = nh.subscribe("/track_target_index",1,&Avoiding::target_point_index_callback,this);
+	sub_utm_gps_ = nh.subscribe("/gps_utm",1,&Avoiding::utm_gps_callback,this);
 	
 	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	pub_avoid_msg_to_gps_ = nh.advertise<std_msgs::Float32>("/start_avoiding",1);
@@ -328,8 +330,8 @@ void Avoiding::bubbleSort(float * const distance, size_t * index, size_t length)
 
 void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
 {
-	float x,y;
-	double X,Y;
+	float x,y;  //object position in vehicle coordination
+	double X,Y; //object position in world coordination
 	for(size_t i=0; i<objects.boxes.size(); i++)
 	{
 		//object position in vehicle coordination
@@ -337,13 +339,112 @@ void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objec
 		y = objects.boxes[i].pose.position.y;
 		
 		//object position in world coordination
-		X = x * cos()
+		X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
+		Y = -x * sin(current_point_.yaw) + y * cos(current_point_.yaw) + current_point_.y;
 		
-		float x =  x0 * cos(current_point_.yaw) + y0 * sin(current_point_.yaw) + current_point_.x;
-	float y = -x0 * sin(current_point_.yaw) + y0 * cos(current_point_.yaw) + current_point_.y;
+		
+		
 	}
-	
+}
 
+
+//calculate the minumum distance from a given point to the path
+float Avoiding::dis2path(const double& X_,const double& Y_)
+{
+	//this target is tracking target ,
+	//let the target points as the starting point of index
+	//Judging whether to index downward or upward
+	float dis2target = pow(path_points_[target_point_index_].x - X_, 2) + 
+					   pow(path_points_[target_point_index_].y - Y_, 2) ;
+	
+	float dis2next_target = pow(path_points_[target_point_index_+1].x - X_, 2) + 
+							pow(path_points_[target_point_index_+1].y - Y_, 2) ;
+							
+	float dis2last_target = pow(path_points_[target_point_index_-1].x - X_, 2) + 
+					        pow(path_points_[target_point_index_-1].y - Y_, 2) ;
+	
+//	cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) <<endl;
+	
+	//heron's formula :a,b,c is three sides of triangle and p is half of its circumference
+	float p,a,b,c;
+	
+	float first_dis ,second_dis ,third_dis;  //a^2 b^2 c^2
+	size_t first_point_index,second_point_index;
+	
+	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
+	{
+		first_dis = dis2target;
+		first_point_index = target_point_index_;
+		
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index_-i;
+			
+			second_dis = pow(path_points_[second_point_index].x - X_, 2) + 
+						 pow(path_points_[second_point_index].y - Y_, 2) ;
+			
+			if(second_dis < first_dis) //continue 
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+			{
+				third_dis = pow(path_points_[second_point_index].x - path_points_[first_point_index].x , 2) + 
+						    pow(path_points_[second_point_index].y - path_points_[first_point_index].y , 2) ;
+				a = sqrt(first_dis);
+				b = sqrt(second_dis);
+				c = sqrt(third_dis);
+				break;
+			}
+		}
+	}
+	else if(dis2next_target < dis2target && dis2last_target > dis2target) //upward
+	{
+		first_dis = dis2target;
+		first_point_index = target_point_index_;
+	
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index_ + i;
+			second_dis = pow(path_points_[second_point_index].x - X_, 2) + 
+						 pow(path_points_[second_point_index].y - Y_, 2) ;
+
+			if(second_dis < first_dis) //continue
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+			{
+				third_dis = pow(path_points_[second_point_index].x - path_points_[first_point_index].x , 2) + 
+						    pow(path_points_[second_point_index].y - path_points_[first_point_index].y , 2) ;
+				a = sqrt(first_dis);
+				b = sqrt(second_dis);
+				c = sqrt(third_dis);
+				break;
+			}
+		}
+	}
+	else //midile
+	{
+		a = sqrt(dis2last_target);
+		b = sqrt(dis2next_target);
+		c = sqrt( pow(path_points_[target_point_index_+1].x - path_points_[target_point_index_-1].x , 2) + 
+			      pow(path_points_[target_point_index_+1].y - path_points_[target_point_index_-1].y , 2)) ;
+	}
+	p = (a+b+c)/2;	
+
+//	cout << "index: " << first_point_index << "  " << second_point_index << "  \r\n";
+	return sqrt(p*(p-a)*(p-b)*(p-c))*2/c;
+}
+
+void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
+{
+	gps_status_ = true;
+	current_point_.x = msg->x;
+	current_point_.y = msg->y;
+	current_point_.yaw = mag->yaw;
 }
 
 int main(int argc,char **argv)
