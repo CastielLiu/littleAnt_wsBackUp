@@ -14,7 +14,8 @@ static const float max_side_acceleration = 1.0;
 float generate_steeringAngle_by_steeringRadius(float radius)
 {
 	assert(radius!=0);
-	return asin(AXIS_DISTANCE /radius)*180/M_PI;
+	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
+	return atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
 }
 
 double sin_deg(double deg)
