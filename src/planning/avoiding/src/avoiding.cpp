@@ -337,9 +337,10 @@ void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objec
 		y = objects.boxes[i].pose.position.y;
 		
 		//object position in world coordination
-		X = 
+		X = x * cos()
 		
-		
+		float x =  x0 * cos(current_point_.yaw) + y0 * sin(current_point_.yaw) + current_point_.x;
+	float y = -x0 * sin(current_point_.yaw) + y0 * cos(current_point_.yaw) + current_point_.y;
 	}
 	
 
