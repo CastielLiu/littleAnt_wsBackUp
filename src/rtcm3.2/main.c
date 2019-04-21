@@ -102,6 +102,9 @@ int main(int argc, const char * argv[]) {
 		get_qxwz_sdk_account_info();
 		
 		int len = read(fd_rtcm,gpggaMsg,199);
+		
+		printf("..........len:%d\r\n",len);  /71?
+		
 		gpggaMsg[len]='\r';
 		gpggaMsg[len+1] = '\n';
 		gpggaMsg[len+2] = '\0';

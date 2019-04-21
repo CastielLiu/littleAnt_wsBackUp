@@ -17,7 +17,6 @@ class Record
 #if IS_POLAR_COORDINATE_GPS==0
 		void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 #endif
-		void timerCallback(const ros::TimerEvent&);
 		float calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2);
 		
 		std::string file_path_;
@@ -30,7 +29,7 @@ class Record
 		
 		ros::Subscriber sub_cartesian_gps_ ;
 		
-		ros::Timer timer;
+		bool gps_status_;
 		
 	public:
 		Record();
@@ -39,7 +38,8 @@ class Record
 		void recordToFile();
 };
 
-Record::Record()
+Record::Record():
+	gps_status_(0)
 {
 	last_point = {0.0,0.0,0.0,0.0,0.0};
 	current_point = last_point;
@@ -56,10 +56,11 @@ bool Record::init()
 	ros::NodeHandle private_nh("~");
 	
 	private_nh.param<std::string>("file_path",file_path_,"/home/wendao/projects/littleAnt_ws/a.txt");
-	private_nh.param<float>("sample_distance",sample_distance_,0.1);
+	private_nh.param<float>("sample_distance",sample_distance_,0.2);
 
 
 	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
+	
 #if IS_POLAR_COORDINATE_GPS==0
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&Record::cartesian_gps_callback,this);
 #endif    
@@ -78,26 +79,15 @@ bool Record::init()
 	}
 	return 1;
 	
-	timer = nh.createTimer(ros::Duration(0.05),&Record::timerCallback,this);
+	
 }
 
+#if IS_POLAR_COORDINATE_GPS ==1
 void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
 {
 	current_point.latitude = gps->latitude;
 	current_point.longitude = gps->longitude;
 	current_point.yaw = gps->azimuth;
-}
-
-#if IS_POLAR_COORDINATE_GPS ==1
-float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude * M_PI/180.);
-	float y = (point1.latitude - point2.latitude) *111000;
-	return x*x+y*y;
-}
-
-void Record::timerCallback(const ros::TimerEvent&)
-{
 	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
 		fprintf(fp,"%.8f\t%.8f\t%.3f\r\n",current_point.longitude,current_point.latitude,current_point.azimuth);
@@ -108,24 +98,38 @@ void Record::timerCallback(const ros::TimerEvent&)
 	}
 }
 
+float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
+{
+	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude * M_PI/180.);
+	float y = (point1.latitude - point2.latitude) *111000;
+	return x*x+y*y;
+}
+
+
 #else
+void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
+{
+	gps_status_ = true;
+	current_point.latitude = gps->latitude;
+	current_point.longitude = gps->longitude;
+	current_point.yaw = gps->azimuth;
+}
+
 float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 {
 	float x = point1.x - point2.x;
 	float y = point1.y - point2.y;
 	
-	return x*x+y+y;
+	return x*x+y*y;
 }
 
 void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	current_point.x = msg->pose.pose.position.x;
 	current_point.y = msg->pose.pose.position.y;
-}
-void Record::timerCallback(const ros::TimerEvent&)
-{
-	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
+	if(gps_status_ == true && sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
+		gps_status_ = false;
 		fprintf(fp,"%.3f\t%.3f\t%.3f\r\n",current_point.x,current_point.y,current_point.yaw);
 		fflush(fp);
 		
@@ -133,6 +137,7 @@ void Record::timerCallback(const ros::TimerEvent&)
 		last_point = current_point;
 	}
 }
+
 #endif
 
 

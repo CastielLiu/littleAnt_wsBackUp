@@ -8,6 +8,7 @@
 #include<vector>
 #include<cstdio>
 #include<ros/ros.h>
+#include<limits.h>
 
 #define IS_POLAR_COORDINATE_GPS 0
 
@@ -35,6 +36,7 @@ float generate_max_steering_angle_by_speed(float speed);
 bool load_path_points(std::string file_path,std::vector<gpsMsg_t>& points);
 
 extern const float g_steering_gearRatio;
+extern const float g_vehicle_width;
 
 
 

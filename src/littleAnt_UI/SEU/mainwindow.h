@@ -35,6 +35,8 @@ private slots:
 
     void on_pushButton_stop_clicked();
 
+    void on_pushButton_rtk_clicked();
+
 private:
     Ui::MainWindow *ui;
 

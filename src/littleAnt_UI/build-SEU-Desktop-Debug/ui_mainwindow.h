@@ -34,6 +34,7 @@ public:
     QLabel *label_2;
     QPushButton *pushButton_start;
     QPushButton *pushButton_stop;
+    QPushButton *pushButton_rtk;
     QStatusBar *statusBar;
 
     void setupUi(QMainWindow *MainWindow)
@@ -61,12 +62,16 @@ public:
         label_2->setStyleSheet(QString::fromUtf8("font: 20pt \"Ubuntu\";"));
         pushButton_start = new QPushButton(centralWidget);
         pushButton_start->setObjectName(QString::fromUtf8("pushButton_start"));
-        pushButton_start->setGeometry(QRect(260, 70, 111, 91));
+        pushButton_start->setGeometry(QRect(260, 130, 111, 61));
         pushButton_start->setStyleSheet(QString::fromUtf8("font: 15pt \"Ubuntu\";"));
         pushButton_stop = new QPushButton(centralWidget);
         pushButton_stop->setObjectName(QString::fromUtf8("pushButton_stop"));
-        pushButton_stop->setGeometry(QRect(260, 200, 111, 91));
+        pushButton_stop->setGeometry(QRect(260, 210, 111, 91));
         pushButton_stop->setStyleSheet(QString::fromUtf8("font: 15pt \"Ubuntu\";"));
+        pushButton_rtk = new QPushButton(centralWidget);
+        pushButton_rtk->setObjectName(QString::fromUtf8("pushButton_rtk"));
+        pushButton_rtk->setGeometry(QRect(260, 70, 111, 41));
+        pushButton_rtk->setStyleSheet(QString::fromUtf8("font: 15pt \"Ubuntu\";"));
         MainWindow->setCentralWidget(centralWidget);
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
@@ -88,6 +93,7 @@ public:
         label_2->setText(QApplication::translate("MainWindow", " \344\270\234\345\215\227\345\244\247\345\255\246\350\207\263\345\226\204\346\231\272\350\203\275\350\275\246\351\230\237", 0, QApplication::UnicodeUTF8));
         pushButton_start->setText(QApplication::translate("MainWindow", "start", 0, QApplication::UnicodeUTF8));
         pushButton_stop->setText(QApplication::translate("MainWindow", "stop", 0, QApplication::UnicodeUTF8));
+        pushButton_rtk->setText(QApplication::translate("MainWindow", "RTK", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };

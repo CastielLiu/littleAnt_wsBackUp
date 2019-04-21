@@ -31,18 +31,17 @@ public:
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 
 private:
-	
-	
 	enum object_type_t
 	{
 		Unknown = 0,
 		Person = 1,
 		Vehicle = 2
 	};
+	void utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg);
 	
 	void objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects);
 	
-	void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
+	void target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
 
 	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
 						  size_t objectIndex,
@@ -51,7 +50,7 @@ private:
 						  float *obstacleDistance, 
 						  size_t *obstacleIndex,
 						  size_t &obstacleSequence);
-
+	
 	whatArea_t which_area(float& x,float& y);
 
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
@@ -61,6 +60,9 @@ private:
 	float brakingAperture_2_deceleration(const float & brakingAperture);
 
 	void bubbleSort(float * const distance, size_t * index, size_t length);
+	
+	float calculate_dis2path(const double& X_,const double& Y_);
+	float dis2path2(const double& X_,const double& Y_);
 	 
 
 private:
@@ -77,6 +79,8 @@ private:
 	std_msgs::Float32 start_avoidingFlag_;
 	
 	float avoid_speed_;
+	
+	float max_deceleration_;
 	
 	std::string objects_topic_;
 	

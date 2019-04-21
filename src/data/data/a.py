@@ -5,6 +5,7 @@ import math
 g_longitudes = []
 g_latitudes =[]
 
+'''
 with open('2.txt','r') as f:
 	lines = f.readlines()
 	
@@ -15,6 +16,7 @@ for line in lines:
 
 
 plt.plot(g_latitudes,g_longitudes,'r--')
+'''
 
 g_longitudes = []
 g_latitudes =[]

@@ -16,12 +16,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setMaximumSize(380,315);
     this->setMinimumSize(380,315);
+
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-
 }
 
 
@@ -33,4 +34,9 @@ void MainWindow::on_pushButton_start_clicked()
 void MainWindow::on_pushButton_stop_clicked()
 {
     system("gnome-terminal -e ./stop.sh");
+}
+
+void MainWindow::on_pushButton_rtk_clicked()
+{
+    system("gnome-terminal -x ~/Desktop/rtcm3.2/main /dev/ttyUSB0");
 }

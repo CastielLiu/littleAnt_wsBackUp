@@ -4,7 +4,7 @@
 Avoiding::Avoiding():
 	gps_status_(false)
 {
-	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR; //_TELECONTROL  //_LIDAR
+	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR;
 	avoid_cmd_.status = false;
 	avoid_cmd_.just_decelerate = false;
 	avoid_cmd_.cmd1.set_driverlessMode = true;
@@ -27,9 +27,11 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	nh_private.param<float>("deceleration_cofficient",deceleration_cofficient_,50);
 	
-	nh_private.param<float>("safety_distance_side",safety_distance_side_,1.7);
+	nh_private.param<float>("safety_distance_side",safety_distance_side_,0.3);
 	
 	nh_private.param<float>("pedestrian_detection_area_side",pedestrian_detection_area_side_,safety_distance_side_+1.0);
+	
+	nh_private.param<float>("max_deceleration",max_deceleration_,5.0); ///////////
 	
 	nh_private.param<float>("danger_distance_side",danger_distance_side_,1.2);
 	
@@ -287,18 +289,20 @@ whatArea_t Avoiding::which_area(float& x,float& y)
 void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)   
 {
 	static int i=0;
-	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
+	vehicleSpeed_ = msg->vehicle_speed; //m/s
+	
 	//最大减速度->最短制动距离 + 防撞距离
-	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;  
+	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 5.0;  
 	
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
-	safety_distance_front_ = danger_distance_front_ *(3.2);  // 安全距离 随危险距离变化
+	safety_distance_front_ = danger_distance_front_ *(2.5);  // 安全距离 随危险距离变化
 
 	i++;
+	
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
-						vehicleSpeed_,danger_distance_front_,safety_distance_front_);
+				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
 }
 
 float Avoiding::deceleration_2_brakingAperture(const float & deceleration)
@@ -332,6 +336,10 @@ void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objec
 {
 	float x,y;  //object position in vehicle coordination
 	double X,Y; //object position in world coordination
+	float dis2path; //the distance between object and the path;
+	float dis2vehicle; //the distance between object and the vehicle
+	float safety_center_distance; // the minimum distance between object center to vehicle center
+	
 	for(size_t i=0; i<objects.boxes.size(); i++)
 	{
 		//object position in vehicle coordination
@@ -342,16 +350,41 @@ void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objec
 		X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
 		Y = -x * sin(current_point_.yaw) + y * cos(current_point_.yaw) + current_point_.y;
 		
+		dis2path = calculate_dis2path(X,Y);
 		
+		dis2vehicle = sqrt(x*x+y*y);
 		
+		safety_center_distance = g_vehicle_width/2 + objects.boxes[i].dimensions.x/2 + safety_distance_side_;
+		
+		if(fabs(dis2path) < safety_center_distance) //avoid
+		{
+			if(dis2vehicle <= danger_distance_front_ )
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd.just_decelerate = true;
+				avoid_cmd_.set_brake = 100.0;
+				avoid_cmd_.set_speed = 0.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				break;
+			}
+			else if(dis2vehicle < = safety_distance_front_)
+			{
+				
+			}
+			
+			
+			float offset = dis2path - safety_center_distance - ; //left avoid
+			float offset = dis2path + safety_center_distance - ; //right avoid
+		}
 	}
 }
 
 
-//calculate the minumum distance from a given point to the path
-float Avoiding::dis2path(const double& X_,const double& Y_)
+//calculate the minimum distance from a given point to the path
+//heron's formula , but no direction.... //just record here
+float Avoiding::dis2path2(const double& X_,const double& Y_)
 {
-	//this target is tracking target ,
+	//this target is tracking target,
 	//let the target points as the starting point of index
 	//Judging whether to index downward or upward
 	float dis2target = pow(path_points_[target_point_index_].x - X_, 2) + 
@@ -371,11 +404,11 @@ float Avoiding::dis2path(const double& X_,const double& Y_)
 	float first_dis ,second_dis ,third_dis;  //a^2 b^2 c^2
 	size_t first_point_index,second_point_index;
 	
+	first_dis = dis2target;
+	first_point_index = target_point_index_;
+	
 	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
 	{
-		first_dis = dis2target;
-		first_point_index = target_point_index_;
-		
 		for(size_t i=1;true;i++)
 		{
 			second_point_index = target_point_index_-i;
@@ -401,9 +434,6 @@ float Avoiding::dis2path(const double& X_,const double& Y_)
 	}
 	else if(dis2next_target < dis2target && dis2last_target > dis2target) //upward
 	{
-		first_dis = dis2target;
-		first_point_index = target_point_index_;
-	
 		for(size_t i=1;true;i++)
 		{
 			second_point_index = target_point_index_ + i;
@@ -433,10 +463,85 @@ float Avoiding::dis2path(const double& X_,const double& Y_)
 		c = sqrt( pow(path_points_[target_point_index_+1].x - path_points_[target_point_index_-1].x , 2) + 
 			      pow(path_points_[target_point_index_+1].y - path_points_[target_point_index_-1].y , 2)) ;
 	}
-	p = (a+b+c)/2;	
+	
+	p = (a+b+c)/2;
 
-//	cout << "index: " << first_point_index << "  " << second_point_index << "  \r\n";
 	return sqrt(p*(p-a)*(p-b)*(p-c))*2/c;
+}
+
+float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
+{
+	//this target is tracking target,
+	//let the target points as the starting point of index
+	//Judging whether to index downward or upward
+	float dis2target = pow(path_points_[target_point_index_].x - X_, 2) + 
+					   pow(path_points_[target_point_index_].y - Y_, 2) ;
+	
+	float dis2next_target = pow(path_points_[target_point_index_+1].x - X_, 2) + 
+							pow(path_points_[target_point_index_+1].y - Y_, 2) ;
+							
+	float dis2last_target = pow(path_points_[target_point_index_-1].x - X_, 2) + 
+					        pow(path_points_[target_point_index_-1].y - Y_, 2) ;
+	
+//	cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) <<endl;
+	
+	float first_dis ,second_dis ,third_dis;  //a^2 b^2 c^2
+	size_t first_point_index,second_point_index;
+	
+	first_dis = dis2target;
+	first_point_index = target_point_index_;
+	
+	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
+	{
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index_-i;
+			
+			second_dis = pow(path_points_[second_point_index].x - X_, 2) + 
+						 pow(path_points_[second_point_index].y - Y_, 2) ;
+			
+			if(second_dis < first_dis) //continue 
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+				break;
+		}
+	}
+	else if(dis2next_target < dis2target && dis2last_target > dis2target) //upward
+	{
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index_ + i;
+			second_dis = pow(path_points_[second_point_index].x - X_, 2) + 
+						 pow(path_points_[second_point_index].y - Y_, 2) ;
+
+			if(second_dis < first_dis) //continue
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+				break;
+		}
+	}
+	else //midile
+	{
+		first_point_index = target_point_index_-1;
+		second_point_index = target_point_index_ +1;
+	}
+	
+	//the direction of side c 
+	//float yaw_of_c = (path_points_[first_point_index].yaw + path_points_[second_point_index].yaw)/2;
+	float yaw_of_c = atan2(path_points_[first_point_index].x-path_points_[second_point_index].x,
+						   path_points_[first_point_index].y-path_points_[second_point_index].y);
+						   
+	//object : world coordination to local coordination
+	float x = (X_-path_points_[first_point_index].x) * cos(yaw_of_c) - (Y_-path_points_[first_point_index].y) * sin(yaw_of_c);
+	//float y = (X_-path_points_[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points_[first_point_index].y) * cos(yaw_of_c);
+	
+	return x;
 }
 
 void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
@@ -444,7 +549,7 @@ void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
 	gps_status_ = true;
 	current_point_.x = msg->x;
 	current_point_.y = msg->y;
-	current_point_.yaw = mag->yaw;
+	current_point_.yaw = msg->yaw;
 }
 
 int main(int argc,char **argv)

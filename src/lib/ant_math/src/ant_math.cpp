@@ -8,6 +8,8 @@
 //方向盘最大转角/前轮最大转角
 const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
+const float g_vehicle_width = 1.8 ;// m
+
 static const float max_side_acceleration = 1.0;
 
 
@@ -81,6 +83,8 @@ bool load_path_points(std::string file_path,std::vector<gpsMsg_t>& points)
 	
 	return true;
 }
+
+ 
 
 
 
