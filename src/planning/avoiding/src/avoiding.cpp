@@ -2,7 +2,8 @@
 
 
 Avoiding::Avoiding():
-	gps_status_(false)
+	gps_status_(false),
+	avoiding_offest_(0.0)
 {
 	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR;
 	avoid_cmd_.status = false;
@@ -332,19 +333,53 @@ void Avoiding::bubbleSort(float * const distance, size_t * index, size_t length)
 	}
 }
 
-void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
+void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
+{
+	size_t n_object = objects->boxes.size();
+	
+	if(n_object==0)
+	{
+		avoid_cmd_.status = false;
+		avoid_cmd_.just_decelerate = false;
+		pub_avoid_cmd_.publish(avoid_cmd_);
+		return;
+	}
+	
+	size_t *index = new size_t[n_object];
+	float * distance = new float[n_object];
+	for(size_t i=0,auto box:objects.boxes)
+	{
+		index[i] = i;
+		distance[i] = sqrt(box.pose.position.x * box.pose.position.x + box.pose.position.y *box.pose.position.y);
+		i++;
+	}
+	bubbleSort(distance,index,n_object);
+	
+	
+	
+	
+	
+	delete [] index;
+	delete [] distance;
+}
+
+void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, size_t index[], float dis2vehicle[])
 {
 	float x,y;  //object position in vehicle coordination
 	double X,Y; //object position in world coordination
 	float dis2path; //the distance between object and the path;
-	float dis2vehicle; //the distance between object and the vehicle
+//	float dis2vehicle; //the distance between object and the vehicle
 	float safety_center_distance; // the minimum distance between object center to vehicle center
+	
+	jsk_recognition_msgs::BoundingBox object;
 	
 	for(size_t i=0; i<objects.boxes.size(); i++)
 	{
+		object = objects->boxes[i];
+		
 		//object position in vehicle coordination
-		x = objects.boxes[i].pose.position.x;
-		y = objects.boxes[i].pose.position.y;
+		x = object.pose.position.x;
+		y = object.pose.position.y;
 		
 		//object position in world coordination
 		X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
@@ -352,33 +387,75 @@ void Avoiding::sds(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objec
 		
 		dis2path = calculate_dis2path(X,Y);
 		
-		dis2vehicle = sqrt(x*x+y*y);
-		
-		safety_center_distance = g_vehicle_width/2 + objects.boxes[i].dimensions.x/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
 		
 		if(fabs(dis2path) < safety_center_distance) //avoid
 		{
-			if(dis2vehicle <= danger_distance_front_ )
+			if(dis2vehicle[i] <= danger_distance_front_ )
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd.just_decelerate = true;
-				avoid_cmd_.set_brake = 100.0;
+				avoid_cmd_.set_brake = 100.0;  //waiting test
 				avoid_cmd_.set_speed = 0.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				break;
 			}
-			else if(dis2vehicle < = safety_distance_front_)
+			else if(dis2vehicle[i] < = safety_distance_front_)
 			{
-				
+				if(object.label == Person)
+				{
+					avoid_cmd_.status = true;
+					avoid_cmd.just_decelerate = true;
+					avoid_cmd_.set_brake = 25.0;  //waiting test
+					avoid_cmd_.set_speed = 0.0;
+					pub_avoid_cmd_.publish(avoid_cmd_);
+					break;
+				}
+				else  // start to avoid
+				{
+					avoid_cmd_.status = true;
+					avoid_cmd.just_decelerate = true;
+					avoid_cmd_.set_brake = 0.0;  
+					avoid_cmd_.set_speed = 13.0; //waiting test
+					pub_avoid_cmd_.publish(avoid_cmd_);
+					
+					if(dis2path > -0.3) //overtake from left
+						avoiding_offest_ = dis2path - safety_center_distance;
+					else //overtake from right
+						avoiding_offest_ = dis2path + safety_center_distance ;
+					
+					bool is_offset_safty = false;
+					
+					jsk_recognition_msgs::BoundingBox nextObject;
+					
+					for(size_t j=i+1; j<objects.boxes.size(); j++)
+					{
+						nextObject = objects->boxes[j];
+						std::pair<double,double> X_Y = 
+								vehicleToWorldCoordination(nextObject.pose.position.x,nextObject.pose.position.y);
+						float dis2newPath = calculate_dis2path(X_Y.first,X_Y.second) - avoiding_offest_;
+					}
+					
+					
+					pub_avoid_msg_to_gps_.publish(); //??
+					
+				}
 			}
 			
 			
-			float offset = dis2path - safety_center_distance - ; //left avoid
-			float offset = dis2path + safety_center_distance - ; //right avoid
+			float offset = dis2path - safety_center_distance ; //left avoid
+			float offset = dis2path + safety_center_distance ; //right avoid
 		}
 	}
 }
 
+std::pair<double,double> Avoiding::vehicleToWorldCoordination(float x,float y)
+{
+	//object position in world coordination
+	double X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
+	double Y = -x * sin(current_point_.yaw) + y * cos(current_point_.yaw) + current_point_.y;
+	return std::pair<double,double>(X,Y);
+}
 
 //calculate the minimum distance from a given point to the path
 //heron's formula , but no direction.... //just record here

@@ -23,7 +23,6 @@ typedef enum
 
 class Avoiding
 {
-
 public:
 	Avoiding();
 	~Avoiding(){}
@@ -105,6 +104,8 @@ private:
 	gpsMsg_t current_point_,target_point_;
 	
 	bool gps_status_;
+	
+	float avoiding_offest_;
 
 };
 

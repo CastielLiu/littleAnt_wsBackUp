@@ -4,7 +4,7 @@
 PathTracking::PathTracking():
 	gps_status_(0x00),
 	target_point_index_(0),
-	avoiding_flag_(0.0),
+	avoiding_offest_(0.0),
 	disThreshold_(6.0),
 	max_steering_angle_(25.0)
 {
@@ -109,11 +109,11 @@ void PathTracking::run()
 		std_msgs::UInt32 index;   index.data = target_point_index_;
 		pub_tracking_target_index_.publish(index);
 		
-		if(avoiding_flag_ != 0.0)
+		if(avoiding_offest_ != 0.0)
 		{
 		//target point offset
-			target_point_.x =  avoiding_flag_ * cos(target_point_.yaw) + target_point_.x;
-			target_point_.y = -avoiding_flag_ * sin(target_point_.yaw) + target_point_.y;
+			target_point_.x =  avoiding_offest_ * cos(target_point_.yaw) + target_point_.x;
+			target_point_.y = -avoiding_offest_ * sin(target_point_.yaw) + target_point_.y;
 		}
 		
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
@@ -205,7 +205,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
 	//avoid to left(-) or right(+) the value presents the offset
-	avoiding_flag_ = msg->data;
+	avoiding_offest_ = msg->data;
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1

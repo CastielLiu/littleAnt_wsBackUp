@@ -70,7 +70,7 @@ private:
 	
 	float disThreshold_;
 	
-	float avoiding_flag_;
+	float avoiding_offest_;
 	
 	little_ant_msgs::ControlCmd gps_controlCmd_;
 	
