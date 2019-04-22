@@ -15,7 +15,7 @@ int dev_open(const char dev[])
 
     fd = open(dev, O_RDWR | O_NONBLOCK);
     if (fd == -1)
-	printf("can not open the %s !\n",dev);
+		printf("can not open the %s !\n",dev);
     else
 	printf("open %s ok!\n",dev);
 
