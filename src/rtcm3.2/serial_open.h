@@ -27,8 +27,8 @@ int set_Parity(int, int, int, int);
 
 
 void test_re(int para);
-void is_open(int fd, char *filename);  // open file
+void is_open(int fd, const char *filename);  // open file
 int is_null(char *str);  //string is null?
-int dev_open(char dev[]);
+int dev_open(const char dev[]);
 
 #endif

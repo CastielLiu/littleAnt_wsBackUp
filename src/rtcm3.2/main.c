@@ -56,7 +56,7 @@ void  get_qxwz_sdk_account_info(void)
 	if(p_account_info->NtripPassword != NULL) {
 		printf("NtripPassword=%s\n",p_account_info->NtripPassword);
 	}
-	printf("expire_time=%d\n",p_account_info->expire_time);
+	printf("expire_time=%ld\n",p_account_info->expire_time);
 }
 
 
@@ -69,11 +69,17 @@ pthread_t qxwz_rtcm_test;
 void test_qxwz_rtcm_start_stop(void);
 #endif
 
-unsigned char gpggaMsg[200];
+char gpggaMsg[200];
 
 int main(int argc, const char * argv[]) {
 
-	fd_rtcm = dev_open("/dev/ttyS4");
+	if(argc ==2)
+		fd_rtcm = dev_open(argv[1]);
+	else
+		fd_rtcm = dev_open("/dev/ttyS4");
+	if(fd_rtcm == -1)
+		return 0;
+		
     //设置appKey和appSecret
     //apapKey申请详细见说明文档
     qxwz_config config;
@@ -90,29 +96,55 @@ int main(int argc, const char * argv[]) {
 	#ifdef _QXWZ_TEST_START_STOP
     pthread_create(&qxwz_rtcm_test,NULL,test_qxwz_rtcm_start_stop,NULL);
 	#endif
-    //demo测试10秒发送gga
+	
+	write(fd_rtcm,"UNLOGALL",8);
+	
+	char log_command[] = "LOG COM3 GPGGA ONTIME 1";
+	
+	int i=0 , try_num = 5;
+	
+	for( ; i<try_num; i++)
+	{
+		write(fd_rtcm,log_command,strlen(log_command));
+		usleep(100000);
+		int len = read(fd_rtcm,gpggaMsg,199);
+		
+		if(len>0)
+			gpggaMsg[len] = '\0';
+		else
+			continue;
+		
+		char * ptr = strstr(gpggaMsg,"$GPGGA");
+
+		if(ptr != NULL)
+			break;
+	}
+	
+	if(i == try_num)
+	{
+		printf("can not connect gps device...\r\n");
+		return 0;
+	}
+	
+	tcflush(fd_rtcm,TCIOFLUSH);
+
     //每秒发送gga以获取最新的rtcm数据流
-    int i;
-    while(1){
-       // qxwz_rtcm_sendGGAWithGGAString("$GPGGA,104853.4,3153.29183,N,11848.61485,E,1,03,20.0,6.8,M,1.1,M,,*53\r\n");
-		//qxwz_rtcm_sendGGAWithGGAString("$GPGGA,102957.00,3148.1359,N,12000.7208,E,1,23,0.7,8.35,M,5.30,M,,*54\r\n");
-        //printf("Send GGA done\r\n");
+    while(1)
+    {
+    	usleep(980000);
         QXLOGI("Send GGA done\r\n");
 		//getAccountExpireDate();
 		get_qxwz_sdk_account_info();
 		
 		int len = read(fd_rtcm,gpggaMsg,199);
 		
-		printf("..........len:%d\r\n",len);  /71?
+		if(len < 0)
+			continue;
+		gpggaMsg[len] = '\0';
 		
-		gpggaMsg[len]='\r';
-		gpggaMsg[len+1] = '\n';
-		gpggaMsg[len+2] = '\0';
+		printf("%s\r\n",gpggaMsg);
 		
 		qxwz_rtcm_sendGGAWithGGAString(gpggaMsg);
-		printf("%s",gpggaMsg);
-		
-        sleep(1);
     }
     QXLOGI("qxwz_rtcm_stop here\r\n");
 //    //关闭rtcm sdk

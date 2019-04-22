@@ -6,7 +6,7 @@ int speed_arr[] =
 int name_arr[] = {230400, 115200, 38400, 19200, 9600, 4800, 2400, 1200, 300 };
 
 
-int dev_open(char dev[])
+int dev_open(const char dev[])
 {
     int fd, flag;
     struct termios term;
@@ -163,7 +163,7 @@ void test_re(int para)
 
 
 // open file
-void is_open(int fd, char *filename)
+void is_open(int fd, const char *filename)
 {
 	if(fd == -1)
 	{
