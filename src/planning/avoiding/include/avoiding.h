@@ -62,7 +62,8 @@ private:
 	
 	float calculate_dis2path(const double& X_,const double& Y_);
 	float dis2path2(const double& X_,const double& Y_);
-	 
+	std::pair<double,double> vehicleToWorldCoordination(float x,float y);
+	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, size_t index[], float dis2vehicle[]);
 
 private:
 	ros::Subscriber sub_objects_msg_;
@@ -106,6 +107,7 @@ private:
 	bool gps_status_;
 	
 	float avoiding_offest_;
+	std_msgs::Float32 offset_msg;
 
 };
 

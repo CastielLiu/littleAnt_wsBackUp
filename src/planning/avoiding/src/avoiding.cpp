@@ -61,7 +61,7 @@ void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg
 {
 	target_point_index_ = msg->data;
 }
-
+/*
 void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
 {
 	//printf("danger_distance_front_:%f\tsafety_distance_front_:%f\t",danger_distance_front_,safety_distance_front_);
@@ -216,6 +216,7 @@ Delete_memory:
 	delete [] obstacleAreas;
 	//ROS_INFO("end");
 }
+*/
 
 void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
 								size_t objectIndex,whatArea_t *obstacleArea,
@@ -347,16 +348,16 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	
 	size_t *index = new size_t[n_object];
 	float * distance = new float[n_object];
-	for(size_t i=0,auto box:objects.boxes)
+	
+	for(size_t i=0; i< objects->boxes.size(); i++)
 	{
 		index[i] = i;
-		distance[i] = sqrt(box.pose.position.x * box.pose.position.x + box.pose.position.y *box.pose.position.y);
-		i++;
+		distance[i] = sqrt(objects->boxes[i].pose.position.x * objects->boxes[i].pose.position.x + 
+						   objects->boxes[i].pose.position.y * objects->boxes[i].pose.position.y);
 	}
 	bubbleSort(distance,index,n_object);
 	
-	
-	
+	decision(objects, index, distance);
 	
 	
 	delete [] index;
@@ -373,7 +374,8 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	
 	jsk_recognition_msgs::BoundingBox object;
 	
-	for(size_t i=0; i<objects.boxes.size(); i++)
+	size_t i = 0;
+	for( ; i<objects->boxes.size(); i++)
 	{
 		object = objects->boxes[i];
 		
@@ -394,58 +396,74 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			if(dis2vehicle[i] <= danger_distance_front_ )
 			{
 				avoid_cmd_.status = true;
-				avoid_cmd.just_decelerate = true;
-				avoid_cmd_.set_brake = 100.0;  //waiting test
-				avoid_cmd_.set_speed = 0.0;
+				avoid_cmd_.just_decelerate = true;
+				avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 0.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				break;
 			}
-			else if(dis2vehicle[i] < = safety_distance_front_)
+			else if(dis2vehicle[i] <= safety_distance_front_)
 			{
 				if(object.label == Person)
 				{
 					avoid_cmd_.status = true;
-					avoid_cmd.just_decelerate = true;
-					avoid_cmd_.set_brake = 25.0;  //waiting test
-					avoid_cmd_.set_speed = 0.0;
+					avoid_cmd_.just_decelerate = true;
+					avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
+					avoid_cmd_.cmd2.set_speed = 0.0;
 					pub_avoid_cmd_.publish(avoid_cmd_);
 					break;
 				}
 				else  // start to avoid
 				{
-					avoid_cmd_.status = true;
-					avoid_cmd.just_decelerate = true;
-					avoid_cmd_.set_brake = 0.0;  
-					avoid_cmd_.set_speed = 13.0; //waiting test
-					pub_avoid_cmd_.publish(avoid_cmd_);
-					
 					if(dis2path > -0.3) //overtake from left
 						avoiding_offest_ = dis2path - safety_center_distance;
 					else //overtake from right
 						avoiding_offest_ = dis2path + safety_center_distance ;
 					
-					bool is_offset_safty = false;
+					bool is_offset_safty = true;
 					
-					jsk_recognition_msgs::BoundingBox nextObject;
-					
-					for(size_t j=i+1; j<objects.boxes.size(); j++)
+					for(size_t j=i+1; j<objects->boxes.size(); j++)
 					{
-						nextObject = objects->boxes[j];
+						object = objects->boxes[j];
 						std::pair<double,double> X_Y = 
-								vehicleToWorldCoordination(nextObject.pose.position.x,nextObject.pose.position.y);
+								vehicleToWorldCoordination(object.pose.position.x,object.pose.position.y);
 						float dis2newPath = calculate_dis2path(X_Y.first,X_Y.second) - avoiding_offest_;
+						safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
+						if(fabs(dis2newPath) < safety_center_distance && 
+						   dis2vehicle[j] < dis2vehicle[i]+ safety_distance_front_);
+						{
+							is_offset_safty = false;
+							break;
+						}
 					}
 					
-					
-					pub_avoid_msg_to_gps_.publish(); //??
-					
+					if(is_offset_safty)
+					{
+						avoid_cmd_.status = true;
+						avoid_cmd_.just_decelerate = true;
+						avoid_cmd_.cmd2.set_brake = 0.0;  
+						avoid_cmd_.cmd2.set_speed = 13.0; //waiting test
+						pub_avoid_cmd_.publish(avoid_cmd_);
+						offset_msg.data = avoiding_offest_;
+						pub_avoid_msg_to_gps_.publish(offset_msg);
+					}
+					else
+					{
+						avoid_cmd_.status = true;
+						avoid_cmd_.just_decelerate = true;
+						avoid_cmd_.cmd2.set_brake = 0.0;  //waiting test
+						avoid_cmd_.cmd2.set_speed = 5.0; //waiting test
+						pub_avoid_cmd_.publish(avoid_cmd_);
+					}
+					break;
 				}
 			}
-			
-			
-			float offset = dis2path - safety_center_distance ; //left avoid
-			float offset = dis2path + safety_center_distance ; //right avoid
 		}
+	}
+	if(i == objects->boxes.size())
+	{
+		avoid_cmd_.status = false;
+		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 }
 
