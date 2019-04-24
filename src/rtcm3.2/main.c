@@ -59,8 +59,6 @@ void  get_qxwz_sdk_account_info(void)
 	printf("expire_time=%ld\n",p_account_info->expire_time);
 }
 
-
-
 //void getAccountExpireDate(void);
 
 
@@ -97,7 +95,7 @@ int main(int argc, const char * argv[]) {
     pthread_create(&qxwz_rtcm_test,NULL,test_qxwz_rtcm_start_stop,NULL);
 	#endif
 	
-	write(fd_rtcm,"UNLOGALL",8);
+	write(fd_rtcm,"UNLOGALL THISPORT",17);
 	
 	char log_command[] = "LOG COM3 GPGGA ONTIME 1";
 	
@@ -106,7 +104,9 @@ int main(int argc, const char * argv[]) {
 	for( ; i<try_num; i++)
 	{
 		write(fd_rtcm,log_command,strlen(log_command));
-		usleep(100000);
+		
+		printf("configure gps ing, please waiting....\r\n");
+		sleep(2);
 		int len = read(fd_rtcm,gpggaMsg,199);
 		
 		if(len>0)
@@ -142,7 +142,7 @@ int main(int argc, const char * argv[]) {
 			continue;
 		gpggaMsg[len] = '\0';
 		
-		printf("%s\r\n",gpggaMsg);
+		printf("\n%s\n\n",gpggaMsg);
 		
 		qxwz_rtcm_sendGGAWithGGAString(gpggaMsg);
     }

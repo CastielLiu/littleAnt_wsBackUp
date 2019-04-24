@@ -1,7 +1,7 @@
 #include "ant_math/ant_math.h"
 
 #define MAX_STEERING_ANGLE 540.0
-#define MAX_ROAD_WHEEL_ANGLE 40.0
+#define MAX_ROAD_WHEEL_ANGLE 25.0
 
 
 
@@ -10,7 +10,7 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 const float g_vehicle_width = 1.8 ;// m
 
-static const float max_side_acceleration = 1.0;
+static const float max_side_acceleration = 0.5;
 
 
 float generate_steeringAngle_by_steeringRadius(float radius)

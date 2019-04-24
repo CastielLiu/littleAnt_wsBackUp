@@ -2,35 +2,37 @@
 import matplotlib.pyplot as plt
 import math
  
-g_longitudes = []
-g_latitudes =[]
+g_x = []
+g_y =[]
 
-'''
-with open('2.txt','r') as f:
+
+with open('path.txt','r') as f:
 	lines = f.readlines()
 	
 for line in lines:
-	lon,lat = line.split()
-	g_longitudes.append(float(lon))
-	g_latitudes.append(float(lat))
+	x,y,_ = line.split()
+	g_x.append(float(x))
+	g_y.append(float(y))
 
 
-plt.plot(g_latitudes,g_longitudes,'r--')
-'''
+plt.plot(g_x,g_y,'b--')
 
-g_longitudes = []
-g_latitudes =[]
+
+g_x = []
+g_y =[]
+
 
 with open('debug.txt','r') as f:
 	lines = f.readlines()
 	
 for line in lines:
-	lon,lat = line.split()
-	g_longitudes.append(float(lon))
-	g_latitudes.append(float(lat))
+	x,y,_ = line.split()
+	g_x.append(float(x))
+	g_y.append(float(y))
 
 
-plt.plot(g_latitudes,g_longitudes,'b--')
+plt.plot(g_x,g_y,'r--')
 
+#plt.savefig('a.pdf')
 
 plt.show()

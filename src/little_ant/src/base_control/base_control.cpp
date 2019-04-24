@@ -370,9 +370,9 @@ void BaseControl::setDriverlessMode()
 		can2serial.sendCanMsg(canMsg_cmd1);
 		usleep(10000);
 		count ++ ;
-		if(count >20)
-			can2serial.sendCanMsg(canMsg_cmd2);
 		if(count >50)
+			can2serial.sendCanMsg(canMsg_cmd2);
+		if(count >80)
 			break;
 	}
 	stm32_serial_port_->flushInput();

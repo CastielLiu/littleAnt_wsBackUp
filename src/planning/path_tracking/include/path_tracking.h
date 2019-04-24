@@ -70,7 +70,7 @@ private:
 	
 	float disThreshold_;
 	
-	float avoiding_offest_;
+	float avoiding_offset_;
 	
 	little_ant_msgs::ControlCmd gps_controlCmd_;
 	
@@ -81,6 +81,8 @@ private:
 	float vehicle_speed_;
 	
 	float max_steering_angle_;
+	
+	bool is_avoiding_;
 
 };
 

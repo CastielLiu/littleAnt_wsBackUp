@@ -112,7 +112,7 @@ void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
 	gps_status_ = true;
 	current_point.latitude = gps->latitude;
 	current_point.longitude = gps->longitude;
-	current_point.yaw = gps->azimuth;
+	current_point.yaw = gps->azimuth*M_PI/180.0;
 }
 
 float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)

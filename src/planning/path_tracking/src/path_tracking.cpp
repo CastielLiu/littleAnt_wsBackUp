@@ -4,9 +4,10 @@
 PathTracking::PathTracking():
 	gps_status_(0x00),
 	target_point_index_(0),
-	avoiding_offest_(0.0),
+	avoiding_offset_(0.0),
 	disThreshold_(6.0),
-	max_steering_angle_(25.0)
+	max_steering_angle_(25.0),
+	is_avoiding_(false)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -104,21 +105,30 @@ void PathTracking::run()
 	
 	ros::Rate loop_rate(20);
 	
+	float dis_threshold;
+	
 	while(ros::ok() && target_point_index_ < path_points_.size())
 	{
 		std_msgs::UInt32 index;   index.data = target_point_index_;
 		pub_tracking_target_index_.publish(index);
 		
-		if(avoiding_offest_ != 0.0)
+		/*printf("x:%lf \ty:%lf \t yaw:%f\n",path_points_[target_point_index_].x,
+										  path_points_[target_point_index_].y,
+										  path_points_[target_point_index_].yaw);*/
+		if( avoiding_offset_ != 0.0)
 		{
 		//target point offset
-			target_point_.x =  avoiding_offest_ * cos(target_point_.yaw) + target_point_.x;
-			target_point_.y = -avoiding_offest_ * sin(target_point_.yaw) + target_point_.y;
+			target_point_.x =  avoiding_offset_ * cos(target_point_.yaw) + path_points_[target_point_index_].x;
+			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
+			//printf("new__ x:%lf \ty:%lf \t yaw:%f\n",target_point_.x,target_point_.y,target_point_.yaw);
+			dis_threshold = 2*disThreshold_;
 		}
+		else
+			dis_threshold = disThreshold_;
 		
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
-		if( dis_yaw.first < disThreshold_)
+		if( dis_yaw.first < dis_threshold)
 		{
 			target_point_ = path_points_[target_point_index_++];
 			continue;
@@ -134,9 +144,9 @@ void PathTracking::run()
 		
 		if(i%50==0)
 		{
-			printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
-					current_point_.longitude,current_point_.latitude,current_point_.yaw,
-					target_point_.longitude,target_point_.latitude,dis_yaw.second);
+			//printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
+			//		current_point_.longitude,current_point_.latitude,current_point_.yaw*180.0/M_PI,
+			//		target_point_.longitude,target_point_.latitude,dis_yaw.second);
 			printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
 					dis_yaw.first,yaw_err*180/M_PI,turning_radius,t_roadWheelAngle);
 		}
@@ -205,7 +215,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
 	//avoid to left(-) or right(+) the value presents the offset
-	avoiding_offest_ = msg->data;
+	avoiding_offset_ = msg->data;
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1
