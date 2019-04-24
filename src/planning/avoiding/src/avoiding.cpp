@@ -1,6 +1,5 @@
 #include"avoiding.h"
 
-
 Avoiding::Avoiding():
 	gps_status_(false),
 	avoiding_offest_(0.0)
@@ -41,7 +40,6 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
 	
 	assert(maxOffset_left_ < 0 && maxOffset_right_ >0);
-	
 	
 	if(path_points_file_.empty())
 	{
