@@ -10,6 +10,7 @@
 #include<ant_math/ant_math.h>
 #include<std_msgs/UInt32.h>
 #include<vector>
+#include<assert.h>
 
 #include<gps_msgs/Utm.h>
 
@@ -63,8 +64,8 @@ private:
 	float calculate_dis2path(const double& X_,const double& Y_);
 	float dis2path2(const double& X_,const double& Y_);
 	std::pair<double,double> vehicleToWorldCoordination(float x,float y);
-	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, size_t index[], float dis2vehicle[]);
-
+	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
@@ -107,7 +108,9 @@ private:
 	bool gps_status_;
 	
 	float avoiding_offest_;
-	std_msgs::Float32 offset_msg;
+	std_msgs::Float32 offset_msg_;
+	
+	float maxOffset_right_,maxOffset_left_;
 
 };
 

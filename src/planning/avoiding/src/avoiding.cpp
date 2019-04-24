@@ -37,6 +37,12 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 	
+	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
+	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
+	
+	assert(maxOffset_left_ < 0 && maxOffset_right_ >0);
+	
+	
 	if(path_points_file_.empty())
 	{
 		ROS_ERROR("no input path points file !!");
@@ -101,124 +107,179 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		return;
 	}
 	
-	size_t *index = new size_t[n_object];
-	float * distance = new float[n_object];
-	
-	for(size_t i=0; i< objects->boxes.size(); i++)
-	{
-		index[i] = i;
-		distance[i] = sqrt(objects->boxes[i].pose.position.x * objects->boxes[i].pose.position.x + 
-						   objects->boxes[i].pose.position.y * objects->boxes[i].pose.position.y);
-	}
-	bubbleSort(distance,index,n_object);
-	
-	decision(objects, index, distance);
-	
-	
-	delete [] index;
-	delete [] distance;
-}
-
-void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, size_t index[], float dis2vehicle[])
-{
-	float x,y;  //object position in vehicle coordination
-	double X,Y; //object position in world coordination
-	float dis2path; //the distance between object and the path;
-//	float dis2vehicle; //the distance between object and the vehicle
-	float safety_center_distance; // the minimum distance between object center to vehicle center
-	
+	size_t *indexArray = new size_t[n_object];
+	float * dis2vehicleArray = new float[n_object];
+	float * dis2pathArray = new float[n_object];
 	jsk_recognition_msgs::BoundingBox object;
 	
-	size_t i = 0;
-	for( ; i<objects->boxes.size(); i++)
+	//object position in vehicle coordination (x,y)
+	//object position in  world  coordination (X,Y)
+	float x,y;  double X,Y;
+	
+	for(size_t i=0; i< n_object; i++)
 	{
-		object = objects->boxes[i];
+		object =  objects->boxes[i];
 		
-		//object position in vehicle coordination
 		x = object.pose.position.x;
 		y = object.pose.position.y;
 		
-		//object position in world coordination
 		X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
 		Y = -x * sin(current_point_.yaw) + y * cos(current_point_.yaw) + current_point_.y;
 		
-		dis2path = calculate_dis2path(X,Y);
-		
+		indexArray[i] = i;
+		dis2vehicleArray[i] = sqrt(x * x + y * y);
+		dis2pathArray[i] = calculate_dis2path(X,Y);
+	}
+	
+	bubbleSort(dis2vehicleArray,indexArray,n_object);
+	
+	//dis2vehicleArray was sorted but dis2pathArray not!
+	decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);
+	
+	delete [] indexArray;
+	delete [] dis2vehicleArray;
+	delete [] dis2pathArray;
+}
+
+void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+{
+	jsk_recognition_msgs::BoundingBox object; 
+	float avoiding_offest[2] ={0.0,0.0};
+	float safety_distance_front;
+	float safety_center_distance;
+	float dis2path;
+	float dis2vehicle;
+	
+	for(size_t i=0; i<n_object; i++)
+	{
+		object = objects->boxes[indexArray[i]];
+		dis2vehicle = dis2vehicleArray[i];
 		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
+		dis2path = dis2pathArray[indexArray[i]];
 		
-		if(fabs(dis2path) < safety_center_distance) //avoid
+		if(avoiding_offest[0] != 0.0)
 		{
-			if(dis2vehicle[i] <= danger_distance_front_ )
+			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
+			dis2path += avoiding_offest[0];
+		}
+		
+		//object is outside the avoding area
+		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
+			continue;
+		//object is inside the danger area ,emergency brake
+		else if(dis2vehicle <= danger_distance_front_)
+		{
+			avoid_cmd_.status = true;
+			avoid_cmd_.just_decelerate = true;
+			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
+			avoid_cmd_.cmd2.set_speed = 0.0;
+			pub_avoid_cmd_.publish(avoid_cmd_);
+			return ;
+		}
+		//object is inside the avoding area!
+		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
+		if(object.label == Person)
+		{
+			//the person is inside the true avoiding area
+			if(dis2vehicle <= safety_distance_front_)
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate = true;
-				avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
+				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 0.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
-				break;
+				return;
 			}
-			else if(dis2vehicle[i] <= safety_distance_front_)
-			{
-				if(object.label == Person)
-				{
-					avoid_cmd_.status = true;
-					avoid_cmd_.just_decelerate = true;
-					avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
-					avoid_cmd_.cmd2.set_speed = 0.0;
-					pub_avoid_cmd_.publish(avoid_cmd_);
-					break;
-				}
-				else  // start to avoid
-				{
-					if(dis2path > -0.3) //overtake from left
-						avoiding_offest_ = dis2path - safety_center_distance;
-					else //overtake from right
-						avoiding_offest_ = dis2path + safety_center_distance ;
-					
-					bool is_offset_safty = true;
-					
-					for(size_t j=i+1; j<objects->boxes.size(); j++)
-					{
-						object = objects->boxes[j];
-						std::pair<double,double> X_Y = 
-								vehicleToWorldCoordination(object.pose.position.x,object.pose.position.y);
-						float dis2newPath = calculate_dis2path(X_Y.first,X_Y.second) - avoiding_offest_;
-						safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
-						if(fabs(dis2newPath) < safety_center_distance && 
-						   dis2vehicle[j] < dis2vehicle[i]+ safety_distance_front_);
-						{
-							is_offset_safty = false;
-							break;
-						}
-					}
-					
-					if(is_offset_safty)
-					{
-						avoid_cmd_.status = true;
-						avoid_cmd_.just_decelerate = true;
-						avoid_cmd_.cmd2.set_brake = 0.0;  
-						avoid_cmd_.cmd2.set_speed = 13.0; //waiting test
-						pub_avoid_cmd_.publish(avoid_cmd_);
-						offset_msg.data = avoiding_offest_;
-						pub_avoid_msg_to_gps_.publish(offset_msg);
-					}
-					else
-					{
-						avoid_cmd_.status = true;
-						avoid_cmd_.just_decelerate = true;
-						avoid_cmd_.cmd2.set_brake = 0.0;  //waiting test
-						avoid_cmd_.cmd2.set_speed = 5.0; //waiting test
-						pub_avoid_cmd_.publish(avoid_cmd_);
-					}
-					break;
-				}
-			}
+			//the person is just in the false avoid area, so pass
+			continue;
 		}
+		//object is other type, start to avoid
+		avoiding_offest[0] += dis2path - safety_center_distance; //try avoid in the left	
 	}
-	if(i == objects->boxes.size())
+	
+	for(size_t i=0; i<n_object; i++)
+	{
+		dis2vehicle = dis2vehicleArray[i];
+		object = objects->boxes[indexArray[i]];
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
+		dis2path = dis2pathArray[indexArray[i]];
+		
+		if(avoiding_offest[1] != 0.0)
+		{
+			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
+			dis2path += avoiding_offest[0];
+		}
+		
+		//object is outside the avoding area
+		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
+			continue;
+		//object is inside the danger area ,emergency brake
+		else if(dis2vehicle <= danger_distance_front_)
+		{
+			avoid_cmd_.status = true;
+			avoid_cmd_.just_decelerate = true;
+			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
+			avoid_cmd_.cmd2.set_speed = 0.0;
+			pub_avoid_cmd_.publish(avoid_cmd_);
+			return;
+		}
+		//object is inside the avoding area!
+		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
+		if(object.label == Person)
+		{
+			//the person is inside the true avoiding area
+			if(dis2vehicle <= safety_distance_front_)
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd_.just_decelerate = true;
+				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 0.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				return;
+			}
+			//the person is just in the false avoid area, so pass
+			continue;
+		}
+		//object is other type, start to avoid
+		avoiding_offest[1] += dis2path - safety_center_distance; //try avoid in the left	
+	}
+	
+	//no avoid message
+	if(avoiding_offest[0]==0.0 && avoiding_offest[1] ==0.0) 
 	{
 		avoid_cmd_.status = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
+	}
+	//avoid message is invalid ,must slow down ,perhaps not brake!
+	else if(avoiding_offest[0] < maxOffset_left_ && avoiding_offest[1] > maxOffset_right_)
+	{
+		avoid_cmd_.status = true;
+		avoid_cmd_.just_decelerate = true;
+		avoid_cmd_.cmd2.set_brake = 15.0;  //waiting test
+		avoid_cmd_.cmd2.set_speed = 0.0;
+		pub_avoid_cmd_.publish(avoid_cmd_);
+	}
+	//avoid message is valid
+	//left offest is smaller,so avoid from left side
+	else if(-avoiding_offest[0] <= avoiding_offest[1])
+	{
+		//assuming that no deceleration is required for avoidance
+		avoid_cmd_.status = false;
+		pub_avoid_cmd_.publish(avoid_cmd_);
+		
+		offset_msg_.data = avoiding_offest[0];
+		pub_avoid_msg_to_gps_.publish(offset_msg_);
+	}
+	//right offest is smaller,so avoid from right side
+	else
+	{
+		//assuming that no deceleration is required for avoidance
+		avoid_cmd_.status = false;
+		pub_avoid_cmd_.publish(avoid_cmd_);
+		
+		offset_msg_.data = avoiding_offest[1];
+		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 }
 

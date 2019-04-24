@@ -28,6 +28,9 @@
 		<param name="pedestrian_detection_area_side" value="2.6" />   <!--  行人检测区宽度（参照雷达）   -->
 		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
+		<param name="maxOffset_left" value="-1.0"/>  <!-- 左右侧避障偏移最大值 -->
+		<param name="maxOffset_left" value="0.5"/>
+		
 	</node>
 
 <!-- 跟踪   -->
