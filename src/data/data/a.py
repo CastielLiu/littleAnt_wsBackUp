@@ -1,7 +1,8 @@
 
 import matplotlib.pyplot as plt
 import math
- 
+
+""" 
 g_x = []
 g_y =[]
 
@@ -17,21 +18,22 @@ for line in lines:
 
 plt.plot(g_x,g_y,'b--')
 
-
+"""
 g_x = []
 g_y =[]
 
 
-with open('debug.txt','r') as f:
+with open('2.txt','r') as f:
 	lines = f.readlines()
 	
-for line in lines:
-	x,y,_ = line.split()
-	g_x.append(float(x))
-	g_y.append(float(y))
+	for line in lines:
+		x,y,_ = line.split()
+		g_x.append(float(x))
+		g_y.append(float(y))
 
 
 plt.plot(g_x,g_y,'r--')
+plt.grid('on')
 
 #plt.savefig('a.pdf')
 

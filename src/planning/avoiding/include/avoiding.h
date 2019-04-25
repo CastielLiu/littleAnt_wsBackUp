@@ -66,6 +66,8 @@ private:
 	std::pair<double,double> vehicleToWorldCoordination(float x,float y);
 	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+	inline void showErrorSystemStatus();
+	
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
@@ -105,12 +107,16 @@ private:
 	
 	gpsMsg_t current_point_,target_point_;
 	
-	bool gps_status_;
+	
 	
 	float avoiding_offest_;
 	std_msgs::Float32 offset_msg_;
 	
 	float maxOffset_right_,maxOffset_left_;
+	
+	bool gps_status_;
+	bool target_point_index_status_;
+	bool vehicle_speed_status_;
 
 };
 

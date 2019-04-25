@@ -2,6 +2,8 @@
 
 Avoiding::Avoiding():
 	gps_status_(false),
+	target_point_index_status_(false),
+	vehicle_speed_status_(false),
 	avoiding_offest_(0.0)
 {
 	avoid_cmd_.origin = little_ant_msgs::ControlCmd::_LIDAR;
@@ -62,13 +64,15 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg)
 {
+	target_point_index_status_ = true;
 	target_point_index_ = msg->data;
 }
 
 
 void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)   
 {
-	static int i=0;
+	vehicle_speed_status_ = true;
+	
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 	
 	//最大减速度->最短制动距离 + 防撞距离
@@ -77,12 +81,13 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
 	safety_distance_front_ = danger_distance_front_ *(2.5);  // 安全距离 随危险距离变化
-
+	/*
+	static int i=0;
 	i++;
-	
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
 				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
+	*/
 }
 
 void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
@@ -95,6 +100,12 @@ void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
 
 void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects)
 {
+	if(!gps_status_ || !vehicle_speed_status_ || !target_point_index_status_)
+	{
+		showErrorSystemStatus();
+		return;
+	}
+	
 	size_t n_object = objects->boxes.size();
 	
 	if(n_object==0)
@@ -117,7 +128,6 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	for(size_t i=0; i< n_object; i++)
 	{
 		object =  objects->boxes[i];
-		
 		x = object.pose.position.x;
 		y = object.pose.position.y;
 		
@@ -127,13 +137,11 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		indexArray[i] = i;
 		dis2vehicleArray[i] = sqrt(x * x + y * y);
 		dis2pathArray[i] = calculate_dis2path(X,Y);
+		ROS_ERROR("dis2path:%f dis2vehicleArray:%f",dis2pathArray[i],dis2vehicleArray[i]);
 	}
-	
 	bubbleSort(dis2vehicleArray,indexArray,n_object);
-	
 	//dis2vehicleArray was sorted but dis2pathArray not!
 	decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);
-	
 	delete [] indexArray;
 	delete [] dis2vehicleArray;
 	delete [] dis2pathArray;
@@ -151,16 +159,18 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	
 	for(size_t i=0; i<n_object; i++)
 	{
-		object = objects->boxes[indexArray[i]];
 		dis2vehicle = dis2vehicleArray[i];
+		object = objects->boxes[indexArray[i]];
 		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
 		dis2path = dis2pathArray[indexArray[i]];
 		
 		if(avoiding_offest[0] != 0.0)
 		{
 			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
-			dis2path += avoiding_offest[0];
+			dis2path -= avoiding_offest[0];
 		}
+		else
+			safety_distance_front =safety_distance_front_;
 		
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
@@ -206,8 +216,13 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		if(avoiding_offest[1] != 0.0)
 		{
 			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
-			dis2path += avoiding_offest[0];
+			dis2path -= avoiding_offest[1];
 		}
+		else
+			safety_distance_front = safety_distance_front_;
+		
+		printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
+				safety_center_distance,safety_distance_front,danger_distance_front_);
 		
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
@@ -240,8 +255,10 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			continue;
 		}
 		//object is other type, start to avoid
-		avoiding_offest[1] += dis2path - safety_center_distance; //try avoid in the left	
+		avoiding_offest[1] += dis2path + safety_center_distance; //try avoid in the left	
 	}
+	
+	ROS_INFO("offest0:%f\t offset1:%f",avoiding_offest[0],avoiding_offest[1]);
 	
 	//no avoid message
 	if(avoiding_offest[0]==0.0 && avoiding_offest[1] ==0.0) 
@@ -279,6 +296,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		offset_msg_.data = avoiding_offest[1];
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
+	ROS_INFO("offset:%f",offset_msg_.data);
 }
 
 std::pair<double,double> Avoiding::vehicleToWorldCoordination(float x,float y)
@@ -292,6 +310,8 @@ std::pair<double,double> Avoiding::vehicleToWorldCoordination(float x,float y)
 
 float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
 {
+	//ROS_INFO("path_points_.size:%d\t target_point_index_:%d",path_points_.size(),target_point_index_);
+	
 	//this target is tracking target,
 	//let the target points as the starting point of index
 	//Judging whether to index downward or upward
@@ -304,7 +324,7 @@ float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
 	float dis2last_target = pow(path_points_[target_point_index_-1].x - X_, 2) + 
 					        pow(path_points_[target_point_index_-1].y - Y_, 2) ;
 	
-//	cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) <<endl;
+	std::cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) << std::endl;
 	
 	float first_dis ,second_dis ,third_dis;  //a^2 b^2 c^2
 	size_t first_point_index,second_point_index;
@@ -312,8 +332,11 @@ float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
 	first_dis = dis2target;
 	first_point_index = target_point_index_;
 	
+	size_t direction = 1;
+	
 	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
 	{
+		direction = -1;
 		for(size_t i=1;true;i++)
 		{
 			second_point_index = target_point_index_-i;
@@ -355,8 +378,8 @@ float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
 	
 	//the direction of side c 
 	//float yaw_of_c = (path_points_[first_point_index].yaw + path_points_[second_point_index].yaw)/2;
-	float yaw_of_c = atan2(path_points_[first_point_index].x-path_points_[second_point_index].x,
-						   path_points_[first_point_index].y-path_points_[second_point_index].y);
+	float yaw_of_c = direction * atan2(path_points_[second_point_index].x-path_points_[first_point_index].x,
+									   path_points_[second_point_index].y-path_points_[first_point_index].y);
 						   
 	//object : world coordination to local coordination
 	float x = (X_-path_points_[first_point_index].x) * cos(yaw_of_c) - (Y_-path_points_[first_point_index].y) * sin(yaw_of_c);
@@ -460,6 +483,13 @@ void Avoiding::bubbleSort(float * const distance, size_t * index, size_t length)
 			}
 		}
 	}
+}
+
+inline void Avoiding::showErrorSystemStatus()
+{
+	ROS_INFO("gps status:%d\t targetIndex status:%d\t vehicleSpeed status:%d",
+			gps_status_,target_point_index_status_,vehicle_speed_status_);
+	ROS_INFO("waiting for all messages is availble....");
 }
 
 
