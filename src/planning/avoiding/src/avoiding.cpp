@@ -162,7 +162,10 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
 		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
-		dis2path = dis2pathArray[indexArray[i]];
+		//dis2path:    distance from the object to the current path 
+		//dis2pathArray[indexArray[i]] : distance from the object to the origin path
+		//obstacle avoidance offset has been set in last time
+		dis2path = dis2pathArray[indexArray[i]] - avoiding_offest_;
 		
 		if(avoiding_offest[0] != 0.0)
 		{
@@ -257,6 +260,9 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		//object is other type, start to avoid
 		avoiding_offest[1] += dis2path + safety_center_distance; //try avoid in the left	
 	}
+	
+	avoiding_offest[0] += avoiding_offest_;
+	avoiding_offest[1] += avoiding_offest_;
 	
 	ROS_INFO("offest0:%f\t offset1:%f",avoiding_offest[0],avoiding_offest[1]);
 	
