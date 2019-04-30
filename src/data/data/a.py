@@ -23,7 +23,7 @@ g_x = []
 g_y =[]
 
 
-with open('2.txt','r') as f:
+with open('path.txt','r') as f:
 	lines = f.readlines()
 	
 	for line in lines:

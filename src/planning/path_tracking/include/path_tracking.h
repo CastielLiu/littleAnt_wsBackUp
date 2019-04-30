@@ -82,9 +82,12 @@ private:
 	uint8_t gps_status_;
 	
 	float vehicle_speed_;
-	float current_steering_angle_;
+	float current_roadwheelAngle_;
 	
-	float max_steering_angle_;
+	float max_roadwheelAngle_;
+	
+	float maxOffset_left_;
+	float maxOffset_right_;
 	
 	bool is_avoiding_;
 	

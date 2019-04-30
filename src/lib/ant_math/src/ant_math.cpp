@@ -10,7 +10,7 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 const float g_vehicle_width = 1.8 ;// m
 
-static const float max_side_acceleration = 0.5;
+static const float max_side_acceleration = 2.0;
 
 
 float generateRoadwheelAngleByRadius(float radius)
@@ -27,6 +27,7 @@ double sinDeg(const double& deg)
 
 float saturationEqual(float value,float limit)
 {
+	//ROS_INFO("value:%f\t limit:%f",value,limit);
 	assert(limit>0);
 	if(value>limit)
 		value = limit;
@@ -35,36 +36,24 @@ float saturationEqual(float value,float limit)
 	return value;
 }
 
-float generateMaxSteeringAngleBySpeed(float speed)
-{
-	float min_steering_radius = speed*speed/max_side_acceleration;
-	
-	if(min_steering_radius <3.0)  //radius = 3.0 -> steeringAngle = 30.0
-		min_steering_radius = 3.0;
-	
-	float max_steering_angle = generateRoadwheelAngleByRadius(min_steering_radius);
-	if(max_steering_angle > MAX_ROAD_WHEEL_ANGLE - 50.0)
-		max_steering_angle = MAX_ROAD_WHEEL_ANGLE -50.0;
-	
-	return max_steering_angle;
-}
 
-float limitSteeringAngleBySpeed(float angle, float speed)
+float limitRoadwheelAngleBySpeed(float angle, float speed)
 {
 	float min_steering_radius = speed*speed/max_side_acceleration;
 	if(min_steering_radius <3.0)  //radius = 3.0 -> steeringAngle = 30.0
 		min_steering_radius = 3.0;
 	
-	float max_steering_angle = generateRoadwheelAngleByRadius(min_steering_radius);
-	if(max_steering_angle > MAX_ROAD_WHEEL_ANGLE - 50.0)
-		max_steering_angle = MAX_ROAD_WHEEL_ANGLE -50.0;
-	return saturationEqual(angle,max_steering_angle);
+	float max_roadwheelAngle = fabs(generateRoadwheelAngleByRadius(min_steering_radius));
+	if(max_roadwheelAngle > MAX_ROAD_WHEEL_ANGLE - 5.0)
+	   max_roadwheelAngle = MAX_ROAD_WHEEL_ANGLE -5.0;
+	return saturationEqual(angle,max_roadwheelAngle);
 }
 
-float limitSpeedByCurrentSteeringAngle(float speed,float angle)
+float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 {
-	float steering_radius = AXIS_DISTANCE/tan(angle*M_PI/180.0);
-	return sqrt(steering_radius*max_side_acceleration);
+	float steering_radius = fabs(AXIS_DISTANCE/tan(angle*M_PI/180.0));
+	float max_speed =  sqrt(steering_radius*max_side_acceleration);
+	return speed>max_speed? max_speed: speed;
 }
 
 int sign(float num)
