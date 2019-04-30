@@ -76,18 +76,18 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 	
 	//最大减速度->最短制动距离 + 防撞距离
-	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 3.0;  
+	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 5.0;  
 	
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
 	safety_distance_front_ = danger_distance_front_ *(2.5);  // 安全距离 随危险距离变化
-	/*
+	
 	static int i=0;
 	i++;
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
 				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
-	*/
+	
 }
 
 void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
@@ -145,10 +145,10 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		//dis2pathArray[i] = calculate_dis2path(X,Y);
 		dis2pathArray[i] = calculateDis2path(X,Y,path_points_,target_point_index_);
 		
-		printf("x:%f\ty:%f\tyaw:%f\t X:%f\tY:%f\t\n",current_point_.x,current_point_.y,current_point_.yaw*180.0/M_PI,X,Y);
+		//printf("x:%f\ty:%f\tyaw:%f\t X:%f\tY:%f\t\n",current_point_.x,current_point_.y,current_point_.yaw*180.0/M_PI,X,Y);
 		
 		
-		ROS_INFO("dis2path:%f\t dis2vehicle:%f\t x:%f  y:%f",dis2pathArray[i],dis2vehicleArray[i],x,y);
+		//ROS_INFO("dis2path:%f\t dis2vehicle:%f\t x:%f  y:%f",dis2pathArray[i],dis2vehicleArray[i],x,y);
 	}
 	bubbleSort(dis2vehicleArray,indexArray,n_object);
 	//dis2vehicleArray was sorted but dis2pathArray not!
@@ -172,7 +172,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
 		//dis2path:    distance from the object to the current path 
 		//dis2pathArray[indexArray[i]] : distance from the object to the origin path
 		//obstacle avoidance offset has been set in last time
@@ -224,7 +224,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
 		dis2path = dis2pathArray[indexArray[i]];
 		
 		if(avoiding_offest[1] != 0.0)
@@ -235,8 +235,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		else
 			safety_distance_front = safety_distance_front_;
 		
-		printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
-				safety_center_distance,safety_distance_front,danger_distance_front_);
+		
 		
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
@@ -249,7 +248,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 			avoid_cmd_.cmd2.set_speed = 0.0;
 			pub_avoid_cmd_.publish(avoid_cmd_);
-			ROS_ERROR("danger!! dis2vehicle:%f\t danger:%f",dis2vehicle,danger_distance_front_ );
+			ROS_ERROR("danger!! dis2vehicle:%f\t dis2path:%f\t offset:%f\t ",dis2vehicle,dis2path,avoiding_offest_ );
 			return;
 		}
 		//object is inside the avoding area!
@@ -276,7 +275,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	avoiding_offest[0] += avoiding_offest_;
 	avoiding_offest[1] += avoiding_offest_;
 	
-	ROS_INFO("offest0:%f\t offset1:%f",avoiding_offest[0],avoiding_offest[1]);
+	//ROS_INFO("offest0:%f\t offset1:%f",avoiding_offest[0],avoiding_offest[1]);
 	
 	//no avoid message
 	if(avoiding_offest[0]==0.0 && avoiding_offest[1] ==0.0) 
@@ -319,6 +318,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	if(offset_msg_.data!=0.0 && is_backToOriginalLane(objects,dis2vehicleArray,indexArray,dis2pathArray,n_object))
 	{
 		offset_msg_.data = 0.0;
+		ROS_ERROR("return");
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	
@@ -333,7 +333,7 @@ bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArra
 	
 	for(size_t i=0; i<n_object; i++)
 	{
-		safety_center_distance = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_*2;
 		
 		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) < safety_center_distance)
 		{

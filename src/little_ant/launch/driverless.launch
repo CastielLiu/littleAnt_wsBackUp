@@ -38,7 +38,7 @@
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
-		<param name="speed" value="5.0"/>						<!-- 跟踪速度  -->
+		<param name="speed" value="15.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.5"/>
 	
