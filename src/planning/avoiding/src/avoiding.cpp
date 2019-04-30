@@ -143,7 +143,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		indexArray[i] = i;
 		dis2vehicleArray[i] = sqrt(x * x + y * y);
 		dis2pathArray[i] = calculate_dis2path(X,Y);
-		ROS_ERROR("dis2path:%f dis2vehicleArray:%f",dis2pathArray[i],dis2vehicleArray[i]);
+		ROS_INFO("dis2path:%f\t dis2vehicle:%f\t x:%f  y:%f",dis2pathArray[i],dis2vehicleArray[i],x,y);
 	}
 	bubbleSort(dis2vehicleArray,indexArray,n_object);
 	//dis2vehicleArray was sorted but dis2pathArray not!
@@ -230,8 +230,8 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		else
 			safety_distance_front = safety_distance_front_;
 		
-		printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
-				safety_center_distance,safety_distance_front,danger_distance_front_);
+	//	printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
+	//			safety_center_distance,safety_distance_front,danger_distance_front_);
 		
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
@@ -244,6 +244,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 			avoid_cmd_.cmd2.set_speed = 0.0;
 			pub_avoid_cmd_.publish(avoid_cmd_);
+			ROS_ERROR("danger!! dis2vehicle:%f\t danger:%f",dis2vehicle,danger_distance_front_ );
 			return;
 		}
 		//object is inside the avoding area!
@@ -363,7 +364,7 @@ float Avoiding::calculate_dis2path(const double& X_,const double& Y_)
 	float dis2last_target = pow(path_points_[target_point_index_-1].x - X_, 2) + 
 					        pow(path_points_[target_point_index_-1].y - Y_, 2) ;
 	
-	std::cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) << std::endl;
+	//std::cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) << std::endl;
 	
 	float first_dis ,second_dis ,third_dis;  //a^2 b^2 c^2
 	size_t first_point_index,second_point_index;

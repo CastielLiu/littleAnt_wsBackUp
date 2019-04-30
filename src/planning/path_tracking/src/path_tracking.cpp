@@ -124,6 +124,11 @@ void PathTracking::run()
 										  path_points_[target_point_index_].yaw);*/
 		if( avoiding_offset_ != 0.0)
 		{
+			if(avoiding_offset_>maxOffset_right_)
+				avoiding_offset_ = maxOffset_right_;
+			else if(avoiding_offset_< maxOffset_left_)
+				avoiding_offset_ = maxOffset_left_;
+				
 		//target point offset
 			target_point_.x =  avoiding_offset_ * cos(target_point_.yaw) + path_points_[target_point_index_].x;
 			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;

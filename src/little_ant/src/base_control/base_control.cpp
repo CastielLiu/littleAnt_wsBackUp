@@ -526,6 +526,12 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
 		stm32_serial_port_->write(send_to_stm32_buf,8);
 	}
+	else
+	{
+		send_to_stm32_buf[5] = 0;
+		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
+		stm32_serial_port_->write(send_to_stm32_buf,8);
+	}
 	
 	
 }

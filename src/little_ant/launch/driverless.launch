@@ -3,9 +3,9 @@
 
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
-	<arg name="stm32_port" default="/dev/U4"/>          <!-- STM32-->
+	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	
-	<arg name="pathTracking_file_name" default="$(find data)/data/2.txt"/>
+	<arg name="pathTracking_file_name" default="$(find data)/data/path.txt"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control">
@@ -20,16 +20,16 @@
 	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
 
 		<param name="avoid_speed" value="3.0" />						 <!-- 避障时的车速  -->
-		<param name="objects_topic" value="/detected_bounding_boxs" />
+		<param name="objects_topic" value="/detection/lidar_objects" />
 		<param name="deceleration_cofficient" value="40" />              <!--系数越大  表明车辆制动性能越差  -->
 																		<!-- 应与实际值保持一致 -->
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
-		<param name="safety_distance_side" value="2.0"/>    <!--   两侧安全距离（参照雷达中心）       -->
+		<param name="safety_distance_side" value="0.3"/>    <!--   两侧安全距离       -->
 		<param name="pedestrian_detection_area_side" value="2.6" />   <!--  行人检测区宽度（参照雷达）   -->
 		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_left" value="0.5"/>
+		<param name="maxOffset_right" value="0.5"/>
 		
 	</node>
 
@@ -38,9 +38,9 @@
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
-		<param name="speed" value="10.0"/>						<!-- 跟踪速度  -->
+		<param name="speed" value="0.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_left" value="0.5"/>
+		<param name="maxOffset_right" value="0.5"/>
 	
 	</node>
 	
@@ -60,6 +60,8 @@
 		<param name="span_default_logs_period" value="0.0" />
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
+	
+	<node pkg="utm_gps" type="utm_gps" name="utm_gps"/>
 	
 <!--调试-->	
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
