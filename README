@@ -1,0 +1,8 @@
+disThreshold_ = 2*vehicle_speed_ ;
+车速与前视距离
+
+车速与最大前轮转角   ant_math  max_side_acceleration
+
+横向偏差与前视距离
+
+当前前轮转角限制车速
