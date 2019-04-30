@@ -119,7 +119,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	first_dis = dis2target;
 	first_point_index = target_point_index;
 	
-	size_t direction = 1;
+	int direction = 1;
 	
 	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
 	{
@@ -172,6 +172,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	float x = (X_-path_points[first_point_index].x) * cos(yaw_of_c) - (Y_-path_points[first_point_index].y) * sin(yaw_of_c);
 	//float y = (X_-path_points[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points[first_point_index].y) * cos(yaw_of_c);
 	
+	//ROS_ERROR("index1:%d\t index2:%d",first_point_index,second_point_index);
 	return x;
 }
 

@@ -41,7 +41,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
 	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
 	
-	assert(maxOffset_left_ < 0 && maxOffset_right_ >0);
+	assert(maxOffset_left_ < 0 && maxOffset_right_ >=0);
 	
 	if(path_points_file_.empty())
 	{
@@ -235,8 +235,8 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		else
 			safety_distance_front = safety_distance_front_;
 		
-	//	printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
-	//			safety_center_distance,safety_distance_front,danger_distance_front_);
+		printf("safety_center_distance:%f\tsafety_distance_front:%f\t danger_front_:%f\n",
+				safety_center_distance,safety_distance_front,danger_distance_front_);
 		
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))

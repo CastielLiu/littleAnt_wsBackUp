@@ -29,16 +29,16 @@
 		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_right" value="0.5"/>
+		<param name="maxOffset_right" value="0.0"/>
 		
 	</node>
 
 <!-- 跟踪   -->
-	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" >
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen"  >
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
-		<param name="speed" value="0.0"/>						<!-- 跟踪速度  -->
+		<param name="speed" value="5.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.5"/>
 	
