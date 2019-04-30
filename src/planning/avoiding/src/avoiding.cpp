@@ -142,7 +142,12 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		
 		indexArray[i] = i;
 		dis2vehicleArray[i] = sqrt(x * x + y * y);
-		dis2pathArray[i] = calculate_dis2path(X,Y);
+		//dis2pathArray[i] = calculate_dis2path(X,Y);
+		dis2pathArray[i] = calculateDis2path(X,Y,path_points_,target_point_index_);
+		
+		printf("x:%f\ty:%f\tyaw:%f\t X:%f\tY:%f\t\n",current_point_.x,current_point_.y,current_point_.yaw*180.0/M_PI,X,Y);
+		
+		
 		ROS_INFO("dis2path:%f\t dis2vehicle:%f\t x:%f  y:%f",dis2pathArray[i],dis2vehicleArray[i],x,y);
 	}
 	bubbleSort(dis2vehicleArray,indexArray,n_object);

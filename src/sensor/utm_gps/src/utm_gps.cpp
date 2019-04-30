@@ -16,7 +16,7 @@ void polar_gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
 	gps_status_ = true;
 	
-	utm_gps_msg.yaw = msg->azimuth;
+	utm_gps_msg.yaw = msg->azimuth*M_PI/180.0;
 }
 
 void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
