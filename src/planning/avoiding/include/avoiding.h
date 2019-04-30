@@ -66,6 +66,8 @@ private:
 	std::pair<double,double> vehicleToWorldCoordination(float x,float y);
 	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+	bool is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
 	inline void showErrorSystemStatus();
 	
 private:

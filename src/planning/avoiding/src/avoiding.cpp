@@ -110,6 +110,11 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	
 	if(n_object==0)
 	{
+		if(offset_msg_.data != 0.0)
+		{
+			offset_msg_.data = 0.0;
+			pub_avoid_msg_to_gps_.publish(offset_msg_);
+		}
 		avoid_cmd_.status = false;
 		avoid_cmd_.just_decelerate = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
@@ -128,6 +133,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	for(size_t i=0; i< n_object; i++)
 	{
 		object =  objects->boxes[i];
+		
 		x = - object.pose.position.y;
 		y =   object.pose.position.x;
 		
@@ -161,7 +167,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
 		//dis2path:    distance from the object to the current path 
 		//dis2pathArray[indexArray[i]] : distance from the object to the origin path
 		//obstacle avoidance offset has been set in last time
@@ -213,7 +219,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.x/2 + safety_distance_side_;
+		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
 		dis2path = dis2pathArray[indexArray[i]];
 		
 		if(avoiding_offest[1] != 0.0)
@@ -303,6 +309,33 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	ROS_INFO("offset:%f",offset_msg_.data);
+	
+	if(offset_msg_.data!=0.0 && is_backToOriginalLane(objects,dis2vehicleArray,indexArray,dis2pathArray,n_object))
+	{
+		offset_msg_.data = 0.0;
+		pub_avoid_msg_to_gps_.publish(offset_msg_);
+	}
+	
+}
+
+bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+{
+	float safety_center_distance;
+	
+	bool ok = true;
+	
+	for(size_t i=0; i<n_object; i++)
+	{
+		safety_center_distance = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
+		
+		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) < safety_center_distance)
+		{
+			ok = false;
+			break;
+		}
+	}
+	return ok;
 }
 
 std::pair<double,double> Avoiding::vehicleToWorldCoordination(float x,float y)
