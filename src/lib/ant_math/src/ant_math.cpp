@@ -13,39 +13,58 @@ const float g_vehicle_width = 1.8 ;// m
 static const float max_side_acceleration = 0.5;
 
 
-float generate_steeringAngle_by_steeringRadius(float radius)
+float generateRoadwheelAngleByRadius(float radius)
 {
 	assert(radius!=0);
 	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
 	return atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
 }
 
-double sin_deg(double deg)
+double sinDeg(const double& deg)
 {
 	return sin(deg*M_PI/180.0);
 }
 
-float limit_steeringAngle(float angle,float limit)
+float saturationEqual(float value,float limit)
 {
 	assert(limit>0);
-	if(angle>limit)
-		angle = limit;
-	else if(angle < -limit)
-		angle = -limit;
-	return angle;
+	if(value>limit)
+		value = limit;
+	else if(value < -limit)
+		value = -limit;
+	return value;
 }
 
-float generate_max_steering_angle_by_speed(float speed)
+float generateMaxSteeringAngleBySpeed(float speed)
+{
+	float min_steering_radius = speed*speed/max_side_acceleration;
+	
+	if(min_steering_radius <3.0)  //radius = 3.0 -> steeringAngle = 30.0
+		min_steering_radius = 3.0;
+	
+	float max_steering_angle = generateRoadwheelAngleByRadius(min_steering_radius);
+	if(max_steering_angle > MAX_ROAD_WHEEL_ANGLE - 50.0)
+		max_steering_angle = MAX_ROAD_WHEEL_ANGLE -50.0;
+	
+	return max_steering_angle;
+}
+
+float limitSteeringAngleBySpeed(float angle, float speed)
 {
 	float min_steering_radius = speed*speed/max_side_acceleration;
 	if(min_steering_radius <3.0)  //radius = 3.0 -> steeringAngle = 30.0
 		min_steering_radius = 3.0;
 	
-	float max_steering_angle = generate_steeringAngle_by_steeringRadius(min_steering_radius);
-	if(max_steering_angle > MAX_ROAD_WHEEL_ANGLE - 8.0)
-		max_steering_angle = MAX_ROAD_WHEEL_ANGLE -8.0;
-	
-	return max_steering_angle;
+	float max_steering_angle = generateRoadwheelAngleByRadius(min_steering_radius);
+	if(max_steering_angle > MAX_ROAD_WHEEL_ANGLE - 50.0)
+		max_steering_angle = MAX_ROAD_WHEEL_ANGLE -50.0;
+	return saturationEqual(angle,max_steering_angle);
+}
+
+float limitSpeedByCurrentSteeringAngle(float speed,float angle)
+{
+	float steering_radius = AXIS_DISTANCE/tan(angle*M_PI/180.0);
+	return sqrt(steering_radius*max_side_acceleration);
 }
 
 int sign(float num)
@@ -58,7 +77,7 @@ float deg2rad(float deg)
 	return  (deg/180.0)*M_PI;
 }
 
-bool load_path_points(std::string file_path,std::vector<gpsMsg_t>& points)
+bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
 	FILE *fp = fopen(file_path.c_str(),"r");
 	
@@ -84,7 +103,90 @@ bool load_path_points(std::string file_path,std::vector<gpsMsg_t>& points)
 	return true;
 }
 
- 
+
+float calculateDis2path(const double& X_,const double& Y_,
+						 const std::vector<gpsMsg_t>& path_points, 
+						 const size_t& target_point_index)
+{
+	//ROS_INFO("path_points.size:%d\t target_point_index:%d",path_points.size(),target_point_index);
+	
+	//this target is tracking target,
+	//let the target points as the starting point of index
+	//Judging whether to index downward or upward
+	float dis2target = pow(path_points[target_point_index].x - X_, 2) + 
+					   pow(path_points[target_point_index].y - Y_, 2) ;
+	
+	float dis2next_target = pow(path_points[target_point_index+1].x - X_, 2) + 
+							pow(path_points[target_point_index+1].y - Y_, 2) ;
+							
+	float dis2last_target = pow(path_points[target_point_index-1].x - X_, 2) + 
+					        pow(path_points[target_point_index-1].y - Y_, 2) ;
+	
+	//std::cout << sqrt(dis2target)<<"\t"<< sqrt(dis2next_target) <<"\t"<< sqrt(dis2last_target) << std::endl;
+	
+	float first_dis ,second_dis ;  //a^2 b^2 
+	size_t first_point_index,second_point_index;
+	
+	first_dis = dis2target;
+	first_point_index = target_point_index;
+	
+	size_t direction = 1;
+	
+	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
+	{
+		direction = -1;
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index-i;
+			
+			second_dis = pow(path_points[second_point_index].x - X_, 2) + 
+						 pow(path_points[second_point_index].y - Y_, 2) ;
+			
+			if(second_dis < first_dis) //continue 
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+				break;
+		}
+	}
+	else if(dis2next_target < dis2target && dis2last_target > dis2target) //upward
+	{
+		for(size_t i=1;true;i++)
+		{
+			second_point_index = target_point_index + i;
+			second_dis = pow(path_points[second_point_index].x - X_, 2) + 
+						 pow(path_points[second_point_index].y - Y_, 2) ;
+
+			if(second_dis < first_dis) //continue
+			{
+				first_dis = second_dis;
+				first_point_index = second_point_index;
+			}
+			else  //end
+				break;
+		}
+	}
+	else //midile
+	{
+		first_point_index = target_point_index-1;
+		second_point_index = target_point_index +1;
+	}
+	
+	//the direction of side c 
+	//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
+	float yaw_of_c = direction * atan2(path_points[second_point_index].x-path_points[first_point_index].x,
+									   path_points[second_point_index].y-path_points[first_point_index].y);
+						   
+	//object : world coordination to local coordination
+	float x = (X_-path_points[first_point_index].x) * cos(yaw_of_c) - (Y_-path_points[first_point_index].y) * sin(yaw_of_c);
+	//float y = (X_-path_points[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points[first_point_index].y) * cos(yaw_of_c);
+	
+	return x;
+}
+
+
 
 
 

@@ -126,9 +126,9 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			cmd_.cmd2.set_speed = 0.0;
 			cmd_.cmd2.set_brake = -speed * 1.0;
 		}
-		float steeringRadius = trackTargetMsg_.distance/(2.5*2*sin_deg(trackTargetMsg_.azimuth)) ;
+		float steeringRadius = trackTargetMsg_.distance/(2.5*2*sinDeg(trackTargetMsg_.azimuth)) ;
 		cmd_.cmd2.set_steeringAngle = 
-			-limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steeringRadius),15.0) * g_steering_gearRatio;
+			-saturationEqual(generateRoadwheelAngleByRadius(steeringRadius),15.0) * g_steering_gearRatio;
 			
 		ROS_INFO("cmd_speed:%f\t cmd_angle:%f tracking_distance:%f",
 			cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle,tracking_distance_);

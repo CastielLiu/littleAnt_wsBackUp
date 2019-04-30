@@ -33,7 +33,9 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);
 
 
-	sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
+	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PathTracking::vehicleSpeed_callback,this);
+	
+	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PathTracking::vehicleState4_callback,this);
 	
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
@@ -56,7 +58,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	//start the ros::spin() thread
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
 	
-	if(!load_path_points(path_points_file_, path_points_))
+	if(!loadPathPoints(path_points_file_, path_points_))
 		return false;
 
 	
@@ -109,6 +111,7 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size())
 	{
+		//publish the current target index
 		std_msgs::UInt32 index;   index.data = target_point_index_;
 		pub_tracking_target_index_.publish(index);
 		
@@ -121,10 +124,12 @@ void PathTracking::run()
 			target_point_.x =  avoiding_offset_ * cos(target_point_.yaw) + path_points_[target_point_index_].x;
 			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
 			//printf("new__ x:%lf \ty:%lf \t yaw:%f\n",target_point_.x,target_point_.y,target_point_.yaw);
-			dis_threshold = 2*disThreshold_;
 		}
-		else
-			dis_threshold = disThreshold_;
+		
+		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_)
+					   -avoiding_offset_;
+			
+		disThreshold_ = disThreshold_*(1 + fabs(lateral_err_)*3);
 		
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
@@ -140,21 +145,19 @@ void PathTracking::run()
 		
 		float turning_radius = (-0.5 * dis_yaw.first)/sin(yaw_err);
 
-		float t_roadWheelAngle = generate_steeringAngle_by_steeringRadius(turning_radius);
+		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
 		if(i%50==0)
 		{
-			//printf("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
-			//		current_point_.longitude,current_point_.latitude,current_point_.yaw*180.0/M_PI,
-			//		target_point_.longitude,target_point_.latitude,dis_yaw.second);
-			printf("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
-					dis_yaw.first,yaw_err*180/M_PI,turning_radius,t_roadWheelAngle);
+			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
+			ROS_INFO("expect roadwheel angle:%.2f",t_roadWheelAngle);
 		}
 		i++;
 		
-		t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle, max_steering_angle_);
+		t_roadWheelAngle = saturationEqual(t_roadWheelAngle, max_steering_angle_);
 		
-		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;
+		gps_controlCmd_.cmd2.set_speed = limitSpeedByCurrentSteeringAngle(path_tracking_speed_,current_steering_angle_);
+		
 		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;
 		
 		loop_rate.sleep();
@@ -209,7 +212,12 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	if(disThreshold_ < 3.0) 
 		disThreshold_  = 3.0;
 		
-	max_steering_angle_ = generate_max_steering_angle_by_speed(vehicle_speed_);
+	max_steering_angle_ = generateMaxSteeringAngleBySpeed(vehicle_speed_);
+}
+
+void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
+{
+	current_steering_angle_ = msg->steeringAngle;
 }
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)

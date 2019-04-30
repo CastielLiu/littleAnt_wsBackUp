@@ -109,7 +109,7 @@ void LaneKeeping::keepLane()
 	
 	float steering_radius = 0.5*foresight_distance_ / sin(delta) ;
 	
-	float angle = limit_steeringAngle(generate_steeringAngle_by_steeringRadius(steering_radius),15.0) * g_steering_gearRatio;
+	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
 	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.err, lane_msg_.theta,alpha);
 	
@@ -284,9 +284,9 @@ void LaneKeeping::changeLane(int dir,float widthOfLane)
 		
 		turning_radius = (0.5 * distance)/sin(yaw_err);
 		
-		t_roadWheelAngle = generate_steeringAngle_by_steeringRadius(turning_radius);
+		t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
-		t_roadWheelAngle = limit_steeringAngle(t_roadWheelAngle, 20.0);
+		t_roadWheelAngle = saturationEqual(t_roadWheelAngle, 20.0);
 		
 		cmd_.cmd2.set_speed = changeLane_speed_;
 		cmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;

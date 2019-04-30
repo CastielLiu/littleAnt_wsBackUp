@@ -57,7 +57,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	pub_avoid_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	pub_avoid_msg_to_gps_ = nh.advertise<std_msgs::Float32>("/start_avoiding",1);
 	
-	if(!load_path_points(path_points_file_, path_points_))
+	if(!loadPathPoints(path_points_file_, path_points_))
 		return false;
 	return true;
 }
@@ -128,8 +128,8 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	for(size_t i=0; i< n_object; i++)
 	{
 		object =  objects->boxes[i];
-		x = object.pose.position.x;
-		y = object.pose.position.y;
+		x = - object.pose.position.y;
+		y =   object.pose.position.x;
 		
 		X =  x * cos(current_point_.yaw) + y * sin(current_point_.yaw) + current_point_.x;
 		Y = -x * sin(current_point_.yaw) + y * cos(current_point_.yaw) + current_point_.y;
@@ -444,7 +444,6 @@ void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::Co
 		obstacleIndex[obstacleSequence] = objectIndex;
 		obstacleSequence ++;
 	}
-	
 }
 
 whatArea_t Avoiding::which_area(float& x,float& y)

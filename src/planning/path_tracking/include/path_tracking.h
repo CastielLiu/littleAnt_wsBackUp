@@ -7,6 +7,7 @@
 #include<vector>
 
 #include<little_ant_msgs/State2.h>  //speed
+#include<little_ant_msgs/State4.h>  //steerAngle
 #include"gps_msgs/Inspvax.h"
 #include<nav_msgs/Odometry.h> 
 #include<geometry_msgs/Quaternion.h>
@@ -36,6 +37,7 @@ public:
 	
 	void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
 	
+	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
 	bool is_gps_data_valid(gpsMsg_t& point);
@@ -47,6 +49,7 @@ private:
 	ros::Subscriber sub_cartesian_gps_;
 	
 	ros::Subscriber sub_vehicleState2_;
+	ros::Subscriber sub_vehicleState4_;
 	
 	ros::Subscriber sub_avoiding_from_lidar_;
 	
@@ -79,10 +82,13 @@ private:
 	uint8_t gps_status_;
 	
 	float vehicle_speed_;
+	float current_steering_angle_;
 	
 	float max_steering_angle_;
 	
 	bool is_avoiding_;
+	
+	float lateral_err_;
 
 };
 
