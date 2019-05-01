@@ -12,22 +12,20 @@
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
 		<param name ="stm32_baudrate" value="115200"/>
-		<param name ="max_steering_speed" value="5.0"/> <!--前后帧转角最大差值 -->
+		<param name ="max_steering_speed" value="1.0"/> <!--前后帧转角最大差值 -->
 		
 	</node>
 
 <!--避障-->	
 	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
 
-		<param name="avoid_speed" value="3.0" />						 <!-- 避障时的车速  -->
 		<param name="objects_topic" value="/detection/lidar_objects" />
-		<param name="deceleration_cofficient" value="40" />              <!--系数越大  表明车辆制动性能越差  -->
-																		<!-- 应与实际值保持一致 -->
-		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
-		<param name="safety_distance_side" value="0.3"/>    <!--   两侧安全距离       -->
-		<param name="pedestrian_detection_area_side" value="2.6" />   <!--  行人检测区宽度（参照雷达）   -->
-		<param name="danger_distance_side"  value="1.2" />  <!--   两侧危险距离（参照雷达中心）       -->
 		
+		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
+		
+		<param name="safety_distance_side" value="0.3"/>    <!--   两侧安全距离       -->
+		
+		<param name="max_deceleration" value="5.0" />
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.0"/>
 		

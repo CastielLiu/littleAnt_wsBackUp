@@ -352,8 +352,8 @@ void BaseControl::setDriverlessMode()
 {
 	ROS_INFO("set driverless mode ing ............");
 	
-	*(long int*)canMsg_cmd1.data = 0;
-	*(long int*)canMsg_cmd2.data = 0;
+	*(unsigned long int*)canMsg_cmd1.data = 0;
+	*(unsigned long int*)canMsg_cmd2.data = 0;
 
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	canMsg_cmd2.data[0] = 0x01; //set_gear drive
@@ -380,8 +380,8 @@ void BaseControl::setDriverlessMode()
 void BaseControl::exitDriverlessMode()
 {
 	ROS_INFO("driverless mode exited ............");
-	*(long int*)canMsg_cmd1.data = 0;
-	*(long int*)canMsg_cmd2.data = 0;
+	*(unsigned long int*)canMsg_cmd1.data = 0;
+	*(unsigned long int*)canMsg_cmd2.data = 0;
 
 	canMsg_cmd1.data[0] = 0x00; //driverless_mode
 	canMsg_cmd2.data[0] = 0x00; //set_gear 0
@@ -483,9 +483,14 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	else if(set_speed > MAX_SPEED-1) 
 		set_speed = MAX_SPEED-1;
 		
-	float currentSpeed = (state2.wheel_speed_FR + state2.wheel_speed_FL)/2;
-	if(set_speed-currentSpeed>5.0)
-		set_speed = currentSpeed+5.0;
+	int currentSpeed = state2.vehicle_speed * 3.6;
+	
+	float increment = 2.0/(currentSpeed/5+1);
+	
+	if(set_speed - currentSpeed > increment )
+		set_speed = currentSpeed + increment;
+		
+		
 		
 	canMsg_cmd2.data[0] &= 0xf0; //clear least 4bits
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
@@ -505,7 +510,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	last_set_steeringAngle = current_set_steeringAngle;
 	
-	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +20;
+	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +30;
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);

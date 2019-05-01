@@ -29,7 +29,7 @@
 #define ID_STATE3 0x4D1
 #define ID_STATE4 0x1D5
 
-#define MAX_SPEED 15.0
+#define MAX_SPEED 30.0
 
 #ifndef PACK
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))

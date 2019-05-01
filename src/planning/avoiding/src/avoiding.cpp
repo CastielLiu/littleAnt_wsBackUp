@@ -76,7 +76,7 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 	
 	//最大减速度->最短制动距离 + 防撞距离
-	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 5.0;  
+	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 3.0;  
 	
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
@@ -87,7 +87,6 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
 				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
-	
 }
 
 void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
@@ -243,11 +242,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		//object is inside the danger area ,emergency brake
 		else if(dis2vehicle <= danger_distance_front_)
 		{
-			avoid_cmd_.status = true;
-			avoid_cmd_.just_decelerate = true;
-			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
-			avoid_cmd_.cmd2.set_speed = 0.0;
-			pub_avoid_cmd_.publish(avoid_cmd_);
+			this->emergencyBrake();
 			ROS_ERROR("danger!! dis2vehicle:%f\t dis2path:%f\t offset:%f\t ",dis2vehicle,dis2path,avoiding_offest_ );
 			return;
 		}
@@ -321,7 +316,6 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		ROS_ERROR("return");
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
-	
 }
 
 bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
@@ -534,6 +528,15 @@ inline void Avoiding::showErrorSystemStatus()
 	ROS_INFO("gps status:%d\t targetIndex status:%d\t vehicleSpeed status:%d",
 			gps_status_,target_point_index_status_,vehicle_speed_status_);
 	ROS_INFO("waiting for all messages is availble....");
+}
+
+inline void Avoiding::emergencyBrake()
+{
+	avoid_cmd_.status = true;
+	avoid_cmd_.just_decelerate = true;
+	avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
+	avoid_cmd_.cmd2.set_speed = 0.0;
+	pub_avoid_cmd_.publish(avoid_cmd_);
 }
 
 
