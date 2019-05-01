@@ -150,6 +150,12 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		//ROS_INFO("dis2path:%f\t dis2vehicle:%f\t x:%f  y:%f",dis2pathArray[i],dis2vehicleArray[i],x,y);
 	}
 	bubbleSort(dis2vehicleArray,indexArray,n_object);
+	if(is_dangerous(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object))
+	{
+		this->emergencyBrake();
+		return ;
+	}
+		
 	//dis2vehicleArray was sorted but dis2pathArray not!
 	decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);
 	delete [] indexArray;
@@ -188,16 +194,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance_x) || (dis2vehicle >= safety_distance_front))
 			continue;
-		//object is inside the danger area ,emergency brake
-		else if(dis2vehicle <= danger_distance_front_)
-		{
-			avoid_cmd_.status = true;
-			avoid_cmd_.just_decelerate = true;
-			avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
-			avoid_cmd_.cmd2.set_speed = 0.0;
-			pub_avoid_cmd_.publish(avoid_cmd_);
-			return ;
-		}
+		
+		
 		//object is inside the avoding area!
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
@@ -239,13 +237,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is outside the avoding area
 		if((fabs(dis2path) >= safety_center_distance_x) || (dis2vehicle >= safety_distance_front))
 			continue;
-		//object is inside the danger area ,emergency brake
-		else if(dis2vehicle <= danger_distance_front_)
-		{
-			this->emergencyBrake();
-			ROS_ERROR("danger!! dis2vehicle:%f\t dis2path:%f\t offset:%f\t ",dis2vehicle,dis2path,avoiding_offest_ );
-			return;
-		}
+			
 		//object is inside the avoding area!
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
