@@ -80,7 +80,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		
 		target_point_ = path_points_[target_point_index_];
 		
-		current_distance = get_dis_yaw(current_point_,target_point_).first;
+		current_distance = get_dis_yaw(target_point_ ,current_point_).first;
 		
 		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
 		
@@ -137,7 +137,7 @@ void PathTracking::run()
 		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_)
 					   -avoiding_offset_;
 		float dis_threshold = disThreshold_;  /*(1 + sqrt(fabs(lateral_err_)));*/
-		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
+		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
 		if( dis_yaw.first < dis_threshold)
 		{
 			target_point_ = path_points_[target_point_index_++];
@@ -159,9 +159,9 @@ void PathTracking::run()
 		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
 		
 		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;/* limitSpeedByCurrentRoadwheelAngle(path_tracking_speed_,current_roadwheelAngle_);*/
-		gps_controlCmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;
+		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
 		
-		if(i%50==0)
+		if(i%10==0)
 		{
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",dis_threshold,t_roadWheelAngle);
