@@ -80,13 +80,14 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	
 	//safety_distance_front_ = danger_distance_front_ + 10.0;
 	
-	safety_distance_front_ = danger_distance_front_ *(2.5);  // 安全距离 随危险距离变化
-	
+	safety_distance_front_ = danger_distance_front_ *(5);  // 安全距离 随危险距离变化
+	/*
 	static int i=0;
 	i++;
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
 				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
+	*/
 }
 
 void Avoiding::utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg)
@@ -106,6 +107,8 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	}
 	
 	size_t n_object = objects->boxes.size();
+	
+	//ROS_INFO("n_object:%d",n_object);
 	
 	if(n_object==0)
 	{
@@ -153,6 +156,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	if(is_dangerous(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object))
 	{
 		this->emergencyBrake();
+		ROS_ERROR("emergencyBrake!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		return ;
 	}
 		
@@ -200,13 +204,22 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
 		{
-			//the person is inside the true avoiding area
-			if(dis2vehicle <= safety_distance_front_)
+			if(dis2vehicle <= danger_distance_front_*2)
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate = true;
 				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 0.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				return;
+			}
+			//the person is inside the true avoiding area
+			else if(dis2vehicle <= safety_distance_front_)
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd_.just_decelerate = true;
+				avoid_cmd_.cmd2.set_brake = 0.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 10.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				return;
 			}
@@ -242,13 +255,22 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
 		{
-			//the person is inside the true avoiding area
-			if(dis2vehicle <= safety_distance_front_)
+			if(dis2vehicle <= danger_distance_front_*2)
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate = true;
 				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 0.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				return;
+			}
+			//the person is inside the true avoiding area
+			else if(dis2vehicle <= safety_distance_front_)
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd_.just_decelerate = true;
+				avoid_cmd_.cmd2.set_brake = 0.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 10.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				return;
 			}
@@ -305,7 +327,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	if(offset_msg_.data!=0.0 && is_backToOriginalLane(objects,dis2vehicleArray,indexArray,dis2pathArray,n_object))
 	{
 		offset_msg_.data = 0.0;
-		ROS_ERROR("return");
+		ROS_ERROR("returnreturnreturnreturnreturnreturnreturnreturnreturnreturn................................");
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 }
@@ -321,7 +343,7 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 	{
 		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
 		
-		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) < safety_center_distance_x)
+		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) <= safety_center_distance_x)
 		{
 			is_ok = false;
 			break;
@@ -343,7 +365,9 @@ inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray:
 		x = -objects->boxes[indexArray[i]].pose.position.y;
 		y = objects->boxes[indexArray[i]].pose.position.x;
 		
-		if(fabs(y) <= safety_center_distance_y || 
+		//ROS_INFO("safety_x: %f\t safety_y:%f\t x:%f\t y:%f",safety_center_distance_x,safety_center_distance_y,x,y);
+		
+		if(fabs(y) <= safety_center_distance_y && 
 		   fabs(x) <= safety_center_distance_x)
 		   return true;
 	}

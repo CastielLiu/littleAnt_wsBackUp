@@ -4,14 +4,14 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="pathTracking_file_name" default="$(find data)/data/path.txt"/>
+	<arg name="pathTracking_file_name" default="$(find data)/data/_path.txt"/>
 	
 <!--底层 -->	
-	<node name="base_control" pkg="little_ant" type="base_control">
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
 		<param name ="stm32_baudrate" value="115200"/>
-		<param name ="max_steering_speed" value="1.0"/> <!--前后帧转角最大差值 -->
+		<param name ="max_steering_speed" value="2.0"/> <!--前后帧转角最大差值 -->
 		
 	</node>
 
@@ -22,7 +22,7 @@
 		
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		
-		<param name="safety_distance_side" value="0.3"/>    <!--   两侧安全距离       -->
+		<param name="safety_distance_side" value="0.2"/>    <!--   两侧安全距离       -->
 		
 		<param name="max_deceleration" value="5.0" />
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
@@ -31,11 +31,11 @@
 	</node>
 
 <!-- 跟踪   -->
-	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen"  >
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" >
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
-		<param name="speed" value="15.0"/>						<!-- 跟踪速度  -->
+		<param name="speed" value="10.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-2.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.5"/>
 	

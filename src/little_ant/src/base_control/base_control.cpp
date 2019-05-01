@@ -464,27 +464,29 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 
 	float set_brake = msg->set_brake;
 	
+	static float last_set_steeringAngle = 0;
+	
+	int currentSpeed = state2.vehicle_speed * 3.6;
+	
 	// 事实是：一旦紧急制动 自动驾驶模式已经退出，执行不到这里 
-	if(stm32_msg1_.is_emergency_brake)
+	/*if(stm32_msg1_.is_emergency_brake)
 	{
 		set_brake = 40.0;
 		set_speed = 0.0;
-	}
-		
-
-	static float last_set_steeringAngle = 0;
-
-	if(set_brake>40)
+	}*/
+	
+	if(currentSpeed+3.0 > msg->set_speed)
 	{
-		set_brake = 40;
-		set_speed = 0;
+		set_brake = (currentSpeed+3.0 - msg->set_speed)*5 + 40;
+	
 	}
-	else if(set_brake >0.0) 
+	
+	set_brake = (set_brake > msg->set_brake) ? set_brake :msg->set_brake;
+	
+	if(set_brake >0.0) 
 		set_speed = 0.0;
 	else if(set_speed > MAX_SPEED-1) 
 		set_speed = MAX_SPEED-1;
-		
-	int currentSpeed = state2.vehicle_speed * 3.6;
 	
 	float increment = 2.0/(currentSpeed/5+1);
 	
@@ -497,7 +499,10 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	canMsg_cmd2.data[1] = uint8_t(set_speed * 10 * 15.0 / MAX_SPEED);
 	
-	canMsg_cmd2.data[2] = uint8_t(msg->set_brake *2.5);
+	if(set_brake>40)
+		canMsg_cmd2.data[2] = uint8_t(40 *2.5);
+	else
+		canMsg_cmd2.data[2] = uint8_t(set_brake *2.5);
 	
 	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
 	
@@ -522,21 +527,12 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	can2serial.sendCanMsg(canMsg_cmd2);
 	
-	float raw_set_brake = msg->set_brake;
-	
-	if(currentSpeed+3.0 > msg->set_speed)
+	if(set_brake > 40)
 	{
-		raw_set_brake = (currentSpeed+3.0 - msg->set_speed)*5 + 40;
-	
-		//ROS_INFO("set_brake:%f",raw_set_brake);
-	}
-	
-	if(raw_set_brake > 40)
-	{
-		if(raw_set_brake >100)
+		if(set_brake >100)
 			send_to_stm32_buf[5] = 255;
 		else
-			send_to_stm32_buf[5] = 1.0*(raw_set_brake-40)/60 * 255;
+			send_to_stm32_buf[5] = 1.0*(set_brake-40)/60 * 255;
 		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
 		stm32_serial_port_->write(send_to_stm32_buf,8);
 	}
