@@ -10,7 +10,7 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 const float g_vehicle_width = 1.8 ;// m
 
-static const float max_side_acceleration = 2.0;
+static const float max_side_acceleration = 1.2; // m/s/s
 
 
 float generateRoadwheelAngleByRadius(float radius)
@@ -37,7 +37,7 @@ float saturationEqual(float value,float limit)
 }
 
 
-float limitRoadwheelAngleBySpeed(float angle, float speed)
+float limitRoadwheelAngleBySpeed(const float& angle, const float& speed)
 {
 	float min_steering_radius = speed*speed/max_side_acceleration;
 	if(min_steering_radius <3.0)  //radius = 3.0 -> steeringAngle = 30.0
@@ -83,7 +83,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 #if IS_POLAR_COORDINATE_GPS == 1
 		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,&point.yaw);
 #else
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
+		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
 #endif			
 		points.push_back(point);
 	}
@@ -174,6 +174,20 @@ float calculateDis2path(const double& X_,const double& Y_,
 	
 	//ROS_ERROR("index1:%d\t index2:%d",first_point_index,second_point_index);
 	return x;
+}
+
+float limitSpeedByPathCurvature(const float& speed,const float& curvature)
+{
+	if(curvature == 0.0)
+		return speed;
+	
+	float max_speed =  sqrt(1.0/curvature*max_side_acceleration) *3.6;
+	return speed>max_speed? max_speed: speed;
+}
+
+float limitSpeedByLateralAndYawErr(float speed,float latErr,float yawErr)
+{
+	///??
 }
 
 

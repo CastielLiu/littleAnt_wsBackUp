@@ -1,6 +1,7 @@
 
 import matplotlib.pyplot as plt
 import math
+import sys
 
 
 class Points:
@@ -17,6 +18,12 @@ class Points:
 			self.x.append(float(x))
 			self.y.append(float(y))
 			self.yaw.append(float(yaw))
+	
+	def dump(self,file_name):
+		with open(file_name,'w') as f:
+			for i in range(len(self.x)):
+				f.write('%.3f\t%.3f\t%.3f\t%.5f\n' %(self.x[i],self.y[i],self.yaw[i],self.curvature[i]))
+	
 	def clear(self):
 		self.x.clear()
 		self.y.clear()
@@ -83,8 +90,17 @@ def plot():
 
 
 
-def main():
-	plot()
+def main(argv):
+	path_points = Points()
+	src_file = 'path.txt'
+	if(len(argv)>1):
+		src_file = argv[1]
+			
+	path_points.load(src_file)
+	
+	path_points.calculateCurvature()
+	path_points.curvatureFilter(15)
+	path_points.dump('_'+src_file)
 
 
 
@@ -95,4 +111,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	main(sys.argv)

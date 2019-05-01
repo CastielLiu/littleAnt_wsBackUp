@@ -24,6 +24,8 @@ typedef struct
 	double x;
 	double y;
 	
+	float curvature;
+	
 }gpsMsg_t;
 
 
@@ -32,7 +34,8 @@ double sinDeg(const double& deg);
 float  saturationEqual(float value,float limit);
 int    sign(float num);
 float  deg2rad(float deg);
-float limitRoadwheelAngleBySpeed(float angle, float speed);
+float limitRoadwheelAngleBySpeed(const float& angle, const float& speed);
+float limitSpeedByPathCurvature(const float& speed,const float& curvature);
 float limitSpeedByCurrentRoadwheelAngle(float speed,float angle);
 bool   loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points);
 float  calculateDis2path(const double& X_,const double& Y_,
