@@ -11,7 +11,7 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 const float g_vehicle_width = 1.8 ;// m
 const float g_vehicle_length = 3.5; 
 
-static const float max_side_acceleration = 1.2; // m/s/s
+static const float max_side_acceleration = 2; // m/s/s
 
 
 float generateRoadwheelAngleByRadius(float radius)
@@ -47,6 +47,7 @@ float limitRoadwheelAngleBySpeed(const float& angle, const float& speed)
 	float max_roadwheelAngle = fabs(generateRoadwheelAngleByRadius(min_steering_radius));
 	if(max_roadwheelAngle > MAX_ROAD_WHEEL_ANGLE - 5.0)
 	   max_roadwheelAngle = MAX_ROAD_WHEEL_ANGLE -5.0;
+	//ROS_INFO("max_angle:%f\t angle:%f",max_roadwheelAngle,angle);
 	return saturationEqual(angle,max_roadwheelAngle);
 }
 
@@ -182,7 +183,7 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	if(curvature == 0.0)
 		return speed;
 	
-	float max_speed =  sqrt(1.0/curvature*max_side_acceleration) *3.6;
+	float max_speed =  sqrt(1.0/fabs(curvature)*max_side_acceleration) *3.6;
 	return speed>max_speed? max_speed: speed;
 }
 

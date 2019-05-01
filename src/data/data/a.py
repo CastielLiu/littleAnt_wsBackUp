@@ -63,9 +63,7 @@ def plot():
 	
 	ax1.plot(range(len(path_points.x)),path_points.curvature,'b.')
 	
-	plt.show()
-	return
-	
+	plt.figure(2)
 	plt.plot(path_points.x,path_points.y,'r--',label="path")
 	
 	result_points = Points()

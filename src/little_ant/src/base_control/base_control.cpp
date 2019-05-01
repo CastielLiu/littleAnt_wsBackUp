@@ -461,6 +461,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		return ;
 		
 	float set_speed = msg->set_speed;
+
 	float set_brake = msg->set_brake;
 	
 	// 事实是：一旦紧急制动 自动驾驶模式已经退出，执行不到这里 
@@ -489,8 +490,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	if(set_speed - currentSpeed > increment )
 		set_speed = currentSpeed + increment;
-		
-		
+			
 		
 	canMsg_cmd2.data[0] &= 0xf0; //clear least 4bits
 	canMsg_cmd2.data[0] |= (msg->set_gear)&0x0f;
@@ -522,12 +522,21 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	can2serial.sendCanMsg(canMsg_cmd2);
 	
-	if(msg->set_brake > 40)
+	float raw_set_brake = msg->set_brake;
+	
+	if(currentSpeed+3.0 > msg->set_speed)
 	{
-		if(msg->set_brake >100)
+		raw_set_brake = (currentSpeed+3.0 - msg->set_speed)*5 + 40;
+	
+		//ROS_INFO("set_brake:%f",raw_set_brake);
+	}
+	
+	if(raw_set_brake > 40)
+	{
+		if(raw_set_brake >100)
 			send_to_stm32_buf[5] = 255;
 		else
-			send_to_stm32_buf[5] = 1.0*(msg->set_brake-40)/60 * 255;
+			send_to_stm32_buf[5] = 1.0*(raw_set_brake-40)/60 * 255;
 		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
 		stm32_serial_port_->write(send_to_stm32_buf,8);
 	}

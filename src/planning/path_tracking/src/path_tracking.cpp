@@ -168,8 +168,10 @@ void PathTracking::run()
 		
 		if(i%10==0)
 		{
+			ROS_INFO("curvature:%f",target_point_.curvature);
+			ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
-			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",dis_threshold,t_roadWheelAngle);
+			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",dis_threshold,t_roadWheelAngle);
 		}
 		i++;
 		

@@ -10,16 +10,16 @@
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
 		<param name ="stm32_baudrate" value="115200"/>
-		<param name ="max_steering_speed" value="1.0"/> <!--前后帧转角最大差值 -->
+		<param name ="max_steering_speed" value="2.0"/> <!--前后帧转角最大差值 -->
 		
 		
 	</node>
 	
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find data)/data/path.txt"/>
+		<param name="path_points_file" value="$(find data)/data/_path.txt"/>
 		<param name="disThreshold" value="6.0"/>
-		<param name="speed" value="10.0"/>
+		<param name="speed" value="30.0"/>
 	
 	</node>
 	
