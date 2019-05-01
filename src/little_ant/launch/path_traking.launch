@@ -44,7 +44,7 @@
 	</node>
 	
 
-	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" >   <!--                   -->
+	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" >  
 		<param name ="traffic_mark_topic" value="/traffic_mark" />
 	</node>
 	

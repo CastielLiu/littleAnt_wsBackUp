@@ -157,13 +157,13 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	delete [] dis2pathArray;
 }
 
-void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
 {
 	jsk_recognition_msgs::BoundingBox object; 
 	float avoiding_offest[2] ={0.0,0.0};
 	float safety_distance_front;
-	float safety_center_distance;
+	float safety_center_distance_x;
 	float dis2path;
 	float dis2vehicle;
 	
@@ -171,7 +171,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
+		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
 		//dis2path:    distance from the object to the current path 
 		//dis2pathArray[indexArray[i]] : distance from the object to the origin path
 		//obstacle avoidance offset has been set in last time
@@ -186,7 +186,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			safety_distance_front =safety_distance_front_;
 		
 		//object is outside the avoding area
-		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
+		if((fabs(dis2path) >= safety_center_distance_x) || (dis2vehicle >= safety_distance_front))
 			continue;
 		//object is inside the danger area ,emergency brake
 		else if(dis2vehicle <= danger_distance_front_)
@@ -216,14 +216,14 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			continue;
 		}
 		//object is other type, start to avoid
-		avoiding_offest[0] += dis2path - safety_center_distance; //try avoid in the left	
+		avoiding_offest[0] += dis2path - safety_center_distance_x; //try avoid in the left	
 	}
 	
 	for(size_t i=0; i<n_object; i++)
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
+		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
 		dis2path = dis2pathArray[indexArray[i]];
 		
 		if(avoiding_offest[1] != 0.0)
@@ -237,7 +237,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 		
 		
 		//object is outside the avoding area
-		if((fabs(dis2path) >= safety_center_distance) || (dis2vehicle >= safety_distance_front))
+		if((fabs(dis2path) >= safety_center_distance_x) || (dis2vehicle >= safety_distance_front))
 			continue;
 		//object is inside the danger area ,emergency brake
 		else if(dis2vehicle <= danger_distance_front_)
@@ -264,7 +264,7 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 			continue;
 		}
 		//object is other type, start to avoid
-		avoiding_offest[1] += dis2path + safety_center_distance; //try avoid in the left	
+		avoiding_offest[1] += dis2path + safety_center_distance_x; //try avoid in the left	
 	}
 	
 	avoiding_offest[0] += avoiding_offest_;
@@ -318,24 +318,44 @@ void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& 
 	}
 }
 
-bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
 {
-	float safety_center_distance;
+	float safety_center_distance_x; //the safety distance along x axis
 	
-	bool ok = true;
+	bool is_ok = true;
 	
 	for(size_t i=0; i<n_object; i++)
 	{
-		safety_center_distance = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_*2;
+		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
 		
-		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) < safety_center_distance)
+		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) < safety_center_distance_x)
 		{
-			ok = false;
+			is_ok = false;
 			break;
 		}
 	}
-	return ok;
+	return is_ok;
+}
+
+inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+{
+	float safety_center_distance_x; //the safety distance along x axis
+	float safety_center_distance_y; //the safety distance along y axis
+	float x,y;
+	for(size_t i=0; i<n_object; i++)
+	{
+		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
+		safety_center_distance_y = g_vehicle_length/2+ objects->boxes[indexArray[i]].dimensions.x/2 + 1.5;
+		x = -objects->boxes[indexArray[i]].pose.position.y;
+		y = objects->boxes[indexArray[i]].pose.position.x;
+		
+		if(fabs(y) <= safety_center_distance_y || 
+		   fabs(x) <= safety_center_distance_x)
+		   return true;
+	}
+	return false;
 }
 
 std::pair<double,double> Avoiding::vehicleToWorldCoordination(float x,float y)

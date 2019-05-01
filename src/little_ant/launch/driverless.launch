@@ -4,7 +4,6 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	
 	<arg name="pathTracking_file_name" default="$(find data)/data/path.txt"/>
 	
 <!--底层 -->	
@@ -67,7 +66,9 @@
 	</node>
 
  <!--总决策-->
-	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node"  />  
+	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" >
+		<param name ="traffic_mark_topic" value="/traffic_mark" />
+	</node>  
 	
 	
 

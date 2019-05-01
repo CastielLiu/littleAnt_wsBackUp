@@ -44,6 +44,7 @@ float  calculateDis2path(const double& X_,const double& Y_,
 
 extern const float g_steering_gearRatio;
 extern const float g_vehicle_width;
+extern const float g_vehicle_length;
 
 
 

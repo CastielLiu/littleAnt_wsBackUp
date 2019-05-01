@@ -136,6 +136,7 @@ void PathTracking::run()
 		}
 		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_)
 					   -avoiding_offset_;
+					   
 		float dis_threshold = disThreshold_;  /*(1 + sqrt(fabs(lateral_err_)));*/
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
 		if( dis_yaw.first < dis_threshold)

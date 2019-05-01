@@ -68,8 +68,11 @@ private:
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
 	bool is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
-	inline void showErrorSystemStatus();
-	inline void emergencyBrake();
+						
+	bool is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
+						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+	void showErrorSystemStatus();
+	void emergencyBrake();
 	
 private:
 	ros::Subscriber sub_objects_msg_;

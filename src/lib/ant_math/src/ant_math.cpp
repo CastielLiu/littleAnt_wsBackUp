@@ -9,6 +9,7 @@
 const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 const float g_vehicle_width = 1.8 ;// m
+const float g_vehicle_length = 3.5; 
 
 static const float max_side_acceleration = 1.2; // m/s/s
 
