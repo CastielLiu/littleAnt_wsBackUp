@@ -146,9 +146,7 @@ void DecisionMaking::traffic_mark_callback(const little_ant_msgs::DetectedObject
 			speed_limit_sign_ = 20.0;  //固定限速值，修改此处
 			speed_limit_time_ = ros::Time::now().toSec();
 		}
-			
 	}
-
 }
 
 int main(int argc,char ** argv)

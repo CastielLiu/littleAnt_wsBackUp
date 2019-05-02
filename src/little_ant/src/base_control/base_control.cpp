@@ -326,7 +326,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 			return ;
 		}
 			
-		mutex_.lock();
+		//mutex_.lock();
 		stm32_msg1_ = *msg;
 		if(stm32_msg1_.is_start && !stm32_msg1_.is_emergency_brake && !is_driverlessMode_)
 		{
@@ -343,7 +343,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 			
 			
 		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
-		mutex_.unlock();
+		//mutex_.unlock();
 	}
 }
 
@@ -363,7 +363,7 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
-	int count = 0;	
+	int count = 0;
 	while(ros::ok())
 	{
 		usleep(10000);
@@ -475,10 +475,11 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		set_speed = 0.0;
 	}*/
 	
-	if(currentSpeed+3.0 > msg->set_speed)
-	{
-		set_brake = (currentSpeed+3.0 - msg->set_speed)*5 + 40;
 	
+	//当设定速度低于当前速度时，制动
+	if(currentSpeed - msg->set_speed > 3.0)
+	{
+		set_brake = (currentSpeed - msg->set_speed - 3.0) *3 + 40;
 	}
 	
 	set_brake = (set_brake > msg->set_brake) ? set_brake :msg->set_brake;
@@ -488,6 +489,8 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	else if(set_speed > MAX_SPEED-1) 
 		set_speed = MAX_SPEED-1;
 	
+	//increment越大，加速度越大
+	//设定速度越低，加速越快
 	float increment = 2.0/(currentSpeed/5+1);
 	
 	if(set_speed - currentSpeed > increment )
@@ -515,7 +518,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	last_set_steeringAngle = current_set_steeringAngle;
 	
-	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +30;
+	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +30; //steering offset
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
@@ -527,23 +530,14 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	can2serial.sendCanMsg(canMsg_cmd2);
 	
-	if(set_brake > 40)
-	{
-		if(set_brake >100)
-			send_to_stm32_buf[5] = 255;
-		else
-			send_to_stm32_buf[5] = 1.0*(set_brake-40)/60 * 255;
-		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
-		stm32_serial_port_->write(send_to_stm32_buf,8);
-	}
+	if(set_brake > 100)
+		send_to_stm32_buf[5] = 255;
+	else if(set_brake >40)
+		send_to_stm32_buf[5] = 1.0*(set_brake-40)/60 * 255;
 	else
-	{
 		send_to_stm32_buf[5] = 0;
-		send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
-		stm32_serial_port_->write(send_to_stm32_buf,8);
-	}
-	
-	
+	send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
+	stm32_serial_port_->write(send_to_stm32_buf,8);
 }
 
 uint8_t BaseControl::generateCheckNum(const uint8_t* ptr,size_t len)

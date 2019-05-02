@@ -159,7 +159,8 @@ void PathTracking::run()
 		
 		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
 		
-		gps_controlCmd_.cmd2.set_speed = limitSpeedByPathCurvature(path_tracking_speed_,target_point_.curvature);
+		gps_controlCmd_.cmd2.set_speed = 
+				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+5].curvature);
 		
 		
 		//gps_controlCmd_.cmd2.set_speed =  limitSpeedByCurrentRoadwheelAngle(path_tracking_speed_,current_roadwheelAngle_);

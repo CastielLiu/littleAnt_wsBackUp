@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
 	#serial
 	roscpp
 	rospy
+	std_msgs
+	#little_ant_msgs
 )
 
 catkin_package(
