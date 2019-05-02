@@ -1,5 +1,7 @@
 #include"avoiding.h"
 
+using namespace utils;
+
 Avoiding::Avoiding():
 	gps_status_(false),
 	target_point_index_status_(false),
@@ -156,7 +158,6 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	if(is_dangerous(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object))
 	{
 		this->emergencyBrake();
-		ROS_ERROR("emergencyBrake!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		return ;
 	}
 		
@@ -224,6 +225,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 				return;
 			}
 			//the person is just in the false avoid area, so pass
+			// when test_offset not zero: safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
 			continue;
 		}
 		//object is other type, start to avoid
@@ -295,6 +297,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(avoiding_offest[0] < maxOffset_left_ && avoiding_offest[1] > maxOffset_right_)
 	{
+		publishDebugMsg("Unable to avoid obstacle! slow down");
 		avoid_cmd_.status = true;
 		avoid_cmd_.just_decelerate = true;
 		avoid_cmd_.cmd2.set_brake = 15.0;  //waiting test
@@ -327,7 +330,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	if(offset_msg_.data!=0.0 && is_backToOriginalLane(objects,dis2vehicleArray,indexArray,dis2pathArray,n_object))
 	{
 		offset_msg_.data = 0.0;
-		ROS_ERROR("returnreturnreturnreturnreturnreturnreturnreturnreturnreturn................................");
+		publishDebugMsg("return to original path..");
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 }
@@ -573,6 +576,7 @@ inline void Avoiding::emergencyBrake()
 	avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 	avoid_cmd_.cmd2.set_speed = 0.0;
 	pub_avoid_cmd_.publish(avoid_cmd_);
+	publishDebugMsg("dangerous! emergency brake!");
 }
 
 

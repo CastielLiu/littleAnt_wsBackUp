@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   jsk_recognition_msgs
   ant_math
+  utils
 )
 
 
