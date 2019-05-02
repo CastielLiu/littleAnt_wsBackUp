@@ -17,7 +17,7 @@
 	
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find data)/data/_path.txt"/>
+		<param name="path_points_file" value="$(find data)/data/_cycle.txt"/>
 		<param name="disThreshold" value="6.0"/>
 		<param name="speed" value="30.0"/>
 	
