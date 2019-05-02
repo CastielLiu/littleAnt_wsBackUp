@@ -54,7 +54,7 @@ class Points:
 			
 def plot():
 	path_points = Points()
-	path_points.load('path.txt')
+	path_points.load('cycle.txt')
 	path_points.calculateCurvature()
 	path_points.curvatureFilter(15)
 	
@@ -64,7 +64,7 @@ def plot():
 	ax1.plot(range(len(path_points.x)),path_points.curvature,'b.')
 	
 	plt.figure(2)
-	plt.plot(path_points.x,path_points.y,'r--',label="path")
+	plt.plot(path_points.x,path_points.y,'r.',label="path")
 	
 	result_points = Points()
 	result_points.load('debug.txt')

@@ -12,7 +12,6 @@
 		<param name ="stm32_baudrate" value="115200"/>
 		<param name ="max_steering_speed" value="2.0"/> <!--前后帧转角最大差值 -->
 		
-		
 	</node>
 	
 	
@@ -20,6 +19,8 @@
 		<param name="path_points_file" value="$(find data)/data/_cycle.txt"/>
 		<param name="disThreshold" value="6.0"/>
 		<param name="speed" value="30.0"/>
+		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
+		<param name="maxOffset_right" value="0.0"/>
 	
 	</node>
 	

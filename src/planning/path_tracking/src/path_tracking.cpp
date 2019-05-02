@@ -7,7 +7,8 @@ PathTracking::PathTracking():
 	avoiding_offset_(0.0),
 	disThreshold_(6.0),
 	max_roadwheelAngle_(25.0),
-	is_avoiding_(false)
+	is_avoiding_(false),
+	is_laneChanging_(false)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -122,6 +123,7 @@ void PathTracking::run()
 		/*printf("x:%lf \ty:%lf \t yaw:%f\n",path_points_[target_point_index_].x,
 										  path_points_[target_point_index_].y,
 										  path_points_[target_point_index_].yaw);*/
+		
 		if( avoiding_offset_ != 0.0)
 		{
 			if(avoiding_offset_>maxOffset_right_)
@@ -136,7 +138,6 @@ void PathTracking::run()
 		}
 		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_)
 					   -avoiding_offset_;
-					   
 		float dis_threshold = disThreshold_;  /*(1 + sqrt(fabs(lateral_err_)));*/
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
 		if( dis_yaw.first < dis_threshold)
@@ -157,10 +158,18 @@ void PathTracking::run()
 		
 		t_roadWheelAngle = limitRoadwheelAngleBySpeed(t_roadWheelAngle,vehicle_speed_);
 		
+		if(is_laneChanging_)
+		{
+			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.5);
+			
+			if(fabs(lateral_err_ - avoiding_offset_) < 0.6 && fabs(yaw_err) < 10.0*M_PI/180.0)
+				is_laneChanging_  = false;
+		}
+		
 		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
 		
 		gps_controlCmd_.cmd2.set_speed = 
-				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+5].curvature);
+				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
 		
 		
 		//gps_controlCmd_.cmd2.set_speed =  limitSpeedByCurrentRoadwheelAngle(path_tracking_speed_,current_roadwheelAngle_);
@@ -227,9 +236,9 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	if(vehicle_speed_ >20.0)
 		return;
 	
-	disThreshold_ = 2.0*vehicle_speed_ ;
-	if(disThreshold_ < 3.0) 
-		disThreshold_  = 3.0;
+	disThreshold_ = 1.8*vehicle_speed_ ;
+	if(disThreshold_ < 5.0) 
+		disThreshold_  = 5.0;
 }
 
 void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
@@ -239,6 +248,9 @@ void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPt
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
+	if(avoiding_offset_ !=- msg->data)
+		is_laneChanging_ = true;
+		
 	//avoid to left(-) or right(+) the value presents the offset
 	avoiding_offset_ = msg->data;
 }

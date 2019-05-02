@@ -92,6 +92,8 @@ private:
 	bool is_avoiding_;
 	
 	float lateral_err_;
+	
+	bool is_laneChanging_;
 
 };
 

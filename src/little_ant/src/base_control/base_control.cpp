@@ -365,7 +365,7 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
-	int count = 0;
+	/*int count = 0;
 	while(ros::ok())
 	{
 		usleep(10000);
@@ -376,7 +376,28 @@ void BaseControl::setDriverlessMode()
 			can2serial.sendCanMsg(canMsg_cmd2);
 		if(count >80)
 			break;
+	}*/
+	
+	while(ros::ok() && state4.driverless_mode==false)
+	{
+		can2serial.sendCanMsg(canMsg_cmd1);
+		usleep(20000);
 	}
+	
+	size_t count = 0;
+	while(ros::ok() && state1.act_gear != 1)
+	{
+		can2serial.sendCanMsg(canMsg_cmd2);
+		usleep(10000);
+		count ++;
+		
+		if(count%5==0)
+			canMsg_cmd2.data[0] = 0x00;
+		else
+			canMsg_cmd2.data[0] = 0x01;
+	}
+	
+	
 	stm32_serial_port_->flushInput();
 }
 void BaseControl::exitDriverlessMode()
