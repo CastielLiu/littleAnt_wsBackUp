@@ -297,16 +297,21 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(avoiding_offest[0] < maxOffset_left_ && avoiding_offest[1] > maxOffset_right_)
 	{
-		publishDebugMsg("Unable to avoid obstacle! slow down");
+		std::stringstream debug_msg("Unable to avoid obstacle! slow down ! \n\t");
+		debug_msg << "t_offset_L: " <<  avoiding_offest[0] << "maxOffset_L: "<< maxOffset_left_ << "\n";
+		debug_msg << "t_offset_R: " <<  avoiding_offest[1] << "maxOffset_R: "<< maxOffset_right_ ;
+		publishDebugMsg(debug_msg.str());
 		avoid_cmd_.status = true;
 		avoid_cmd_.just_decelerate = true;
-		avoid_cmd_.cmd2.set_brake = 15.0;  //waiting test
+		avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
 		avoid_cmd_.cmd2.set_speed = 0.0;
 		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 	//avoid message is valid
 	//left offest is smaller,so avoid from left side
-	else if(-avoiding_offest[0] <= avoiding_offest[1])
+	else if(( -avoiding_offest[0] <= avoiding_offest[1] && avoiding_offest[0] > maxOffset_left_) ||
+			(-avoiding_offest[0] > avoiding_offest[1] && avoiding_offest[0] > maxOffset_left_ && 
+			avoiding_offest[1] >maxOffset_right_))
 	{
 		//assuming that no deceleration is required for avoidance
 		avoid_cmd_.status = false;
