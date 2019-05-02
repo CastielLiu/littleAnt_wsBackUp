@@ -1,6 +1,8 @@
 #include<base_control/base_control.h>
 #include<assert.h>
 
+using namespace utils;
+
 static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int baud_rate)
 {
 	try 
@@ -215,7 +217,6 @@ void BaseControl::parse_obdCanMsg()
 				
 			default:
 				break;
-				
 		}
 	}
 }
@@ -351,6 +352,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 void BaseControl::setDriverlessMode()
 {
 	ROS_INFO("set driverless mode ing ............");
+	publishDebugMsg("enter driverless mode.");
 	
 	*(unsigned long int*)canMsg_cmd1.data = 0;
 	*(unsigned long int*)canMsg_cmd2.data = 0;
@@ -380,6 +382,7 @@ void BaseControl::setDriverlessMode()
 void BaseControl::exitDriverlessMode()
 {
 	ROS_INFO("driverless mode exited ............");
+	publishDebugMsg("exit driverless mode. ");
 	*(unsigned long int*)canMsg_cmd1.data = 0;
 	*(unsigned long int*)canMsg_cmd2.data = 0;
 

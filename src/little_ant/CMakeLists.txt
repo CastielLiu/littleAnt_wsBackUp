@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   can2serial
   jsk_recognition_msgs
+  utils
 )
 
 include_directories(

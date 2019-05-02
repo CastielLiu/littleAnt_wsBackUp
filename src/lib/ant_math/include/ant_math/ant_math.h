@@ -9,7 +9,7 @@
 #include<cstdio>
 #include<ros/ros.h>
 #include<limits.h>
-//#include "little_ant_msgs/Debug.h"
+#include "little_ant_msgs/Debug.h"
 
 #define IS_POLAR_COORDINATE_GPS 0
 

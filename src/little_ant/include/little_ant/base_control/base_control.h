@@ -20,7 +20,8 @@
 
 #include <little_ant_msgs/ControlCmd1.h>
 #include <little_ant_msgs/ControlCmd2.h>
-#include<little_ant_msgs/Debug.h>
+
+#include<utils/utils.h>
 
 #define ID_CMD_1 0x2C5
 #define	ID_CMD_2 0x1C5
@@ -118,7 +119,6 @@ private:
 	little_ant_msgs::State2 state2;
 	little_ant_msgs::State3 state3;
 	little_ant_msgs::State4 state4;
-	little_ant_msgs::Debug  debug;
 	
 	boost::mutex mutex_;
 
