@@ -9,7 +9,6 @@
 #include<cstdio>
 #include<ros/ros.h>
 #include<limits.h>
-#include "little_ant_msgs/Debug.h"
 
 #define IS_POLAR_COORDINATE_GPS 0
 
@@ -44,7 +43,6 @@ float  calculateDis2path(const double& X_,const double& Y_,
 						 const size_t& target_point_index);
 						 
 						 
-void publishDebugMsg(std::string& str);
 
 extern const float g_steering_gearRatio;
 extern const float g_vehicle_width;

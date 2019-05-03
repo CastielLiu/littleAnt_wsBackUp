@@ -8,16 +8,27 @@ project(utils)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  ant_math
-  little_ant_msgs
   roscpp
   rospy
   std_msgs
+  message_generation
+  little_ant_msgs
+)
+
+add_message_files(
+   FILES
+   Debug.msg
+ )
+ 
+generate_messages(
+	DEPENDENCIES
+	sensor_msgs
+	std_msgs
 )
 
 
 catkin_package(
-	CATKIN_DEPENDS roscpp rospy
+	CATKIN_DEPENDS roscpp rospy message_runtime
 	LIBRARIES ${PROJECT_NAME}
 	INCLUDE_DIRS include
 	#CATKIN_DEPENDS serial #
