@@ -103,7 +103,7 @@ private:
 	
 	float pedestrian_detection_area_side_; //行人检测区两侧距离
 	
-	float vehicleSpeed_; //m/s
+	float vehicle_speed_; //m/s
 	float vehicle_axis_dis_ ;
 	float deceleration_cofficient_;
 	

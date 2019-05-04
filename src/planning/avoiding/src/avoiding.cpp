@@ -19,7 +19,7 @@ Avoiding::Avoiding():
 
 	danger_distance_front_ = 3.0;
 	safety_distance_front_=20.0;
-	vehicleSpeed_ = 5.0;
+	vehicle_speed_ = 5.0;
 }
 
 bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
@@ -75,9 +75,9 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 {
 	vehicle_speed_status_ = true;
 	
-	vehicleSpeed_ = msg->vehicle_speed; //m/s
+	vehicle_speed_ = msg->vehicle_speed; //m/s
 	
-	danger_distance_front_ = generateDangerDistanceBySpeed(vehicleSpeed_);  
+	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 
 	/*
@@ -85,7 +85,7 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	i++;
 	if(i%20==0)
 		ROS_INFO("callback speed:%f\t danger_distance_front_:%f\t safety_distance_front_:%f",
-				 vehicleSpeed_,danger_distance_front_,safety_distance_front_);
+				 vehicle_speed_,danger_distance_front_,safety_distance_front_);
 	*/
 }
 
