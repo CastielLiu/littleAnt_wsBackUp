@@ -75,6 +75,7 @@ private:
 						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
 	void showErrorSystemStatus();
 	void emergencyBrake();
+	void backToOriginalLane();
 	
 private:
 	ros::Subscriber sub_objects_msg_;
@@ -125,7 +126,8 @@ private:
 	bool gps_status_;
 	bool target_point_index_status_;
 	bool vehicle_speed_status_;
-
+	
+	bool is_systemOk_;
 };
 
 

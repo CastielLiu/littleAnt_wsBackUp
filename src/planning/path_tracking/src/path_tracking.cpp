@@ -166,7 +166,9 @@ void PathTracking::run()
 			float temp_max_roadwheelAngle = 
 				  maxRoadWheelAngleWhenChangeLane(lane_width_, safety_distance_front_);
 				  
-			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle);
+			//t_roadWheelAngle = saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle);
+			ROS_DEBUG("max_angle:........%f",saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle));
+			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.0);
 			
 			if(fabs(lateral_err_ - avoiding_offset_) < 0.6 && fabs(yaw_err) < 10.0*M_PI/180.0)
 				is_laneChanging_  = false;
