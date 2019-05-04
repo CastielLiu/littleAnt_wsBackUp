@@ -211,7 +211,8 @@ void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 
 void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
-	gps_status_ |= 0x01;
+	if(gps_status_!=0x03)
+		gps_status_ |= 0x01;
 	
 	current_point_.longitude = msg->longitude;
 	current_point_.latitude = msg->latitude;
@@ -221,7 +222,8 @@ void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 
 void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-	gps_status_ |= 0x02;
+	if(gps_status_!=0x03)
+		gps_status_ |= 0x02;
 	
 	current_point_.x = msg->pose.pose.position.x;
 	current_point_.y = msg->pose.pose.position.y;
@@ -263,7 +265,7 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg
 		is_laneChanging_ = true;
 		lane_width_ = fabs(avoiding_offset_ - lateral_err_ ); 
 	}
-		
+	
 	//avoid to left(-) or right(+) the value presents the offset
 	avoiding_offset_ = msg->data;
 }
