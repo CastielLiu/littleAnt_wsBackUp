@@ -1,6 +1,6 @@
 #include"avoiding.h"
 
-using namespace utils;
+using namespace state_detection;
 
 Avoiding::Avoiding():
 	gps_status_(false),
@@ -51,8 +51,8 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		return false;
 	}
 
-	sub_objects_msg_ = nh.subscribe(objects_topic_,2,&Avoiding::objects_callback,this);
-	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",2,&Avoiding::vehicleSpeed_callback,this);
+	sub_objects_msg_ = nh.subscribe(objects_topic_,1,&Avoiding::objects_callback,this);
+	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",1,&Avoiding::vehicleSpeed_callback,this);
 	sub_target_point_index_ = nh.subscribe("/track_target_index",1,&Avoiding::target_point_index_callback,this);
 	sub_utm_gps_ = nh.subscribe("/gps_utm",1,&Avoiding::utm_gps_callback,this);
 	
@@ -77,12 +77,9 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 	
-	//最大减速度->最短制动距离 + 防撞距离
-	danger_distance_front_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /max_deceleration_  + 3.0;  
-	
-	//safety_distance_front_ = danger_distance_front_ + 10.0;
-	
-	safety_distance_front_ = danger_distance_front_ *(5);  // 安全距离 随危险距离变化
+	danger_distance_front_ = generateDangerDistanceBySpeed(vehicleSpeed_);  
+	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
+
 	/*
 	static int i=0;
 	i++;
@@ -105,6 +102,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	if(!gps_status_ || !vehicle_speed_status_ || !target_point_index_status_)
 	{
 		showErrorSystemStatus();
+		sleep(1);
 		return;
 	}
 	
@@ -300,7 +298,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		std::stringstream debug_msg("Unable to avoid obstacle! slow down ! \n\t");
 		debug_msg << "t_offset_L: " <<  avoiding_offest[0] << "maxOffset_L: "<< maxOffset_left_ << "\n";
 		debug_msg << "t_offset_R: " <<  avoiding_offest[1] << "maxOffset_R: "<< maxOffset_right_ ;
-		publishDebugMsg(debug_msg.str());
+		publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 		avoid_cmd_.status = true;
 		avoid_cmd_.just_decelerate = true;
 		avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
@@ -335,7 +333,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	if(offset_msg_.data!=0.0 && is_backToOriginalLane(objects,dis2vehicleArray,indexArray,dis2pathArray,n_object))
 	{
 		offset_msg_.data = 0.0;
-		publishDebugMsg("return to original path..");
+		publishDebugMsg(state_detection::Debug::INFO,"return to original path..");
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 }
@@ -581,7 +579,7 @@ inline void Avoiding::emergencyBrake()
 	avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 	avoid_cmd_.cmd2.set_speed = 0.0;
 	pub_avoid_cmd_.publish(avoid_cmd_);
-	publishDebugMsg("dangerous! emergency brake!");
+	publishDebugMsg(state_detection::Debug::INFO,"dangerous! emergency brake!");
 }
 
 
@@ -590,6 +588,8 @@ int main(int argc,char **argv)
 	ros::init(argc,argv,"avoiding_node");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
+	
+	state_detection::debugSystemInitial();
 	
 	Avoiding avoiding;
 	if(avoiding.init(nh,nh_private))

@@ -15,6 +15,8 @@
 
 #include<std_msgs/Bool.h>
 #include<ant_math/ant_math.h>
+#include<state_detection/state_detection.h>
+#include<climits>
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -71,6 +73,7 @@ private:
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;
 	
+	float min_foresight_distance_;
 	float disThreshold_;
 	
 	float avoiding_offset_;
@@ -80,20 +83,25 @@ private:
 	float path_tracking_speed_;
 	
 	uint8_t gps_status_;
+	bool vehicle_speed_status_;
+	
+	
 	
 	float vehicle_speed_;
 	float current_roadwheelAngle_;
 	
-	float max_roadwheelAngle_;
+	float safety_distance_front_;
+	float danger_distance_front_;
 	
-	float maxOffset_left_;
-	float maxOffset_right_;
+	float max_roadwheelAngle_;
 	
 	bool is_avoiding_;
 	
 	float lateral_err_;
 	
 	bool is_laneChanging_;
+	float lane_width_;
+	float foreSightDistance_coefficient_;
 
 };
 

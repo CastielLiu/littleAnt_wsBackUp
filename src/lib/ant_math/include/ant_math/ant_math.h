@@ -29,7 +29,7 @@ typedef struct
 }gpsMsg_t;
 
 
-float  generateRoadwheelAngleByRadius(float radius);
+float  generateRoadwheelAngleByRadius(const float& radius);
 double sinDeg(const double& deg); 
 float  saturationEqual(float value,float limit);
 int    sign(float num);
@@ -42,7 +42,10 @@ float  calculateDis2path(const double& X_,const double& Y_,
 						 const std::vector<gpsMsg_t>& path_points, 
 						 const size_t& target_point_index);
 						 
-						 
+float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance);
+float generateDangerDistanceBySpeed(const float &speed);
+float generateSafetyDisByDangerDis(const float &danger_dis);
+
 
 extern const float g_steering_gearRatio;
 extern const float g_vehicle_width;

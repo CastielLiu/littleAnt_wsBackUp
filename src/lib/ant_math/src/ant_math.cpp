@@ -11,10 +11,12 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 const float g_vehicle_width = 1.7 ;// m
 const float g_vehicle_length = 3.5; 
 
+const float Max_deceleration = 5.0; // m/s/s
+
 static const float max_side_acceleration = 1.9; // m/s/s
 
 
-float generateRoadwheelAngleByRadius(float radius)
+float generateRoadwheelAngleByRadius(const float& radius)
 {
 	assert(radius!=0);
 	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
@@ -191,6 +193,25 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 float limitSpeedByLateralAndYawErr(float speed,float latErr,float yawErr)
 {
 	///??
+}
+
+//offset: change lane offset
+//distance: longitudianal displacement of vehicle in the course of change lane
+float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
+{
+	float theta = 2*atan(fabs(offset)/distance);
+	float radius = 0.5*distance/sin(theta);
+	return generateRoadwheelAngleByRadius(radius);
+}
+
+float generateDangerDistanceBySpeed(const float &speed)
+{
+	return 0.5* speed * speed /Max_deceleration  + 3.0; 
+}
+
+float generateSafetyDisByDangerDis(const float &danger_dis)
+{
+	return danger_dis *1.5 + 10.0;
 }
 
  

@@ -3,9 +3,9 @@
 
 PathTracking::PathTracking():
 	gps_status_(0x00),
+	vehicle_speed_status_(false),
 	target_point_index_(0),
 	avoiding_offset_(0.0),
-	disThreshold_(6.0),
 	max_roadwheelAngle_(25.0),
 	is_avoiding_(false),
 	is_laneChanging_(false)
@@ -48,11 +48,12 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	pub_tracking_target_index_ = nh.advertise<std_msgs::UInt32>("/track_target_index",1);
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
-									
+
 	nh_private.param<float>("speed",path_tracking_speed_,3.0);
+
+	nh_private.param<float>("foreSightDistance_coefficient", foreSightDistance_coefficient_,1.8);
 	
-	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
-	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
+	nh_private.param<float>("min_foresight_distance",min_foresight_distance_,5.0);
 	
 	if(path_points_file_.empty())
 	{
@@ -67,7 +68,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		return false;
 
 	
-	float last_distance = 999999999999;
+	float last_distance = FLT_MAX;
 	float current_distance = 0;
 	
 	for(target_point_index_ =0; target_point_index_<path_points_.size()&& ros::ok(); )
@@ -75,7 +76,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		if(!is_gps_data_valid(current_point_))
 		{
 			ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
-			usleep(100000);
+			sleep(1);
 			continue;
 		}
 		
@@ -100,6 +101,13 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		ROS_ERROR("file read over, No target was found");
 		return false;
 	}
+	
+	while(!vehicle_speed_status_ && ros::ok())
+	{
+		ROS_INFO("waiting for vehicle speed data ok ...");
+		usleep(20000);
+	}
+	
 	return true;
 }
 
@@ -126,11 +134,6 @@ void PathTracking::run()
 		
 		if( avoiding_offset_ != 0.0)
 		{
-			if(avoiding_offset_>maxOffset_right_)
-				avoiding_offset_ = maxOffset_right_;
-			else if(avoiding_offset_< maxOffset_left_)
-				avoiding_offset_ = maxOffset_left_;
-				
 		//target point offset
 			target_point_.x =  avoiding_offset_ * cos(target_point_.yaw) + path_points_[target_point_index_].x;
 			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
@@ -160,7 +163,10 @@ void PathTracking::run()
 		
 		if(is_laneChanging_)
 		{
-			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.5);
+			float temp_max_roadwheelAngle = 
+				  maxRoadWheelAngleWhenChangeLane(lane_width_, safety_distance_front_);
+				  
+			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle);
 			
 			if(fabs(lateral_err_ - avoiding_offset_) < 0.6 && fabs(yaw_err) < 10.0*M_PI/180.0)
 				is_laneChanging_  = false;
@@ -231,14 +237,18 @@ void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& ms
 
 void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
+	vehicle_speed_status_ = true;
 	vehicle_speed_ = msg->vehicle_speed; //  m/s
 	
 	if(vehicle_speed_ >20.0)
 		return;
 	
-	disThreshold_ = 1.8*vehicle_speed_ ;
-	if(disThreshold_ < 5.0) 
-		disThreshold_  = 5.0;
+	disThreshold_ = foreSightDistance_coefficient_ * vehicle_speed_ ;
+	if(disThreshold_ < min_foresight_distance_) 
+		disThreshold_  = min_foresight_distance_;
+		
+	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
+	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 }
 
 void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
@@ -248,8 +258,11 @@ void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPt
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
-	if(avoiding_offset_ !=- msg->data)
+	if(avoiding_offset_ !=- msg->data && is_laneChanging_ == false)
+	{
 		is_laneChanging_ = true;
+		lane_width_ = fabs(avoiding_offset_ - lateral_err_ ); 
+	}
 		
 	//avoid to left(-) or right(+) the value presents the offset
 	avoiding_offset_ = msg->data;
@@ -312,6 +325,8 @@ int main(int argc,char**argv)
 	ros::init(argc,argv,"path_tracking");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
+	
+	state_detection::debugSystemInitial();
 	
 	PathTracking path_tracking;
 	if(!path_tracking.init(nh,nh_private))

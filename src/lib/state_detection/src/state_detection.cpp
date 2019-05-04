@@ -1,11 +1,10 @@
-#include"utils/utils.h"
-#include<utils/Debug.h>
+#include"state_detection/state_detection.h"
 
-namespace utils
+namespace state_detection
 {
 static bool is_initial = false;
 static ros::Publisher pub;
-static utils::Debug debug;
+static state_detection::Debug debug;
 
 void debugSystemInitial()
 {
@@ -13,14 +12,15 @@ void debugSystemInitial()
 	{
 		is_initial = true;
 		ros::NodeHandle nh;
-		pub = nh.advertise<utils::Debug>("/debug",10);
+		pub = nh.advertise<state_detection::Debug>("/debug",10);
 	}
 }
 
-void publishDebugMsg(const std::string& str)
+void publishDebugMsg(uint8_t level , const std::string& str)
 {
 	if(is_initial)
 	{
+		debug.level = level;
 		debug.info = str;
 		pub.publish(debug);
 	}

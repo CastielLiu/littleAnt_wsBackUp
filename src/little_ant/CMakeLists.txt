@@ -12,10 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   little_ant_msgs
+  jsk_recognition_msgs
   serial
   can2serial
-  jsk_recognition_msgs
-  utils
+  state_detection
 )
 
 include_directories(
@@ -24,7 +24,6 @@ include_directories(
 )
 
 catkin_package(
- 
   CATKIN_DEPENDS roscpp rospy std_msgs little_ant_msgs jsk_recognition_msgs
    INCLUDE_DIRS include
    LIBRARIES 

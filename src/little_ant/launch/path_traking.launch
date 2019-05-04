@@ -18,10 +18,10 @@
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
 		<param name="path_points_file" value="$(find data)/data/_cycle.txt"/>
 		<param name="disThreshold" value="6.0"/>
+		
+		<param name="foreSightDistance_coefficient_" value = "1.8"/>
+		
 		<param name="speed" value="30.0"/>
-		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_right" value="0.0"/>
-	
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >

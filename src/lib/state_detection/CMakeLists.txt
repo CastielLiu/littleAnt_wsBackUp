@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(utils)
+project(state_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,8 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  message_generation
   little_ant_msgs
+  message_generation
 )
 
 add_message_files(
@@ -36,14 +36,14 @@ catkin_package(
 
 
 ## Sources
-set(utils_SRCS
-    src/utils.cpp
-    include/utils/utils.h
+set(${PROJECT_NAME}_SRCS
+    src/${PROJECT_NAME}.cpp
+    include/${PROJECT_NAME}/${PROJECT_NAME}.h
 )
  
 
-## Add utils library
-add_library(${PROJECT_NAME} ${utils_SRCS})
+## Add ${PROJECT_NAME} library
+add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRCS})
 
 #target_link_libraries(${PROJECT_NAME} boost)
 
@@ -57,7 +57,7 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 ## Install headers
-install(FILES include/utils.h
-  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/utils)
+install(FILES include/${PROJECT_NAME}.h
+  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/${PROJECT_NAME})
 
 
