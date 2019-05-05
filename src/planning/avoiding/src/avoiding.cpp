@@ -174,7 +174,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 }
 
 inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+				const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int n_object)
 {
 	jsk_recognition_msgs::BoundingBox object; 
 	float avoiding_offest[2] ={0.0,0.0};
@@ -182,6 +182,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	float safety_center_distance_x;
 	float dis2path;
 	float dis2vehicle;
+	
 	
 	for(size_t i=0; i<n_object; i++)
 	{
@@ -236,7 +237,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is other type, start to avoid
 		avoiding_offest[0] += dis2path - safety_center_distance_x; //try avoid in the left	
 		ROS_INFO("left try offset:%f\t dis2path:%f safety_dis:%f",avoiding_offest[0],dis2path,safety_center_distance_x);
-		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
+		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
+					offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
 	}
 	
 	for(size_t i=0; i<n_object; i++)
@@ -289,7 +291,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is other type, start to avoid
 		avoiding_offest[1] += dis2path + safety_center_distance_x; //try avoid in the right	
 		ROS_INFO("right try offset:%f\t dis2path:%f safety_dis:%f",avoiding_offest[1],dis2path,safety_center_distance_x);
-		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
+		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
+					offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
 	}
 	
 	avoiding_offest[0] += offset_msg_.data;
@@ -355,7 +358,7 @@ inline void Avoiding::backToOriginalLane()
 }
 
 inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+						const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object)
 {
 	float safety_center_distance_x; //the safety distance along x axis
 	
@@ -375,7 +378,7 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 }
 
 inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object)
+					const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object)
 {
 	float safety_center_distance_x; //the safety distance along x axis
 	float safety_center_distance_y; //the safety distance along y axis
@@ -565,7 +568,7 @@ float Avoiding::brakingAperture_2_deceleration(const float & brakingAperture)
 	return brakingAperture / deceleration_cofficient_;
 }
 
-void Avoiding::bubbleSort(float * const distance, size_t * index, size_t length)
+void Avoiding::bubbleSort(const float * distance, size_t * index, size_t length)
 {
 	for (size_t i = 0; i < length; i++)
 	{

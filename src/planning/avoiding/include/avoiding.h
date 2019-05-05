@@ -61,18 +61,18 @@ private:
 
 	float brakingAperture_2_deceleration(const float & brakingAperture);
 
-	void bubbleSort(float * const distance, size_t * index, size_t length);
+	void bubbleSort(const float * distance, size_t * index, size_t length);
 	
 	float calculate_dis2path(const double& X_,const double& Y_);
 	float dis2path2(const double& X_,const double& Y_);
 	std::pair<double,double> vehicleToWorldCoordination(float x,float y);
 	void decision(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+				const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int n_object);
 	bool is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+						const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object);
 						
 	bool is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
-						float dis2vehicleArray[], size_t indexArray[], float dis2pathArray[], int n_object);
+					const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object);
 	void showErrorSystemStatus();
 	void emergencyBrake();
 	void backToOriginalLane();
