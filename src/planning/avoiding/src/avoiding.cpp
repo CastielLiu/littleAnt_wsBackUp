@@ -147,7 +147,7 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		
 		indexArray[i] = i;
 		dis2vehicleArray[i] = sqrt(x * x + y * y);
-		//dis2pathArray[i] = calculate_dis2path(X,Y);
+		
 		dis2pathArray[i] = calculateDis2path(X,Y,path_points_,target_point_index_);
 		
 		//printf("x:%f\ty:%f\tyaw:%f\t X:%f\tY:%f\t\n",current_point_.x,current_point_.y,current_point_.yaw*180.0/M_PI,X,Y);
@@ -177,12 +177,13 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 				const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int n_object)
 {
 	jsk_recognition_msgs::BoundingBox object; 
-	float avoiding_offest[2] ={0.0,0.0};
+	float try_offest[2] ={0.0,0.0};
 	float safety_distance_front;
 	float safety_center_distance_x;
 	float dis2path;
 	float dis2vehicle;
 	
+	float lateral_err = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_);
 	
 	for(size_t i=0; i<n_object; i++)
 	{
@@ -194,10 +195,10 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//obstacle avoidance offset has been set in last time
 		dis2path = dis2pathArray[indexArray[i]] - offset_msg_.data;
 		
-		if(avoiding_offest[0] != 0.0)
+		if(try_offest[0] != 0.0)
 		{
 			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
-			dis2path -= avoiding_offest[0];
+			dis2path -= try_offest[0];
 		}
 		else
 			safety_distance_front =safety_distance_front_;
@@ -235,10 +236,11 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			continue;
 		}
 		//object is other type, start to avoid
-		avoiding_offest[0] += dis2path - safety_center_distance_x; //try avoid in the left	
-		ROS_INFO("left try offset:%f\t dis2path:%f safety_dis:%f",avoiding_offest[0],dis2path,safety_center_distance_x);
+		try_offest[0] += dis2path - safety_center_distance_x; //try avoid in the left	
+		ROS_INFO("left try offset:%f\t dis2path:%f safety_dis:%f",try_offest[0],dis2path,safety_center_distance_x);
 		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
 					offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
+		ROS_INFO("lateral_err:%f",lateral_err);
 	}
 	
 	for(size_t i=0; i<n_object; i++)
@@ -248,10 +250,10 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
 		dis2path = dis2pathArray[indexArray[i]] - offset_msg_.data;
 		
-		if(avoiding_offest[1] != 0.0)
+		if(try_offest[1] != 0.0)
 		{
 			safety_distance_front = safety_distance_front_ + 2*danger_distance_front_ ;
-			dis2path -= avoiding_offest[1];
+			dis2path -= try_offest[1];
 		}
 		else
 			safety_distance_front = safety_distance_front_;
@@ -289,29 +291,28 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			continue;
 		}
 		//object is other type, start to avoid
-		avoiding_offest[1] += dis2path + safety_center_distance_x; //try avoid in the right	
-		ROS_INFO("right try offset:%f\t dis2path:%f safety_dis:%f",avoiding_offest[1],dis2path,safety_center_distance_x);
+		try_offest[1] += dis2path + safety_center_distance_x; //try avoid in the right	
+		ROS_INFO("right try offset:%f\t dis2path:%f safety_dis:%f",try_offest[1],dis2path,safety_center_distance_x);
 		ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
 					offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
+		ROS_INFO("lateral_err:%f",lateral_err);
 	}
 	
-	avoiding_offest[0] += offset_msg_.data;
-	avoiding_offest[1] += offset_msg_.data;
-	
-	//ROS_INFO("offest0:%f\t offset1:%f",avoiding_offest[0],avoiding_offest[1]);
+	try_offest[0] += offset_msg_.data;
+	try_offest[1] += offset_msg_.data;
 	
 	//no avoid message
-	if(avoiding_offest[0]==0.0 && avoiding_offest[1] ==0.0) 
+	if(try_offest[0]==0.0 && try_offest[1] ==0.0) 
 	{
 		avoid_cmd_.status = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 	//avoid message is invalid ,must slow down ,perhaps not brake!
-	else if(avoiding_offest[0] < maxOffset_left_ && avoiding_offest[1] > maxOffset_right_)
+	else if(try_offest[0] < maxOffset_left_ && try_offest[1] > maxOffset_right_)
 	{
 		std::stringstream debug_msg("Unable to avoid obstacle! slow down ! \n");
-		debug_msg << "t_offset_L: " <<  avoiding_offest[0] << " maxOffset_L: "<< maxOffset_left_ << "\n";
-		debug_msg << "\t t_offset_R: " <<  avoiding_offest[1] << " maxOffset_R: "<< maxOffset_right_ ;
+		debug_msg << "t_offset_L: " <<  try_offest[0] << " maxOffset_L: "<< maxOffset_left_ << "\n";
+		debug_msg << "\t t_offset_R: " <<  try_offest[1] << " maxOffset_R: "<< maxOffset_right_ ;
 		
 		ROS_INFO("%s",debug_msg.str().c_str());
 		publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
@@ -323,15 +324,15 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	//avoid message is valid
 	//left offest is smaller,so avoid from left side
-	else if(( -avoiding_offest[0] <= avoiding_offest[1] && avoiding_offest[0] > maxOffset_left_) ||
-			(-avoiding_offest[0] > avoiding_offest[1] && avoiding_offest[0] > maxOffset_left_ && 
-			avoiding_offest[1] >maxOffset_right_))
+	else if(( -try_offest[0] <= try_offest[1] && try_offest[0] > maxOffset_left_) ||
+			(-try_offest[0] > try_offest[1] && try_offest[0] > maxOffset_left_ && 
+			try_offest[1] >maxOffset_right_))
 	{
 		//assuming that no deceleration is required for avoidance
 		avoid_cmd_.status = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
 		
-		offset_msg_.data = avoiding_offest[0];
+		offset_msg_.data = try_offest[0];
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	//right offest is smaller,so avoid from right side
@@ -341,7 +342,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		avoid_cmd_.status = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
 		
-		offset_msg_.data = avoiding_offest[1];
+		offset_msg_.data = try_offest[1];
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	if(offset_msg_.data != 0.0)
