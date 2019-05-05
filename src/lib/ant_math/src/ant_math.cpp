@@ -49,7 +49,7 @@ float limitRoadwheelAngleBySpeed(const float& angle, const float& speed)
 	float max_roadwheelAngle = fabs(generateRoadwheelAngleByRadius(min_steering_radius));
 	if(max_roadwheelAngle > MAX_ROAD_WHEEL_ANGLE - 5.0)
 	   max_roadwheelAngle = MAX_ROAD_WHEEL_ANGLE -5.0;
-	ROS_INFO("max_angle:%f\t angle:%f",max_roadwheelAngle,angle);
+	//ROS_INFO("max_angle:%f\t angle:%f",max_roadwheelAngle,angle);
 	return saturationEqual(angle,max_roadwheelAngle);
 }
 
@@ -123,11 +123,11 @@ float calculateDis2path(const double& X_,const double& Y_,
 	first_dis = dis2target;
 	first_point_index = target_point_index;
 	
-	int direction = 1;
+	bool is_yawReverse = 0;
 	
 	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
 	{
-		direction = -1;
+		is_yawReverse = 1;
 		for(size_t i=1;true;i++)
 		{
 			second_point_index = target_point_index-i;
@@ -169,9 +169,9 @@ float calculateDis2path(const double& X_,const double& Y_,
 	
 	//the direction of side c 
 	//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
-	float yaw_of_c = direction * atan2(path_points[second_point_index].x-path_points[first_point_index].x,
+	float yaw_of_c = is_yawReverse*M_PI + atan2(path_points[second_point_index].x-path_points[first_point_index].x,
 									   path_points[second_point_index].y-path_points[first_point_index].y);
-						   
+				
 	//object : world coordination to local coordination
 	float x = (X_-path_points[first_point_index].x) * cos(yaw_of_c) - (Y_-path_points[first_point_index].y) * sin(yaw_of_c);
 	//float y = (X_-path_points[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points[first_point_index].y) * cos(yaw_of_c);
@@ -211,7 +211,7 @@ float generateDangerDistanceBySpeed(const float &speed)
 
 float generateSafetyDisByDangerDis(const float &danger_dis)
 {
-	return danger_dis *1.5 + 10.0;
+	return danger_dis *3 + 10.0;
 }
 
  

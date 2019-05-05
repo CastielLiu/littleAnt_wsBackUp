@@ -157,18 +157,18 @@ void PathTracking::run()
 
 		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
-		//ROS_INFO("0 t_roadWheelAngle :%f",t_roadWheelAngle);
-		
 		t_roadWheelAngle = limitRoadwheelAngleBySpeed(t_roadWheelAngle,vehicle_speed_);
+		
+		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
 		if(is_laneChanging_)
 		{
 			float temp_max_roadwheelAngle = 
 				  maxRoadWheelAngleWhenChangeLane(lane_width_, safety_distance_front_);
-				  
+			//ROS_INFO("lane_width_:%f\t safety_distance_front_:%f",lane_width_,safety_distance_front_);  
 			//t_roadWheelAngle = saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle);
-			ROS_DEBUG("max_angle:........%f",saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle));
-			t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.0);
+			//ROS_ERROR("max_angle:........%f",saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle));
+			//t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.0);
 			
 			if(fabs(lateral_err_ - avoiding_offset_) < 0.6 && fabs(yaw_err) < 10.0*M_PI/180.0)
 				is_laneChanging_  = false;
@@ -184,15 +184,16 @@ void PathTracking::run()
 		
 		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
 		
-		if(i%10==0)
+		/*
+		if(i%100==0)
 		{
-			ROS_INFO("curvature:%f",target_point_.curvature);
-			ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
+			//ROS_INFO("curvature:%f",target_point_.curvature);
+			//ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
-			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",dis_threshold,t_roadWheelAngle);
+			//ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",dis_threshold,t_roadWheelAngle);
 		}
 		i++;
-		
+		*/
 		loop_rate.sleep();
 	}
 }
@@ -250,7 +251,11 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	disThreshold_ = foreSightDistance_coefficient_ * vehicle_speed_ ;
 	if(disThreshold_ < min_foresight_distance_) 
 		disThreshold_  = min_foresight_distance_;
-		
+	
+	disThreshold_ = disThreshold_ * (1.0 + 0.3 * fabs(lateral_err_) );
+	
+	ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
+	
 	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 }
