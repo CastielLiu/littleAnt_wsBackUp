@@ -504,7 +504,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	
 	//当设定速度低于当前速度时，制动
-	if(currentSpeed - msg->set_speed > 3.0)
+	if(currentSpeed  > 3.0 + msg->set_speed)
 	{
 		set_brake = (currentSpeed - msg->set_speed - 3.0) *3 + 40;
 	}

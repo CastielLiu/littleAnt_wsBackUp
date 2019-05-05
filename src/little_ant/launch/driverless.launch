@@ -38,7 +38,8 @@
 		<param name="speed" value="20.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.0"/>
-		<param name="foreSightDistance_coefficient_" value = "1.8"/>
+		<param name="foreSightDis_speedCoefficient" value = "1.8"/>
+		<param name="foreSightDis_latErrCoefficient" value = "1.8"/>
 		
 	</node>
 	

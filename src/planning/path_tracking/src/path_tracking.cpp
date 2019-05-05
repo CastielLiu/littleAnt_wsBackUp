@@ -51,7 +51,9 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 	nh_private.param<float>("speed",path_tracking_speed_,3.0);
 
-	nh_private.param<float>("foreSightDistance_coefficient", foreSightDistance_coefficient_,1.8);
+	nh_private.param<float>("foreSightDis_speedCoefficient", foreSightDis_speedCoefficient_,1.8);
+	nh_private.param<float>("foreSightDis_latErrCoefficient", foreSightDis_latErrCoefficient_,0.3);
+	
 	
 	nh_private.param<float>("min_foresight_distance",min_foresight_distance_,5.0);
 	
@@ -248,11 +250,11 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	if(vehicle_speed_ >20.0)
 		return;
 	
-	disThreshold_ = foreSightDistance_coefficient_ * vehicle_speed_ ;
+	disThreshold_ = foreSightDis_speedCoefficient_ * vehicle_speed_ ;
 	if(disThreshold_ < min_foresight_distance_) 
 		disThreshold_  = min_foresight_distance_;
 	
-	disThreshold_ = disThreshold_ * (1.0 + 0.3 * fabs(lateral_err_) );
+	disThreshold_ = disThreshold_ * (1.0 + foreSightDis_latErrCoefficient_ * fabs(lateral_err_) );
 	
 	ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
 	

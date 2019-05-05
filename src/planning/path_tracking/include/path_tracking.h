@@ -101,7 +101,8 @@ private:
 	
 	bool is_laneChanging_;
 	float lane_width_;
-	float foreSightDistance_coefficient_;
+	float foreSightDis_speedCoefficient_;
+	float foreSightDis_latErrCoefficient_;
 
 };
 

@@ -30,13 +30,14 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	nh_private.param<float>("deceleration_cofficient",deceleration_cofficient_,50);
 	
-	nh_private.param<float>("safety_distance_side",safety_distance_side_,0.3);
+	nh_private.param<float>("safety_distance_side",safety_distance_side_,0.4);
+	nh_private.param<float>("danger_distance_side",danger_distance_side_,0.25);
 	
 	nh_private.param<float>("pedestrian_detection_area_side",pedestrian_detection_area_side_,safety_distance_side_+1.0);
 	
 	nh_private.param<float>("max_deceleration",max_deceleration_,5.0); ///////////
 	
-	nh_private.param<float>("danger_distance_side",danger_distance_side_,1.2);
+	
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 	
@@ -189,7 +190,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
+		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
 		//dis2path:    distance from the object to the current path 
 		//dis2pathArray[indexArray[i]] : distance from the object to the origin path
 		//obstacle avoidance offset has been set in last time
@@ -247,7 +248,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	{
 		dis2vehicle = dis2vehicleArray[i];
 		object = objects->boxes[indexArray[i]];
-		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_ +0.2;
+		safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
 		dis2path = dis2pathArray[indexArray[i]] - offset_msg_.data;
 		
 		if(try_offest[1] != 0.0)
@@ -308,16 +309,17 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(try_offest[0] < maxOffset_left_ && try_offest[1] > maxOffset_right_)
 	{
-		std::stringstream debug_msg("Unable to avoid obstacle! slow down ! \n");
-		debug_msg << "t_offset_L: " <<  try_offest[0] << " maxOffset_L: "<< maxOffset_left_ << "\n";
-		debug_msg << "\t t_offset_R: " <<  try_offest[1] << " maxOffset_R: "<< maxOffset_right_ ;
-		ROS_ERROR("Unable to avoid obstacle! slow down !");
-		ROS_INFO("%s",debug_msg.str().c_str());
+		std::stringstream debug_msg;
+		debug_msg << "Unable to avoid obstacle! slow down ! ";
+		debug_msg << "  t_L: " <<  try_offest[0] << " max_L: "<< maxOffset_left_;
+		debug_msg << "  t_R: " <<  try_offest[1] << " max_R: "<< maxOffset_right_ ;
+		
 		publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
+		
 		avoid_cmd_.status = true;
 		avoid_cmd_.just_decelerate = true;
 		avoid_cmd_.cmd2.set_brake = 35.0;  //waiting test
-		avoid_cmd_.cmd2.set_speed = 0.0;
+		avoid_cmd_.cmd2.set_speed = 0.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
 		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 	//avoid message is valid
@@ -352,7 +354,6 @@ inline void Avoiding::backToOriginalLane()
 	offset_msg_.data = 0.0;
 	pub_avoid_msg_to_gps_.publish(offset_msg_);
 	publishDebugMsg(state_detection::Debug::INFO,"return to original path..");
-	ROS_ERROR("return to original path.....................");
 }
 
 inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
@@ -383,17 +384,18 @@ inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray:
 	float x,y;
 	for(size_t i=0; i<n_object; i++)
 	{
-		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
-		safety_center_distance_y = g_vehicle_length/2+ objects->boxes[indexArray[i]].dimensions.x/2 + 1.5;
+		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + danger_distance_side_;
+		safety_center_distance_y = g_vehicle_length/2+ objects->boxes[indexArray[i]].dimensions.x/2 + danger_distance_front_;
 		x = -objects->boxes[indexArray[i]].pose.position.y;
 		y = objects->boxes[indexArray[i]].pose.position.x;
 		
-		//ROS_INFO("safety_x: %f\t safety_y:%f\t x:%f\t y:%f",safety_center_distance_x,safety_center_distance_y,x,y);
-		
-		if(y <= safety_center_distance_y && 
-		   y > -g_vehicle_length/2  &&
-		   fabs(x) <= safety_center_distance_x)
-		   return true;
+		if(y <= safety_center_distance_y && y > -g_vehicle_length/2  && fabs(x) <= safety_center_distance_x)
+		{
+			std::stringstream ss ;
+			ss << "safety_x:"<<safety_center_distance_x <<"  safety_y:"<<safety_center_distance_y<<"  x:"<<x <<"  y:"<<y;
+			publishDebugMsg(state_detection::Debug::WARN,ss.str());
+			return true;
+		}
 	}
 	return false;
 }
@@ -597,7 +599,7 @@ inline void Avoiding::emergencyBrake()
 	avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 	avoid_cmd_.cmd2.set_speed = 0.0;
 	pub_avoid_cmd_.publish(avoid_cmd_);
-	publishDebugMsg(state_detection::Debug::INFO,"dangerous! emergency brake!");
+	publishDebugMsg(state_detection::Debug::WARN,"dangerous! emergency brake!");
 	//ROS_ERROR("dangerous! emergency brake!!!!!");
 	
 }
