@@ -34,7 +34,6 @@ bool Acc_esr::init()
 	pub_cmd_ = nh_.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
 	
 	nh_private_.param<float>("trackTargetAngle_range",trackTargetAngle_range_,1.0);
-	nh_private_.param<float>("deceleration_cofficient",deceleration_cofficient_,50.0);
 	
 	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
 	
@@ -58,9 +57,6 @@ void Acc_esr::carFollowThread()
 	{
 		if(is_car_following_)
 		{
-			
-		
-		
 		
 		}
 		loop_rate.sleep();
@@ -79,10 +75,6 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0  + 15.0;
 }
 
-float Acc_esr::brakingAperture_2_deceleration(const float & brakingAperture)
-{
-	return brakingAperture / deceleration_cofficient_;
-}
 
 void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 {
@@ -193,6 +185,7 @@ void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 		first_time_find_target_flag_ = true;
 		ROS_ERROR("acc target lost! acc has to exited !!");
 		lastTime_of_seekTarget_ = 0.0;
+		publishCarFollowingStats(false);
 	}
 }
 

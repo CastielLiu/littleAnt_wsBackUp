@@ -35,8 +35,10 @@ public:
 	void run();
 
 private:
-	float brakingAperture_2_deceleration(const float & brakingAperture);
 	inline void publishCarFollowingStats(bool status);
+	
+	
+	
 private:
 	ros::NodeHandle nh_;
 	ros::NodeHandle nh_private_;
@@ -65,8 +67,6 @@ private:
 	float trackTargetAngle_range_;
 	
 	double lastTime_of_seekTarget_;
-	
-	float deceleration_cofficient_;
 	
 	bool first_time_find_target_flag_;
 	

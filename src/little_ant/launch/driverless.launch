@@ -4,6 +4,9 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
+	<arg name="esr_radar_port_in" default="/dev/ttyUSB0"/>  <!-- esrRadar -->
+	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
+	
 	<arg name="pathTracking_file_name" default="$(find data)/data/_cycle.txt"/>
 	
 <!--底层 -->	
@@ -60,8 +63,23 @@
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
 	
+<!-- lat,lon,yaw + x,y = utm_gps -->	
 	<node pkg="utm_gps" type="utm_gps" name="utm_gps"/>
 	
+<!-- esr_radar  -->
+	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
+		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
+		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
+		<param name ="in_port_name" value= "$(arg esr_radar_port_in)"/>
+		<param name ="out_port_name" value= "$(arg esr_radar_port_out)"/>
+	</node>
+	
+	
+<!-- vehicle following  -->
+	<node name="acc_node" pkg="acc" type="acc_node">
+		<param name="trackTargetAngle_range" vale="1.0"/>
+	</node>
+
 <!--调试-->	
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
 		<param name="file_path" value="$(find data)/data/debug.txt"/>
