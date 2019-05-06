@@ -4,7 +4,8 @@
 
 Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	nh_(nh),
-	nh_private_(nh_private)
+	nh_private_(nh_private),
+	is_car_following_(false)
 {
 	cmd_.cmd2.set_gear =1;
 	cmd_.cmd1.set_driverlessMode =true;
@@ -37,7 +38,7 @@ bool Acc_esr::init()
 	
 	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
 	
-	car_follow_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&Acc_esr::carFollowThread, this)));
+//	car_follow_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&Acc_esr::carFollowThread, this)));
 }
 
 void Acc_esr::run()
@@ -47,14 +48,22 @@ void Acc_esr::run()
 
 void Acc_esr::carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg)
 {
-	
+	is_acc_ = true;
 }
 
 void Acc_esr::carFollowThread()
 {
+	ros::Rate loop_rate(20);
 	while(ros::ok())
 	{
-		if()
+		if(is_car_following_)
+		{
+			
+		
+		
+		
+		}
+		loop_rate.sleep();
 	}
 }
 
@@ -67,8 +76,7 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 	
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 		
-	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;
-	tracking_distance_ *= 2.0;  //wait debug..
+	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0  + 15.0;
 }
 
 float Acc_esr::brakingAperture_2_deceleration(const float & brakingAperture)
@@ -105,13 +113,13 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			{
 				min_distance = objects->objects[potentialTarget_index_[i]].distance;
 				acc_targetId_ = objects->objects[potentialTarget_index_[i]].id;
-					
 			}
 		}
 		//ROS_INFO("target locked distance:%f  azimuth:%f",
 		//		objects->objects[potentialTarget_index_[i]].distance,
 		//		objects->objects[potentialTarget_index_[i]].azimuth);
-		//acc_targetId_ = objects->
+		
+		publishCarFollowingStats(false);
 	}
 	else
 	{
@@ -119,6 +127,8 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		{
 			ROS_INFO("target id:0x%x",acc_targetId_);
 			first_time_find_target_flag_ = false;
+			
+			publishCarFollowingStats(true);
 		}
 		for(size_t i=0;i<objects->size;i++)
 		{
@@ -126,14 +136,14 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			{
 				trackTargetMsg_ = objects->objects[i];
 				ROS_INFO("target Id:%x  angle:%f  distance:%f speed:%f",
-						trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
+							trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
 				
 				lastTime_of_seekTarget_ = ros::Time::now().toSec();
 				break;
 			}
 		}
-		float speed = vehicleSpeed_ + trackTargetMsg_.speed + 
-			(trackTargetMsg_.distance -tracking_distance_) *1.0;
+		float speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *1.0;  //wait debug
+		
 		if(speed >=0.0)
 		{
 			cmd_.cmd2.set_speed = speed;
@@ -142,14 +152,15 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		else
 		{
 			cmd_.cmd2.set_speed = 0.0;
-			cmd_.cmd2.set_brake = -speed * 1.0;
 		}
+		/*
 		float steeringRadius = trackTargetMsg_.distance/(2.5*2*sinDeg(trackTargetMsg_.azimuth)) ;
 		cmd_.cmd2.set_steeringAngle = 
 			-saturationEqual(generateRoadwheelAngleByRadius(steeringRadius),15.0) * g_steering_gearRatio;
 			
 		ROS_INFO("cmd_speed:%f\t cmd_angle:%f tracking_distance:%f",
-			cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle,tracking_distance_);
+			cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle,tracking_distance_);*/
+			
 		pub_cmd_.publish(cmd_);
 	}
 }
@@ -167,7 +178,6 @@ void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 		ROS_INFO("Acc mode started...");
 		cmd_.status = true;
 	}
-		
 	is_acc_ = state->data;
 	
 }
@@ -184,6 +194,14 @@ void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 		ROS_ERROR("acc target lost! acc has to exited !!");
 		lastTime_of_seekTarget_ = 0.0;
 	}
+}
+
+inline void Acc_esr::publishCarFollowingStats(bool status)
+{
+	std_msgs::Bool is_can_follow;
+	is_can_follow.data = status;
+	pub_car_follow_response_.publish(is_can_follow);
+	
 }
 
 

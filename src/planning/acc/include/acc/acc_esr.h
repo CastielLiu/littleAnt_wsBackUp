@@ -6,8 +6,8 @@
 #include<little_ant_msgs/ControlCmd2.h>
 #include<std_msgs/Bool.h>
 
-#include<boost::bind.hpp>
-#include<boost::thread.hpp>
+#include<boost/bind.hpp>
+#include<boost/thread.hpp>
 
 #include<little_ant_msgs/State1.h>
 #include<little_ant_msgs/State2.h>
@@ -29,13 +29,14 @@ public:
 	void is_acc_callback(const std_msgs::Bool::ConstPtr& state);
 	void updateTargetStatus_callback(const ros::TimerEvent&);
 	void carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg);
+	void carFollowThread();
 	
 	bool init();
 	void run();
 
 private:
 	float brakingAperture_2_deceleration(const float & brakingAperture);
-	
+	inline void publishCarFollowingStats(bool status);
 private:
 	ros::NodeHandle nh_;
 	ros::NodeHandle nh_private_;
@@ -71,6 +72,7 @@ private:
 	
 	boost::shared_ptr<boost::thread> car_follow_thread_ptr_;
 	
+	bool is_car_following_;
 
 };
 

@@ -107,8 +107,6 @@ void ESR_RADAR::run()
 {
 	boost::thread parse_thread(boost::bind(&ESR_RADAR::handleCanMsg,this));
 	
-	
-	
 	if(is_pubBoundingBox_)
 		this->start_publishBoundingBoxArray_thread();
 	
@@ -179,7 +177,7 @@ void ESR_RADAR::handleCanMsg()
 void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 {
 	static uint16_t scan_index;
-	cout << "ID:" << hex << can_msg.ID <<endl;
+//	cout << "ID:" << hex << can_msg.ID <<endl;
 /*	
 	for(size_t i=0;i<can_msg.len;i++)
 	 printf("%x\t",can_msg.data[i]);
@@ -197,15 +195,14 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		objects.size = objects.objects.size();
 		if(objects.size)
 			esr_pub.publish(objects);
-		
-		last_frame_objects = objects;
+		if(is_pubBoundingBox_)
+			last_frame_objects = objects;
 		
 		objects.objects.clear();
 	}
 	
 	if(can_msg.ID <= 0x53f && can_msg.ID >=0x500)
 	{
-				
 		if(objects.objects.size() > 63)
 		{
 			objects.objects.clear();
