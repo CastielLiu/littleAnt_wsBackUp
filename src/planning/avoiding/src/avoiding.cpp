@@ -218,7 +218,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 				avoid_cmd_.status = true;
 				avoid_cmd_.just_decelerate = true;
 				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
-				avoid_cmd_.cmd2.set_speed = 0.0;
+				avoid_cmd_.cmd2.set_speed = 5.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				break;
 			}

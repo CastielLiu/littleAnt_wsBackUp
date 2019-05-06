@@ -40,7 +40,7 @@ private:
 	ros::Subscriber sub_vehicleSpeed_;
 	ros::Subscriber sub_start_acc_;
 	ros::Publisher pub_cmd_;
-	ros::Timer updateTargetStatus_300ms_;
+	ros::Timer updateTargetStatus_timer_;
 	
 	little_ant_msgs::ControlCmd cmd_;
 	

@@ -128,6 +128,7 @@ void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)
 		if((cmdMsg_[i].status==true)&& (current_time-cmdMsg_[i].time > 0.1)) //over 100ms;
 			cmdMsg_[i].status = false;
 	}
+	
 	//限速超时，退出限速
 	if(current_time - speed_limit_time_ > 60.0)
 		speed_limit_sign_ = -1;

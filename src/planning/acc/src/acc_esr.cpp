@@ -31,7 +31,7 @@ bool Acc_esr::init()
 	nh_private_.param<float>("trackTargetAngle_range",trackTargetAngle_range_,1.0);
 	nh_private_.param<float>("deceleration_cofficient",deceleration_cofficient_,50.0);
 	
-	updateTargetStatus_300ms_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
+	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
 }
 
 void Acc_esr::run()
@@ -42,12 +42,12 @@ void Acc_esr::run()
 
 void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
-	static int i=0;
-	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
-
+	/*static int i=0;
 	i++;
 	if(i%20==0)
-		ROS_INFO("vehicle speed:%f ",vehicleSpeed_);
+		ROS_INFO("vehicle speed:%f ",vehicleSpeed_);*/
+	
+	vehicleSpeed_ = msg->vehicle_speed; //m/s
 		
 	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /brakingAperture_2_deceleration(40.0)  + 5.0;
 	tracking_distance_ *= 2.0;  //wait debug..
