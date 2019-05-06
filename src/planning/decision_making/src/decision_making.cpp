@@ -63,14 +63,9 @@ void DecisionMaking::sensor_decision_callback(const little_ant_msgs::ControlCmd:
 //
 void DecisionMaking::sendCmd1_callback(const ros::TimerEvent&)
 {
-	for(size_t i=0;i<SENSOR_NUM;i++)
-	{
-		if(cmdMsg_[i].status == true)
-		{
-			pub_final_decision1_.publish(cmdMsg_[i].cmd.cmd1);
-			break;
-		}
-	}
+	
+	pub_final_decision1_.publish(cmdMsg_[_GPS].cmd.cmd1);
+
 }
 
 void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
@@ -79,45 +74,28 @@ void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 	{
 		if(cmdMsg_[i].status == true)
 		{
-			//when the lidar send just_decelerate cmd, the obstacle is in vehicle's dangerous area now,
-			//according to lidar's speed cmd and other sensor's steer angle cmd to control vehicle
-			if((_LIDAR==i)&& cmdMsg_[i].cmd.just_decelerate)
+			if((_LIDAR == i)||(_ESR_RADAR == i))
 			{
 				cmd2_.set_brake = cmdMsg_[i].cmd.cmd2.set_brake;
 				cmd2_.set_speed = cmdMsg_[i].cmd.cmd2.set_speed;
-				for(size_t j=i+1;j<SENSOR_NUM;j++)
-				{
-					if(cmdMsg_[j].status == true)
-					{
-						cmd2_.set_steeringAngle = cmdMsg_[j].cmd.cmd2.set_steeringAngle;
-						break;
-					}
-				}
-			}
-			//when the vehicle is in accMode ,close the avoiding function!
-			else if((_LIDAR==i) && cmdMsg_[_ESR_RADAR].status)
-			{
-				cmd2_ = cmdMsg_[_ESR_RADAR].cmd.cmd2;
+				cmd2_.set_steeringAngle = cmdMsg_[_GPS].cmd.cmd2.set_steeringAngle;
 			}
 			else
 			{
 				cmd2_ = cmdMsg_[i].cmd.cmd2;
 			}
-			
-			//traffic mark
-			if(traffic_light_status_ == TrafficLight_stop)
-			{
-				cmd2_.set_speed = 0.0;
-				cmd2_.set_brake = 40.0;
-			}
-			else if(speed_limit_sign_ >0 && cmd2_.set_speed > speed_limit_sign_)
-				cmd2_.set_speed = speed_limit_sign_;
-			
-			
-			pub_final_decision2_.publish(cmd2_);
 			break;
 		}
 	}
+	//traffic mark
+	if(traffic_light_status_ == TrafficLight_stop)
+	{
+		cmd2_.set_speed = 5.0;   //waiting debug
+		cmd2_.set_brake = 40.0;  //waiting debug
+	}
+	else if(speed_limit_sign_ >0 && cmd2_.set_speed > speed_limit_sign_)
+		cmd2_.set_speed = speed_limit_sign_;
+	pub_final_decision2_.publish(cmd2_);
 }
 
 void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)

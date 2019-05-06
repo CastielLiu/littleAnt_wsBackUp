@@ -3,6 +3,9 @@
 #include<ros/ros.h>
 #include<little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/State2.h>
+#include<esr_radar_msgs/Object.h>
+#include<esr_radar_msgs/Objects.h>
+#include<std_msgs/Bool.h>
 #include<jsk_recognition_msgs/BoundingBoxArray.h>
 #include<jsk_recognition_msgs/BoundingBox.h>
 #include<iostream>
@@ -53,6 +56,11 @@ private:
 						  size_t *obstacleIndex,
 						  size_t &obstacleSequence);
 	
+	void requestCarFollowing(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
+								   const std::vector<size_t>& indexArray);
+								   
+	void carFollowResponse_callback(const std_msgs::Bool::ConstPtr& msg);							   
+								
 	whatArea_t which_area(float& x,float& y);
 
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
@@ -82,9 +90,11 @@ private:
 	ros::Subscriber sub_vehicle_speed_;
 	ros::Subscriber sub_target_point_index_;
 	ros::Subscriber sub_utm_gps_;
+	ros::Subscriber sub_carFollow_response_;
 	
 	ros::Publisher pub_avoid_cmd_;
 	ros::Publisher pub_avoid_msg_to_gps_; 
+	ros::Publisher pub_car_follow_request_;
 	
 	little_ant_msgs::ControlCmd avoid_cmd_;
 	
@@ -128,6 +138,8 @@ private:
 	bool vehicle_speed_status_;
 	
 	bool is_systemOk_;
+	
+	bool is_carFollow_;
 };
 
 

@@ -4,6 +4,10 @@
 #include <little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/ControlCmd1.h>
 #include<little_ant_msgs/ControlCmd2.h>
+#include<std_msgs/Bool.h>
+
+#include<boost::bind.hpp>
+#include<boost::thread.hpp>
 
 #include<little_ant_msgs/State1.h>
 #include<little_ant_msgs/State2.h>
@@ -24,7 +28,7 @@ public:
 	void object_callback(const esr_radar_msgs::Objects::ConstPtr& objects);
 	void is_acc_callback(const std_msgs::Bool::ConstPtr& state);
 	void updateTargetStatus_callback(const ros::TimerEvent&);
-	
+	void carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg);
 	
 	bool init();
 	void run();
@@ -39,6 +43,9 @@ private:
 	ros::Subscriber sub_esrObjects_;
 	ros::Subscriber sub_vehicleSpeed_;
 	ros::Subscriber sub_start_acc_;
+	ros::Subscriber sub_carFollow_request_;
+	
+	ros::Publisher pub_car_follow_response_;
 	ros::Publisher pub_cmd_;
 	ros::Timer updateTargetStatus_timer_;
 	
@@ -61,6 +68,8 @@ private:
 	float deceleration_cofficient_;
 	
 	bool first_time_find_target_flag_;
+	
+	boost::shared_ptr<boost::thread> car_follow_thread_ptr_;
 	
 
 };

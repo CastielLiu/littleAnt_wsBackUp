@@ -26,12 +26,18 @@ bool Acc_esr::init()
 	sub_vehicleSpeed_ = nh_.subscribe("/vehicleState2",2,&Acc_esr::vehicleSpeed_callback,this);
 	sub_start_acc_ = nh_.subscribe("/is_acc",2,&Acc_esr::is_acc_callback,this);
 	
+	sub_carFollow_request_ = nh_.subscribe("/carFollow_request",1,&Acc_esr::carFollowRequest_callback,this);
+	
+	pub_car_follow_response_ = nh_.advertise<std_msgs::Bool>("/carFollow_response",1);
+	
 	pub_cmd_ = nh_.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
 	
 	nh_private_.param<float>("trackTargetAngle_range",trackTargetAngle_range_,1.0);
 	nh_private_.param<float>("deceleration_cofficient",deceleration_cofficient_,50.0);
 	
 	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
+	
+	car_follow_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&Acc_esr::carFollowThread, this)));
 }
 
 void Acc_esr::run()
@@ -39,6 +45,18 @@ void Acc_esr::run()
 	ros::spin();
 }
 
+void Acc_esr::carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg)
+{
+	
+}
+
+void Acc_esr::carFollowThread()
+{
+	while(ros::ok())
+	{
+		if()
+	}
+}
 
 void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {

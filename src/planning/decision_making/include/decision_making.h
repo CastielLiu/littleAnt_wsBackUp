@@ -10,8 +10,10 @@
 #define SENSOR_NUM little_ant_msgs::ControlCmd::SENSOR_NUM
 
 #define _LIDAR        little_ant_msgs::ControlCmd::_LIDAR
-#define _GPS          little_ant_msgs::ControlCmd::_GPS
+
 #define _ESR_RADAR    little_ant_msgs::ControlCmd::_ESR_RADAR
+
+#define _GPS          little_ant_msgs::ControlCmd::_GPS
 
 
 class DecisionMaking
