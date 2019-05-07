@@ -11,7 +11,7 @@
 #include<iostream>
 #include<std_msgs/Float32.h>
 #include<ant_math/ant_math.h>
-#include<std_msgs/UInt32.h>
+#include<array_msgs/UInt32Array.h>
 #include<vector>
 #include<assert.h>
 
@@ -46,7 +46,7 @@ private:
 	
 	void objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects);
 	
-	void target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
+	void relatedIndex_callback(const array_msgs::UInt32Array::ConstPtr& msg);
 
 	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
 						  size_t objectIndex,
@@ -88,7 +88,7 @@ private:
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
-	ros::Subscriber sub_target_point_index_;
+	ros::Subscriber sub_related_index_;
 	ros::Subscriber sub_utm_gps_;
 	ros::Subscriber sub_carFollow_response_;
 	

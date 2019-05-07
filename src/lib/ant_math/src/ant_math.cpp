@@ -11,33 +11,10 @@ const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 const float g_vehicle_width = 1.7 ;// m
 const float g_vehicle_length = 3.5; 
 
-const float Max_deceleration = 5.0; // m/s/s
+const float g_max_deceleration = 5.0; // m/s/s
 
 static const float max_side_acceleration = 1.9; // m/s/s
 
-
-float generateRoadwheelAngleByRadius(const float& radius)
-{
-	assert(radius!=0);
-	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
-	return atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
-}
-
-double sinDeg(const double& deg)
-{
-	return sin(deg*M_PI/180.0);
-}
-
-float saturationEqual(float value,float limit)
-{
-	//ROS_INFO("value:%f\t limit:%f",value,limit);
-	assert(limit>0);
-	if(value>limit)
-		value = limit;
-	else if(value < -limit)
-		value = -limit;
-	return value;
-}
 
 
 float limitRoadwheelAngleBySpeed(const float& angle, const float& speed)
@@ -60,15 +37,6 @@ float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 	return speed>max_speed? max_speed: speed;
 }
 
-int sign(float num)
-{
-	return num > 0? 1 : -1;
-}
-
-float deg2rad(float deg)
-{
-	return  (deg/180.0)*M_PI;
-}
 
 bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
@@ -96,10 +64,10 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 	return true;
 }
 
-
 float calculateDis2path(const double& X_,const double& Y_,
 						 const std::vector<gpsMsg_t>& path_points, 
-						 const size_t& target_point_index)
+						 const size_t& target_point_index,
+						 size_t * const nearest_point_index_ptr)
 {
 	//ROS_INFO("path_points.size:%d\t target_point_index:%d",path_points.size(),target_point_index);
 	
@@ -123,7 +91,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	first_dis = dis2target;
 	first_point_index = target_point_index;
 	
-	bool is_yawReverse = 0;
+	int is_yawReverse = 0;
 	
 	if(dis2last_target <dis2target && dis2next_target > dis2target) //downward
 	{
@@ -167,6 +135,9 @@ float calculateDis2path(const double& X_,const double& Y_,
 		second_point_index = target_point_index +1;
 	}
 	
+	if(nearest_point_index_ptr != NULL)
+		*nearest_point_index_ptr = (first_point_index+second_point_index)/2;
+	
 	//the direction of side c 
 	//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
 	float yaw_of_c = is_yawReverse*M_PI + atan2(path_points[second_point_index].x-path_points[first_point_index].x,
@@ -179,6 +150,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	//ROS_ERROR("index1:%d\t index2:%d",first_point_index,second_point_index);
 	return x;
 }
+
 
 float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 {
@@ -199,6 +171,11 @@ float generateMaxTolarateSpeedByCurvature(const float& curvature)
 	return sqrt(1.0/fabs(curvature)*1.5) *3.6;
 }
 
+float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,const size_t& target_point_index)
+{
+	
+}
+
 float limitSpeedByLateralAndYawErr(float speed,float latErr,float yawErr)
 {
 	///??
@@ -212,22 +189,4 @@ float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
 	float radius = 0.5*distance/sin(theta);
 	return generateRoadwheelAngleByRadius(radius);
 }
-
-float generateDangerDistanceBySpeed(const float &speed)
-{
-	return 0.5* speed * speed /Max_deceleration  + 3.0; 
-}
-
-float generateSafetyDisByDangerDis(const float &danger_dis)
-{
-	return danger_dis *3 + 5.0;
-}
-
- 
-
-
- 
-
-
-
 

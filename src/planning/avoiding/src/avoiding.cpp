@@ -53,7 +53,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 	sub_objects_msg_ = nh.subscribe(objects_topic_,1,&Avoiding::objects_callback,this);
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",1,&Avoiding::vehicleSpeed_callback,this);
-	sub_target_point_index_ = nh.subscribe("/track_target_index",1,&Avoiding::target_point_index_callback,this);
+	sub_related_index_ = nh.subscribe("/target_and_nearest_points_index",1,&Avoiding::relatedIndex_callback,this);
 	sub_utm_gps_ = nh.subscribe("/gps_utm",1,&Avoiding::utm_gps_callback,this);
 	sub_carFollow_response_ = nh.subscribe("/carFollow_response",1,&Avoiding::carFollowResponse_callback ,this);
 	
@@ -66,10 +66,10 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
-void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg)
+void Avoiding::relatedIndex_callback(const array_msgs::UInt32Array::ConstPtr& msg)
 {
 	target_point_index_status_ = true;
-	target_point_index_ = msg->data;
+	target_point_index_ = msg->data[0];
 }
 
 

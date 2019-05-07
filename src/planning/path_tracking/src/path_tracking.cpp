@@ -46,7 +46,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
-	pub_tracking_target_index_ = nh.advertise<std_msgs::UInt32>("/track_target_index",1);
+	pub_related_index_ = nh.advertise<array_msgs::UInt32Array>("/target_and_nearest_points_index",1);
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
@@ -97,7 +97,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		target_point_index_++;
 	}
 	
-	ROS_INFO("first target index:%d   total index:%d",target_point_index_,path_points_.size());
+	//ROS_INFO("first target index:%d   total index:%d",target_point_index_,path_points_.size());
 	
 	if(target_point_index_ == path_points_.size())
 	{
@@ -127,13 +127,8 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-1)
 	{
-		//publish the current target index
-		std_msgs::UInt32 index;   index.data = target_point_index_;
-		pub_tracking_target_index_.publish(index);
-		
-		/*printf("x:%lf \ty:%lf \t yaw:%f\n",path_points_[target_point_index_].x,
-										  path_points_[target_point_index_].y,
-										  path_points_[target_point_index_].yaw);*/
+		//publish the current target and nearest point index
+		this->publishRelatedIndex();
 		
 		if( avoiding_offset_ != 0.0)
 		{
@@ -142,11 +137,11 @@ void PathTracking::run()
 			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
 			//printf("new__ x:%lf \ty:%lf \t yaw:%f\n",target_point_.x,target_point_.y,target_point_.yaw);
 		}
-		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_)
-					   -avoiding_offset_;
-		float dis_threshold = disThreshold_;  /*(1 + sqrt(fabs(lateral_err_)));*/
+		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
+										 target_point_index_,&nearest_point_index_) - avoiding_offset_;
+										 
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
-		if( dis_yaw.first < dis_threshold)
+		if( dis_yaw.first < disThreshold_)
 		{
 			target_point_ = path_points_[target_point_index_++];
 			continue;
@@ -194,12 +189,20 @@ void PathTracking::run()
 			//ROS_INFO("curvature:%f",target_point_.curvature);
 			//ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
-			//ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",dis_threshold,t_roadWheelAngle);
+			//ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",disThreshold_,t_roadWheelAngle);
 		}
 		i++;
 		*/
 		loop_rate.sleep();
 	}
+}
+
+void PathTracking::publishRelatedIndex()
+{
+	array_msgs::UInt32Array msg;
+	msg.data.push_back(target_point_index_);
+	msg.data.push_back(nearest_point_index_) ;
+	pub_related_index_.publish(msg);
 }
 
 void PathTracking::publishMaxTolerateSpeed()

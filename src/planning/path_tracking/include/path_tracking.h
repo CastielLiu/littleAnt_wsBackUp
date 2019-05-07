@@ -4,6 +4,7 @@
 #include<little_ant_msgs/ControlCmd.h>
 #include<std_msgs/Float32.h>
 #include<std_msgs/UInt32.h>
+#include<array_msgs/UInt32Array.h>
 #include<vector>
 
 #include<little_ant_msgs/State2.h>  //speed
@@ -48,6 +49,7 @@ public:
 
 private:
 	void publishMaxTolerateSpeed();	
+	void publishRelatedIndex();
 private:
 	ros::Subscriber sub_gps_;
 	
@@ -62,10 +64,9 @@ private:
 	
 	ros::Publisher pub_gps_cmd_;
 	
-	ros::Publisher pub_tracking_target_index_;
+	ros::Publisher pub_related_index_;
 	
 	ros::Publisher pub_max_tolerate_speed_;
-	
 	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
@@ -73,7 +74,8 @@ private:
 	
 	std::vector<gpsMsg_t> path_points_;
 	
-	uint32_t target_point_index_;
+	size_t target_point_index_;
+	size_t nearest_point_index_;
 	
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;
