@@ -190,6 +190,15 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	return speed>max_speed? max_speed: speed;
 }
 
+//km/h
+float generateMaxTolarateSpeedByCurvature(const float& curvature)
+{
+	if(curvature==0.0)
+		return 100.0;
+
+	return sqrt(1.0/fabs(curvature)*1.5) *3.6;
+}
+
 float limitSpeedByLateralAndYawErr(float speed,float latErr,float yawErr)
 {
 	///??
@@ -211,7 +220,7 @@ float generateDangerDistanceBySpeed(const float &speed)
 
 float generateSafetyDisByDangerDis(const float &danger_dis)
 {
-	return danger_dis *3 + 10.0;
+	return danger_dis *3 + 5.0;
 }
 
  

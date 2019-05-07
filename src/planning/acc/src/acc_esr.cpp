@@ -79,7 +79,7 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 	
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 		
-	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0 * 5  + 8.0;
+	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0 * 3  + 8.0;
 }
 
 
@@ -93,7 +93,7 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		
 		publishCarFollowingStats(false);
 		
-		ROS_INFO("finding target........ max_target_search_distance_:%f",max_target_search_distance_);
+		//ROS_INFO("finding target........ max_target_search_distance_:%f",max_target_search_distance_);
 		
 		potentialTarget_num_=0; 
 		
@@ -124,7 +124,7 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 	else
 	{
 		cmd_.status = false;
-		
+		cmd_.cmd2.set_brake = 0.0;
 		for(size_t i=0;i<objects->size;i++)
 		{
 			if(objects->objects[i].id == acc_targetId_ && objects->objects[i].status != 1)  //!=newTarget
@@ -152,9 +152,9 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		float distanceErr = trackTargetMsg_.distance -tracking_distance_;
 		float t_speed;  //m/s
 		if(distanceErr >= 0)
-			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.2;  //wait debug
+			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.5;  //wait debug
 		else
-			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.5;
+			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.3;
 			
 		ROS_INFO("target speed:%f \t vehicle speed:%f \t t_speed:%f\t t_dis:%f\t dis:%f",
 						vehicleSpeed_ + trackTargetMsg_.speed,vehicleSpeed_,t_speed,tracking_distance_,trackTargetMsg_.distance);
@@ -165,7 +165,7 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			cmd_.cmd2.set_speed = t_speed * 3.6; //km/h
 		else
 		{
-			ROS_INFO("here...............................");
+			//ROS_INFO("here...............................");
 			cmd_.cmd2.set_speed = 0.0;   //emergencyBrake!!
 			cmd_.cmd2.set_brake = 35.0;
 		}

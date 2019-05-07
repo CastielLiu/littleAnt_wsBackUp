@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   jsk_recognition_msgs
   serial
   can2serial
+  ant_math
   state_detection
 )
 

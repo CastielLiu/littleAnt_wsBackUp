@@ -5,7 +5,8 @@
 #include<little_ant_msgs/ControlCmd1.h>
 #include<little_ant_msgs/ControlCmd2.h>
 #include<little_ant_msgs/DetectedObjectArray.h>
-
+#include<std_msgs/Float32.h>
+#include<ant_math/ant_math.h>
 
 #define SENSOR_NUM little_ant_msgs::ControlCmd::SENSOR_NUM
 
@@ -34,11 +35,13 @@ private:
 	void updateCmdStatus_callback(const ros::TimerEvent&);
 	
 	void traffic_mark_callback(const little_ant_msgs::DetectedObjectArray::ConstPtr& msg);
-
+	
+	void maxTolerateSpeed_callback(const std_msgs::Float32::ConstPtr& msg);
 
 private:
 	ros::Subscriber sub_sensors_decision_;
 	ros::Subscriber sub_traffic_mark_;
+	ros::Subscriber sub_max_tolerate_speed_;
 	
 	ros::Publisher pub_final_decision1_;
 	ros::Publisher pub_final_decision2_;
@@ -72,7 +75,7 @@ private:
 	float speed_limit_sign_;
 	double speed_limit_time_; //限速时刻
 	
-	float gps_cmd_speed_;
+	float max_tolerate_speed_;
 	
 };
 

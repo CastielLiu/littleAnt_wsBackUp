@@ -55,6 +55,7 @@
   <build_depend>little_ant_msgs</build_depend>
   <build_depend>jsk_recognition_msgs</build_depend>
   <build_depend>state_detection</build_depend>
+   <build_depend>ant_math</build_depend>
   
   
   <build_export_depend>roscpp</build_export_depend>

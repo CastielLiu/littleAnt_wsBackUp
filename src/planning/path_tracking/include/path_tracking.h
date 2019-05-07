@@ -12,6 +12,7 @@
 #include<nav_msgs/Odometry.h> 
 #include<geometry_msgs/Quaternion.h>
 #include <tf/transform_datatypes.h>
+#include<std_msgs/Float32.h>
 
 #include<std_msgs/Bool.h>
 #include<ant_math/ant_math.h>
@@ -44,7 +45,9 @@ public:
 	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread();
-	
+
+private:
+	void publishMaxTolerateSpeed();	
 private:
 	ros::Subscriber sub_gps_;
 	
@@ -60,6 +63,8 @@ private:
 	ros::Publisher pub_gps_cmd_;
 	
 	ros::Publisher pub_tracking_target_index_;
+	
+	ros::Publisher pub_max_tolerate_speed_;
 	
 	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;

@@ -66,7 +66,7 @@ class Points:
 			
 def plot():
 	path_points = Points()
-	path_points.load('cycle.txt')
+	path_points.load('2.txt')
 	path_points.calculateCurvature()
 	path_points.curvatureFilter(15)
 	
@@ -82,21 +82,24 @@ def plot():
 	
 	path_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	plt.plot(path_points.y,path_points.x,'r.',label="path")
-	
 	result_points = Points()
 	result_points.load('debug.txt')
 	
 	result_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	plt.plot(result_points.y,result_points.x,'k-',label="debug")
+	#plt.plot(path_points.y,path_points.x,'r.',label="path")
+	#plt.plot(result_points.y,result_points.x,'k-',label="debug")
+	
+	plt.plot(path_points.x,path_points.y,'r.',label="path")
+	plt.plot(result_points.x,result_points.y,'k-',label="debug")
+
+
 
 	plt.legend()
-	plt.axis('equal')
+
+	#plt.ylim((0,30))
 	
-	#plt.xlim((-40,10))
-	
-	plt.xticks(np.arange(0,200,2))
+	#plt.xticks(np.arange(0,200,2))
 	plt.grid('on')
 
 	plt.savefig('a.pdf')

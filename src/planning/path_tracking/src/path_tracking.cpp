@@ -41,7 +41,8 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
 	
-	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",5);
+	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
+	pub_max_tolerate_speed_ = nh.advertise<std_msgs::Float32>("/max_tolerate_speed",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
@@ -181,6 +182,7 @@ void PathTracking::run()
 		gps_controlCmd_.cmd2.set_speed = 
 				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
 		
+		this->publishMaxTolerateSpeed();
 		
 		//gps_controlCmd_.cmd2.set_speed =  limitSpeedByCurrentRoadwheelAngle(path_tracking_speed_,current_roadwheelAngle_);
 		
@@ -200,6 +202,12 @@ void PathTracking::run()
 	}
 }
 
+void PathTracking::publishMaxTolerateSpeed()
+{
+	std_msgs::Float32 msg;
+	msg.data = generateMaxTolarateSpeedByCurvature(path_points_[target_point_index_+10].curvature);
+	pub_max_tolerate_speed_.publish(msg);
+}
 
 float PathTracking::point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2)
 {

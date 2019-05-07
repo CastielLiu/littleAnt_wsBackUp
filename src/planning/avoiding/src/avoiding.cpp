@@ -614,7 +614,7 @@ inline void Avoiding::emergencyBrake()
 void Avoiding::carFollowResponse_callback(const std_msgs::Bool::ConstPtr& msg)
 {
 	is_carFollow_ = msg->data;
-	ROS_INFO("is_carFollow_:%d----------------------------",is_carFollow_);
+	//ROS_INFO("is_carFollow_:%d----------------------------",is_carFollow_);
 }
 
 void Avoiding::requestCarFollowing(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,

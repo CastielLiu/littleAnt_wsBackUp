@@ -14,6 +14,7 @@
 
 #define WHEEL_DISTANCE  1.2
 #define AXIS_DISTANCE  1.5
+#define MAX_SPEED 30.0
 
 typedef struct
 {
@@ -45,6 +46,7 @@ float  calculateDis2path(const double& X_,const double& Y_,
 float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance);
 float generateDangerDistanceBySpeed(const float &speed);
 float generateSafetyDisByDangerDis(const float &danger_dis);
+float generateMaxTolarateSpeedByCurvature(const float& curvature);
 
 
 extern const float g_steering_gearRatio;

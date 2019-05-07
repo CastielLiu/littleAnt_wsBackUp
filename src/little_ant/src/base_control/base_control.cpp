@@ -509,7 +509,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		set_speed = MAX_SPEED-1;
 	//increment越大，加速度越大
 	//设定速度越低，加速越快
-	float increment = 2.0/(currentSpeed/5+1);
+	float increment = 3.0/(currentSpeed/5+1);
 	
 	if(set_speed - currentSpeed > increment )
 		set_speed = currentSpeed + increment;

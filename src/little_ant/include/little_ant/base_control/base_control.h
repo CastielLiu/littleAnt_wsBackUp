@@ -22,6 +22,7 @@
 #include <little_ant_msgs/ControlCmd2.h>
 
 #include<state_detection/state_detection.h>
+#include<ant_math/ant_math.h>
 
 #define ID_CMD_1 0x2C5
 #define	ID_CMD_2 0x1C5
@@ -31,7 +32,10 @@
 #define ID_STATE3 0x4D1
 #define ID_STATE4 0x1D5
 
+#ifndef MAX_SPEED
 #define MAX_SPEED 30.0
+#endif
+
 
 #ifndef PACK
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
