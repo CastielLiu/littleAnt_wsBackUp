@@ -67,8 +67,6 @@ private:
 	
 	double lastTime_of_seekTarget_;
 	
-	bool first_time_find_target_flag_;
-	
 	boost::shared_ptr<boost::thread> car_follow_thread_ptr_;
 	
 	bool is_car_following_;

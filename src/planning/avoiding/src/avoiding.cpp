@@ -320,8 +320,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		if(is_carFollow_ == false)
 		{
 			avoid_cmd_.status = true;
-			avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
-			avoid_cmd_.cmd2.set_speed = 8.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
+			avoid_cmd_.cmd2.set_brake = 60.0;  //waiting test
+			avoid_cmd_.cmd2.set_speed = 5.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
 			
 			requestCarFollowing(objects,vehicleObstacle_indexArray);
 		}

@@ -495,18 +495,10 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	int currentSpeed = state2.vehicle_speed * 3.6;
 	
-	// 事实是：一旦紧急制动 自动驾驶模式已经退出，执行不到这里 
-	/*if(stm32_msg1_.is_emergency_brake)
-	{
-		set_brake = 40.0;
-		set_speed = 0.0;
-	}*/
-	
-	
 	//当设定速度低于当前速度时，制动
-	if(currentSpeed  > 3.0 + msg->set_speed)
+	if(currentSpeed  > 2.0 + msg->set_speed)
 	{
-		set_brake = (currentSpeed - msg->set_speed - 3.0) *3 + 40;
+		set_brake = (currentSpeed - msg->set_speed - 2.0) *3 + 40;
 	}
 	
 	set_brake = (set_brake > msg->set_brake) ? set_brake :msg->set_brake;
@@ -515,7 +507,6 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		set_speed = 0.0;
 	else if(set_speed > MAX_SPEED-1) 
 		set_speed = MAX_SPEED-1;
-	
 	//increment越大，加速度越大
 	//设定速度越低，加速越快
 	float increment = 2.0/(currentSpeed/5+1);

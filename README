@@ -3,3 +3,8 @@ max_deceleration
 
 当不能避障时，减速行驶，直到安全停车
 但是设定速度不能为0  否则顶层系统将立即制动
+
+
+
+1.show unable avoidance object ,verify
+2.

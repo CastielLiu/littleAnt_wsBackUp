@@ -11,6 +11,7 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	cmd_.cmd2.set_gear =1;
 	cmd_.cmd1.set_driverlessMode =true;
 	cmd_.origin = little_ant_msgs::ControlCmd::_ESR_RADAR;
+	cmd_.status = false;
 	cmd_.cmd2.set_brake = 0.0;
 	
 	vehicleSpeed_ = 0.0;
@@ -19,8 +20,6 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	acc_targetId_ = 0xff; //no target
 	lastTime_of_seekTarget_ = 0.0;
 	tracking_distance_ = 10.0;
-	first_time_find_target_flag_ = true;
-	
 }
 
 bool Acc_esr::init()
@@ -52,7 +51,8 @@ void Acc_esr::carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr&
 {
 	for(size_t i=0; i< msg->objects.size(); i++)
 	{
-		max_target_search_distance_ = msg->objects[i].x > max_target_search_distance_ ? msg->objects[i].x : max_target_search_distance_;
+		max_target_search_distance_ = 
+				msg->objects[i].x > max_target_search_distance_ ? msg->objects[i].x : max_target_search_distance_;
 	}
 	is_acc_ = true;
 }
@@ -91,11 +91,13 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 	{
 		float min_distance=500.0; //a big num
 		
-		ROS_INFO("finding target.... max_target_search_distance_:%f",max_target_search_distance_);
+		publishCarFollowingStats(false);
 		
-		potentialTarget_num_=0;  //cannot locate in for cycle!! can can NB
+		ROS_INFO("finding target........ max_target_search_distance_:%f",max_target_search_distance_);
 		
-		for(size_t i=0;i<objects->size;i++)
+		potentialTarget_num_=0; 
+		
+		for(size_t i=0;i< objects->size;i++)
 		{
 			//ROS_INFO("angle:%f  anglerange:%f",objects->objects[i].azimuth,trackTargetAngle_range_);
 			if((objects->objects[i].azimuth <trackTargetAngle_range_) &&
@@ -104,7 +106,6 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 				objects->objects[i].speed + vehicleSpeed_ > 0.5 )
 			{
 				potentialTarget_index_[potentialTarget_num_++] = i; 
-				//ROS_ERROR("!!!!!");
 			}
 		}
 		//ROS_INFO("objects->size:%d \tpotentialTarget_num_:%d",objects->size,potentialTarget_num_);
@@ -119,35 +120,33 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		//ROS_INFO("target locked distance:%f  azimuth:%f",
 		//		objects->objects[potentialTarget_index_[i]].distance,
 		//		objects->objects[potentialTarget_index_[i]].azimuth);
-		
-		publishCarFollowingStats(false);
 	}
 	else
 	{
-		if(first_time_find_target_flag_)
-		{
-			ROS_INFO("target id:0x%x.......................................................",acc_targetId_);
-			first_time_find_target_flag_ = false;
-			
-		}
+		cmd_.status = false;
+		
 		for(size_t i=0;i<objects->size;i++)
 		{
-			if(objects->objects[i].id == acc_targetId_ && objects->objects[i].status != 1)
+			if(objects->objects[i].id == acc_targetId_ && objects->objects[i].status != 1)  //!=newTarget
 			{
 				trackTargetMsg_ = objects->objects[i];
 				//ROS_INFO("target Id:%x  angle:%f  distance:%f speed:%f",
 				//			trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
 				
 				lastTime_of_seekTarget_ = ros::Time::now().toSec();
+				publishCarFollowingStats(true);
+				cmd_.status = true;
 				break;
 			}
 			else if(objects->objects[i].id == acc_targetId_ && objects->objects[i].status == 1)
-					this->setTrackTargetLost();
-				
+			{
+				this->setTrackTargetLost();
+				break;
+			}
 		}
-		
-		publishCarFollowingStats(true);
-		
+	}
+	if(cmd_.status == true)
+	{
 		//distanceErr>0    acceleration
 		//distanceErr<0    deceleration
 		float distanceErr = trackTargetMsg_.distance -tracking_distance_;
@@ -163,29 +162,19 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		if(t_speed > max_following_speed_/3.6)
 			cmd_.cmd2.set_speed = max_following_speed_ * 3.6; //km/h
 		else if(t_speed >0.0)
-		{
 			cmd_.cmd2.set_speed = t_speed * 3.6; //km/h
-		}
 		else
 		{
 			ROS_INFO("here...............................");
-			cmd_.cmd2.set_speed = 5.0;
+			cmd_.cmd2.set_speed = 0.0;   //emergencyBrake!!
 			cmd_.cmd2.set_brake = 35.0;
 		}
-			
-			
-		/*
-		float steeringRadius = trackTargetMsg_.distance/(2.5*2*sinDeg(trackTargetMsg_.azimuth)) ;
-		cmd_.cmd2.set_steeringAngle = 
-			-saturationEqual(generateRoadwheelAngleByRadius(steeringRadius),15.0) * g_steering_gearRatio;
-			
-		ROS_INFO("cmd_speed:%f\t cmd_angle:%f tracking_distance:%f",
-			cmd_.cmd2.set_speed,cmd_.cmd2.set_steeringAngle,tracking_distance_);*/
-			
-		pub_cmd_.publish(cmd_);
 	}
+	pub_cmd_.publish(cmd_);
+	
 }
 
+//extern acc command
 void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 {
 	if(is_acc_ && !state->data)
@@ -200,13 +189,12 @@ void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 		cmd_.status = true;
 	}
 	is_acc_ = state->data;
-	
 }
 
 void Acc_esr::updateTargetStatus_callback(const ros::TimerEvent&)
 {
 	if(is_acc_ && (acc_targetId_!=0xff) && 
-		(ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.8 && 
+		(ros::Time::now().toSec()-lastTime_of_seekTarget_)>0.2 && 
 		lastTime_of_seekTarget_ >10.0) //overtime
 	{
 		this->setTrackTargetLost();
@@ -217,10 +205,10 @@ inline void Acc_esr::setTrackTargetLost()
 {
 	is_acc_ = false;
 	acc_targetId_ = 0xff;
-	first_time_find_target_flag_ = true;
 	ROS_ERROR("acc target lost! acc has to exited !!");
 	lastTime_of_seekTarget_ = 0.0;
 	publishCarFollowingStats(false);
+	cmd_.status = false;
 }
 
 inline void Acc_esr::publishCarFollowingStats(bool status)
