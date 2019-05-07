@@ -4,11 +4,8 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
-	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
 	
 	<arg name="pathTracking_file_name" default="$(find data)/data/_cycle.txt"/>
-	<arg name="max_speed"  default="20.0"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -30,7 +27,7 @@
 		<param name="danger_distance_side" value="0.25"/>
 		
 		<param name="max_deceleration" value="5.0" />
-		<param name="maxOffset_left" value="0.0"/>  <!-- 左右侧避障偏移最大值 -->
+		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.0"/>
 		
 	</node>
@@ -38,8 +35,11 @@
 <!-- 跟踪   -->
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
 		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
-		<param name="speed" value="$(arg max_speed)"/>						<!-- 跟踪速度  -->
-		
+		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
+		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
+		<param name="speed" value="20.0"/>						<!-- 跟踪速度  -->
+		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
+		<param name="maxOffset_right" value="0.0"/>
 		<param name="foreSightDis_speedCoefficient" value = "1.8"/>
 		<param name="foreSightDis_latErrCoefficient" value = "0.3"/>
 		
@@ -65,20 +65,6 @@
 <!-- lat,lon,yaw + x,y = utm_gps -->	
 	<node pkg="utm_gps" type="utm_gps" name="utm_gps"/>
 	
-<!-- esr_radar  -->
-	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" >
-		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
-		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
-		<param name ="in_port_name" value= "$(arg esr_radar_port_in)"/>
-		<param name ="out_port_name" value= "$(arg esr_radar_port_out)"/>
-	</node>
-	
-	
-<!-- vehicle following  -->
-	<node name="acc_node" pkg="acc" type="acc_node" output="screen">
-		<param name="trackTargetAngle_range" value="6.0"/>
-		<param name="max_following_speed" value="$(arg max_speed)"/>	
-	</node>
 
 <!--调试-->	
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">

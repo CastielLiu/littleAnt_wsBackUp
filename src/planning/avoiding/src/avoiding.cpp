@@ -43,7 +43,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
 	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
 	
-	assert(maxOffset_left_ < 0 && maxOffset_right_ >=0);
+	assert(maxOffset_left_ <= 0 && maxOffset_right_ >=0);
 	
 	if(path_points_file_.empty())
 	{
@@ -111,7 +111,6 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		is_systemOk_ = true;
 		ROS_INFO("system initial ok .");
 	}
-		
 	
 	size_t n_object = objects->boxes.size();
 	
@@ -287,7 +286,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			//the person is just in the false avoid area, so pass
 			continue;
 		}
-		else if(object.label == Vehicle)
+		//else if(object.label == Vehicle)
 			vehicleObstacle_indexArray.push_back(indexArray[i]);
 			
 		//object is other type, start to avoid
@@ -321,12 +320,16 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		if(is_carFollow_ == false)
 		{
 			avoid_cmd_.status = true;
-			avoid_cmd_.cmd2.set_brake = 35.0;  //waiting test
-			avoid_cmd_.cmd2.set_speed = 0.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
-			pub_avoid_cmd_.publish(avoid_cmd_);
+			avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
+			avoid_cmd_.cmd2.set_speed = 8.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
 			
 			requestCarFollowing(objects,vehicleObstacle_indexArray);
 		}
+		else
+		{
+			avoid_cmd_.status = false;
+		}
+		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 	//avoid message is valid
 	//left offest is smaller,so avoid from left side
@@ -611,6 +614,7 @@ inline void Avoiding::emergencyBrake()
 void Avoiding::carFollowResponse_callback(const std_msgs::Bool::ConstPtr& msg)
 {
 	is_carFollow_ = msg->data;
+	ROS_INFO("is_carFollow_:%d----------------------------",is_carFollow_);
 }
 
 void Avoiding::requestCarFollowing(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,

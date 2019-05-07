@@ -35,9 +35,8 @@ public:
 	void run();
 
 private:
-	inline void publishCarFollowingStats(bool status);
-	
-	
+	void publishCarFollowingStats(bool status);
+	void setTrackTargetLost();
 	
 private:
 	ros::NodeHandle nh_;
@@ -73,6 +72,10 @@ private:
 	boost::shared_ptr<boost::thread> car_follow_thread_ptr_;
 	
 	bool is_car_following_;
+	
+	float max_following_speed_;
+	
+	float max_target_search_distance_;
 
 };
 

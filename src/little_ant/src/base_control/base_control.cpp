@@ -86,8 +86,8 @@ bool BaseControl::init(int argc,char**argv)
 	assert(!obd_can_port_name_.empty() && !stm32_port_name_.empty());
 	assert(max_steering_speed_>0);
 	
-	cmd1_sub = nh.subscribe("/controlCmd1",10,&BaseControl::callBack1,this);
-	cmd2_sub = nh.subscribe("/controlCmd2",10,&BaseControl::callBack2,this);
+	cmd1_sub = nh.subscribe("/controlCmd1",1,&BaseControl::callBack1,this);
+	cmd2_sub = nh.subscribe("/controlCmd2",1,&BaseControl::callBack2,this);
 	
 	state1_pub = nh.advertise<little_ant_msgs::State1>("vehicleState1",10);
 	state2_pub = nh.advertise<little_ant_msgs::State2>("vehicleState2",10);

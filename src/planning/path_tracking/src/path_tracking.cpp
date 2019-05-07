@@ -256,7 +256,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	
 	disThreshold_ = disThreshold_ * (1.0 + foreSightDis_latErrCoefficient_ * fabs(lateral_err_) );
 	
-	ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
+	//ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
 	
 	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);

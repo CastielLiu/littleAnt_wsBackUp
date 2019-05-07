@@ -250,13 +250,14 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		
 		if(!object.x && !object.y) return;
 
-		object.speed = s16_targetSpeed*0.01;
+		object.speed = s16_targetSpeed*0.01;  //m/s
 		
 		object.status = measurementStatus;
 		
 		object.id = can_msg.ID;
 		
-		objects.objects.push_back(object);
+		if(object.distance > 0.5)
+			objects.objects.push_back(object);
 		
 		/*
 		switch(measurementStatus)
