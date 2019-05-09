@@ -9,6 +9,7 @@
 #include<cstdio>
 #include<ros/ros.h>
 #include<limits.h>
+#include<exception>
 
 #define IS_POLAR_COORDINATE_GPS 0
 
@@ -90,6 +91,9 @@ float  calculateDis2path(const double& X_,const double& Y_,
 float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance);
 float generateDangerDistanceBySpeed(const float &speed);
 float generateMaxTolarateSpeedByCurvature(const float& curvature);
+float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,
+											const size_t& nearest_point_index,
+											const size_t& target_point_index);
 
 
 

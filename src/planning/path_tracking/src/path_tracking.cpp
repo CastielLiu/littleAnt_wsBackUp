@@ -5,6 +5,7 @@ PathTracking::PathTracking():
 	gps_status_(0x00),
 	vehicle_speed_status_(false),
 	target_point_index_(0),
+	nearest_point_index_(0),
 	avoiding_offset_(0.0),
 	max_roadwheelAngle_(25.0),
 	is_avoiding_(false),
@@ -125,7 +126,7 @@ void PathTracking::run()
 	
 	ros::Rate loop_rate(20);
 	
-	while(ros::ok() && target_point_index_ < path_points_.size()-1)
+	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
 		//publish the current target and nearest point index
 		this->publishRelatedIndex();
@@ -137,9 +138,14 @@ void PathTracking::run()
 			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
 			//printf("new__ x:%lf \ty:%lf \t yaw:%f\n",target_point_.x,target_point_.y,target_point_.yaw);
 		}
-		lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
-										 target_point_index_,&nearest_point_index_) - avoiding_offset_;
-										 
+		
+		try{
+			lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
+											 target_point_index_,&nearest_point_index_) - avoiding_offset_;
+		}catch(const char* str){
+			ROS_INFO("%s",str);
+			break;
+		}								 
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
 		if( dis_yaw.first < disThreshold_)
 		{
@@ -354,6 +360,8 @@ int main(int argc,char**argv)
 	if(!path_tracking.init(nh,nh_private))
 		return 1;
 	path_tracking.run();
+	
+	ros::shutdown();
 
 	return 0;
 }

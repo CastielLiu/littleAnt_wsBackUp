@@ -117,6 +117,12 @@ float calculateDis2path(const double& X_,const double& Y_,
 		for(size_t i=1;true;i++)
 		{
 			second_point_index = target_point_index + i;
+			if(second_point_index >= path_points.size())
+			{
+				throw "point index out of range";
+				return 0;
+			}
+			
 			second_dis = pow(path_points[second_point_index].x - X_, 2) + 
 						 pow(path_points[second_point_index].y - Y_, 2) ;
 
@@ -171,9 +177,21 @@ float generateMaxTolarateSpeedByCurvature(const float& curvature)
 	return sqrt(1.0/fabs(curvature)*1.5) *3.6;
 }
 
-float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,const size_t& target_point_index)
+float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,
+											const size_t& nearest_point_index,
+											const size_t& target_point_index)
 {
-	
+	float max_cuvature = 0.0001;
+	size_t endIndex = target_point_index + 10;
+	if(endIndex >= path_points.size())
+		endIndex = path_points.size() -1;
+		
+	for(size_t i=nearest_point_index; i < endIndex; i++)
+	{
+		if(fabs(path_points[i].curvature) > max_cuvature)
+			max_cuvature = fabs(path_points[i].curvature);
+	}
+	return sqrt(1.0/max_cuvature*1.5) *3.6;
 }
 
 float limitSpeedByLateralAndYawErr(float speed,float latErr,float yawErr)
