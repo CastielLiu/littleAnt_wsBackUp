@@ -10,7 +10,6 @@
 #define PI_ 3.141592653589
 #endif
 
-
 class Record
 {
 	private:
@@ -50,6 +49,7 @@ Record::Record():
 {
 	last_point = {0.0,0.0,0.0,0.0,0.0};
 	current_point = last_point;
+	path_info_.other_info = 0;
 }
 
 Record::~Record()
@@ -146,14 +146,14 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	{
 		gps_status_ = false;
 		//x,y,theta,offset_l,offset_r,traffic_sign
-		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
+		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
 													path_info_.maxOffset_left,path_info_.maxOffset_right,
-													path_info_.traffic_sign);
+													path_info_.traffic_sign,path_info_.other_info);
 		fflush(fp);
 		
-		ROS_INFO("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
+		ROS_INFO("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
 													path_info_.maxOffset_left,path_info_.maxOffset_right,
-													path_info_.traffic_sign);
+													path_info_.traffic_sign,path_info_.other_info);
 		last_point = current_point;
 	}
 }
