@@ -505,7 +505,6 @@ void Avoiding::get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::Co
 								size_t *obstacleIndex,
 								size_t &obstacleSequence)
 {
-	
 	float core_x = objects->boxes[objectIndex].pose.position.x;
 	float core_y = objects->boxes[objectIndex].pose.position.y;
 	

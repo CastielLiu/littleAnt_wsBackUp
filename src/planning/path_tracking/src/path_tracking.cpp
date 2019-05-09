@@ -361,7 +361,9 @@ int main(int argc,char**argv)
 		return 1;
 	path_tracking.run();
 	
+	ROS_INFO("path tracking completed.");
 	ros::shutdown();
+	
 
 	return 0;
 }

@@ -3,9 +3,18 @@
 
 
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
+	<arg name="file_name" default="path.txt" />
+	<arg name="initial_maxOffset_left" default="0.0"/>
+	<arg name="initial_maxOffset_right" default="0.0" />
+	<arg name="traffic_sign" default="0" />
 
 	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node" output= "screen">
-		<param name="file_path" value="$(find data)/data/path.txt"/>
+		<param name="file_path" value="$(find data)/data/$(arg file_name)"/>
+		<param name="sample_distance" value="0.1" />
+		<param name="initial_maxOffset_left" value="$(arg initial_maxOffset_left)"/>
+		<param name="initial_maxOffset_right" value="$(arg initial_maxOffset_right)"/>
+		<param name="traffic_sign" value="$(arg traffic_sign)"/>
+		
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
