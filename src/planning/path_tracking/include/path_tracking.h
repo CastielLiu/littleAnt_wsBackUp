@@ -93,7 +93,6 @@ private:
 	bool vehicle_speed_status_;
 	
 	
-	
 	float vehicle_speed_;
 	float current_roadwheelAngle_;
 	

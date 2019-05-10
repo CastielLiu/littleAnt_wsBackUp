@@ -10,25 +10,38 @@ class Points:
 		self.y = []
 		self.yaw = []
 		self.curvature = []
+		self.maxOffset_left = []
+		self.maxOffset_right =[]
+		self.traffic_sign = []
+		self.other_info = []
+		
 	def load(self,file_name):
 		with open(file_name,'r') as f:
 			lines = f.readlines()
 		for line in lines:
-			x,y,yaw = line.split()
+			x,y,yaw,l,r,t,o = line.split()
 			self.x.append(float(x))
 			self.y.append(float(y))
 			self.yaw.append(float(yaw))
+			self.maxOffset_left.append(float(l))
+			self.maxOffset_right.append(float(r))
+			self.traffic_sign.append(int(t))
+			self.other_info.append(int(o))
 	
 	def dump(self,file_name):
 		with open(file_name,'w') as f:
 			for i in range(len(self.x)):
-				f.write('%.3f\t%.3f\t%.3f\t%.5f\n' %(self.x[i],self.y[i],self.yaw[i],self.curvature[i]))
+				f.write('%.3f\t%.3f\t%.3f\t%.5f\t%.3f\t%.3f\t%d\t%d\n' \
+				%(self.x[i],self.y[i],self.yaw[i],self.curvature[i], \
+				self.maxOffset_left[i],self.maxOffset_right[i], \
+				self.traffic_sign[i],self.other_info[i]))
 	
 	def clear(self):
 		self.x.clear()
 		self.y.clear()
 		self.yaw.clear()
 		self.curvature.clear()
+		
 	def calculateCurvature(self):
 		self.curvature = [0.0]*len(self.x)
 		for i in range(len(self.x)-1):
@@ -89,18 +102,22 @@ def plot():
 	plt.show()
 
 
-
 def main(argv):
 	path_points = Points()
-	src_file = 'path.txt'
+	
+	raw_file_path = '../raw/'
+	result_file_path = '../result/'
+	
+	raw_file_name = 'path.txt'
+	
 	if(len(argv)>1):
-		src_file = argv[1]
+		raw_file_name = argv[1]
 			
-	path_points.load(src_file)
+	path_points.load(raw_file_path+raw_file_name)
 	
 	path_points.calculateCurvature()
 	path_points.curvatureFilter(15)
-	path_points.dump('_'+src_file)
+	path_points.dump(result_file_path+'_'+raw_file_name)
 
 
 

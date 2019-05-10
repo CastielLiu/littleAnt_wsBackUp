@@ -122,7 +122,8 @@ private:
 	
 	std::string path_points_file_;
 	
-	uint32_t target_point_index_;
+	size_t target_point_index_;
+	size_t nearest_point_index_;
 	
 	gpsMsg_t current_point_,target_point_;
 	

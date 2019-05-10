@@ -27,7 +27,7 @@ class Record
 		gpsMsg_t last_point , current_point;
 		
 		float sample_distance_;
-		ros::Subscriber gps_sub;
+		ros::Subscriber sub_gps_;
 		
 		ros::Subscriber sub_cartesian_gps_ ;
 		
@@ -73,8 +73,8 @@ bool Record::init()
 	path_info_.traffic_sign = _temp;
 	
 
-	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
-	gps_sub= nh.subscribe("/path_info",1,&Record::path_info_callback,this);
+	sub_gps_= nh.subscribe("/gps",1,&Record::gps_callback,this);
+	sub_pathInfo_= nh.subscribe("/path_info",1,&Record::path_info_callback,this);
 	
 #if IS_POLAR_COORDINATE_GPS==0
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&Record::cartesian_gps_callback,this);

@@ -55,8 +55,10 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 #if IS_POLAR_COORDINATE_GPS == 1
 		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,&point.yaw);
 #else
-		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
-#endif			
+		fscanf(fp,"%lf\t%lf\t%lf\t%f\t%f\t%f\t%d\t%d\n",&point.x,&point.y,&point.yaw,&point.curvature,
+														&point.maxOffset_left,&point.maxOffset_right,
+														&point.traffic_sign,&point.other_info);
+#endif
 		points.push_back(point);
 	}
 	fclose(fp);
@@ -207,4 +209,44 @@ float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
 	float radius = 0.5*distance/sin(theta);
 	return generateRoadwheelAngleByRadius(radius);
 }
+
+
+/*
+void generateMaxOffset(const std::vector<gpsMsg_t>& path_points, 
+					   size_t nearest_point_index,
+					   size_t target_point_index,
+					   float& max_left, float& max_right)
+{
+	float left = -10; // a small number
+	float right = 10; //a big number
+	
+	size_t endIndex = target_point_index + 10;
+	
+	
+}
+
+//given the startIndex and expect distance  find the point index
+size_t indexForGivenDis(const std::vector<gpsMsg_t>& path_points, size_t startIndex,float dis)
+{
+	float sum_dis = 0.0;
+	while(ros::ok())
+	{
+		sum_dis	+= disBetweenPoints(path_points[startIndex],path_points[startIndex+5]);
+		
+		startIndex += 5;
+		
+		if(sum_dis > dis)
+			return startIndex;
+	}
+}
+
+float disBetweenPoints(const gpsMsg_t& point1, const gpsMsg_t& point2)
+{
+	float x = point1.x - point2.x;
+	float y = point1.y - point2.y;
+	
+	return sqrt(x*x+y*y);
+}
+
+*/
 

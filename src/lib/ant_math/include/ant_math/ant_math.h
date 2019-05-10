@@ -28,6 +28,11 @@ typedef struct
 	
 	float curvature;
 	
+	float maxOffset_left;
+	float maxOffset_right;
+	float traffic_sign;
+	float other_info;
+	
 }gpsMsg_t;
 
 extern const float g_steering_gearRatio;

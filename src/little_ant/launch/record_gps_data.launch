@@ -1,7 +1,6 @@
 <!-- -->
 <launch>
 
-
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="file_name" default="path.txt" />
 	<arg name="initial_maxOffset_left" default="0.0"/>
@@ -9,28 +8,25 @@
 	<arg name="traffic_sign" default="0" />
 
 	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node" output= "screen">
-		<param name="file_path" value="$(find data)/data/$(arg file_name)"/>
+		<param name="file_path" value="$(find data)/data/raw/$(arg file_name)"/>
 		<param name="sample_distance" value="0.1" />
 		<param name="initial_maxOffset_left" value="$(arg initial_maxOffset_left)"/>
 		<param name="initial_maxOffset_right" value="$(arg initial_maxOffset_right)"/>
 		<param name="traffic_sign" value="$(arg traffic_sign)"/>
 		
 	</node>
-	
-	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
+<!--
+	<node pkg="novatel" type="novatel_node" name="novatel_node" >
 
 		<param name="port" value="$(arg gps_port)" />
 		<param name="baudrate" value="115200" />
 		<param name="odom_topic" value="/gps_odom" />
-		<!-- <param name="log_commands" value="inspvaxb ontime 0.05" /> -->
 		<param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />
-		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
-		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
 		<param name="gps_default_logs_period" value="0.0" />
 		<param name="span_default_logs_period" value="0.0" />
 		
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
-	
+-->	
 
 </launch>

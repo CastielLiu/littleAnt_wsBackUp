@@ -40,10 +40,10 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 	
-	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
-	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
+	//nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
+	//nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
 	
-	assert(maxOffset_left_ <= 0 && maxOffset_right_ >=0);
+	//assert(maxOffset_left_ <= 0 && maxOffset_right_ >=0);
 	
 	if(path_points_file_.empty())
 	{
@@ -70,6 +70,7 @@ void Avoiding::relatedIndex_callback(const array_msgs::UInt32Array::ConstPtr& ms
 {
 	target_point_index_status_ = true;
 	target_point_index_ = msg->data[0];
+	nearest_point_index_ = msg->data[1];
 }
 
 
@@ -300,6 +301,9 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	
 	try_offest[0] += offset_msg_.data;
 	try_offest[1] += offset_msg_.data;
+	
+	maxOffset_left_ = path_points_[nearest_point_index_].maxOffset_left;
+	maxOffset_right_= path_points_[nearest_point_index_].maxOffset_right;
 	
 	//no avoid message
 	if(try_offest[0]==0.0 && try_offest[1] ==0.0) 
