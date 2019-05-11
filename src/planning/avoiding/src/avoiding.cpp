@@ -215,11 +215,19 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
 		{
-			if(dis2vehicle <= danger_distance_front_*2)
+			if(dis2vehicle <= danger_distance_front_*5)
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 5.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				break;
+			}
+			else if(dis2vehicle <= danger_distance_front_*3)
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 3.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				break;
 			}
@@ -267,13 +275,22 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
 		if(object.label == Person)
 		{
-			if(dis2vehicle <= danger_distance_front_*2)
+			ROS_ERROR("Person........................");
+			if(dis2vehicle <= danger_distance_front_*5)
 			{
 				avoid_cmd_.status = true;
 				avoid_cmd_.cmd2.set_brake = 25.0;  //waiting test
-				avoid_cmd_.cmd2.set_speed = 0.0;
+				avoid_cmd_.cmd2.set_speed = 5.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
-				return;
+				break;
+			}
+			else if(dis2vehicle <= danger_distance_front_*3)
+			{
+				avoid_cmd_.status = true;
+				avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
+				avoid_cmd_.cmd2.set_speed = 3.0;
+				pub_avoid_cmd_.publish(avoid_cmd_);
+				break;
 			}
 			//the person is inside the true avoiding area
 			else if(dis2vehicle <= safety_distance_front_)
@@ -304,6 +321,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	
 	maxOffset_left_ = path_points_[nearest_point_index_].maxOffset_left;
 	maxOffset_right_= path_points_[nearest_point_index_].maxOffset_right;
+	//maxOffset_left_ = 0.0;
+	//maxOffset_right_ = 0.0;
 	
 	//no avoid message
 	if(try_offest[0]==0.0 && try_offest[1] ==0.0) 
@@ -323,9 +342,27 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		
 		if(is_carFollow_ == false)
 		{
+			float _min_distance=100.0;  //a big number
+			jsk_recognition_msgs::BoundingBox box;
+			for(size_t i=0; i< vehicleObstacle_indexArray.size(); i++)
+			{
+				box = objects->boxes[vehicleObstacle_indexArray[i]];
+				_min_distance = 
+						box.pose.position.x < _min_distance ? box.pose.position.x : _min_distance;
+			}
+			float t_deceleration = 0.5*vehicle_speed_*vehicle_speed_/(_min_distance-5.0);
+			
+			if(t_deceleration < 0.0)
+			{
+				avoid_cmd_.cmd2.set_speed = 0.0;
+			}
+			else
+			{
+				avoid_cmd_.cmd2.set_speed = 20.0;
+				avoid_cmd_.cmd2.set_brake = t_deceleration/g_max_deceleration * 60 + 30.0;
+				ROS_DEBUG("t_deceleration:%f\t set_brake:%f",t_deceleration,avoid_cmd_.cmd2.set_brake);
+			}
 			avoid_cmd_.status = true;
-			avoid_cmd_.cmd2.set_brake = 60.0;  //waiting test
-			avoid_cmd_.cmd2.set_speed = 5.0;   //!!!!!!!!!!!!!!!!!!!!!!speed = 0 ==>>  emergencyBrake
 			
 			requestCarFollowing(objects,vehicleObstacle_indexArray);
 		}

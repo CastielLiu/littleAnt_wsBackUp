@@ -71,6 +71,23 @@ float calculateDis2path(const double& X_,const double& Y_,
 						 const size_t& target_point_index,
 						 size_t * const nearest_point_index_ptr)
 {
+	if(target_point_index == 0)
+	{
+		if(nearest_point_index_ptr != NULL)
+			*nearest_point_index_ptr = 0;
+	
+		//the direction of side c 
+		//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
+		float yaw_of_c = atan2(path_points[1].x-path_points[0].x,
+										   path_points[1].y-path_points[0].y);
+				
+		//object : world coordination to local coordination
+		float x = (X_-path_points[0].x) * cos(yaw_of_c) - (Y_-path_points[0].y) * sin(yaw_of_c);
+		//float y = (X_-path_points[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points[first_point_index].y) * cos(yaw_of_c);
+	
+		return x;
+	}
+	
 	//ROS_INFO("path_points.size:%d\t target_point_index:%d",path_points.size(),target_point_index);
 	
 	//this target is tracking target,
@@ -99,8 +116,17 @@ float calculateDis2path(const double& X_,const double& Y_,
 	{
 		is_yawReverse = 1;
 		for(size_t i=1;true;i++)
-		{
-			second_point_index = target_point_index-i;
+		{	
+		/*   prevent size_t index 0-1 data overflow    */
+			if(target_point_index >= i)
+				second_point_index = target_point_index-i;
+			else
+			{
+				first_point_index = 0;
+				second_point_index = 1;
+				break;
+			}
+		/*   prevent size_t index 0-1 data overflow    */
 			
 			second_dis = pow(path_points[second_point_index].x - X_, 2) + 
 						 pow(path_points[second_point_index].y - Y_, 2) ;
@@ -139,10 +165,12 @@ float calculateDis2path(const double& X_,const double& Y_,
 	}
 	else //midile
 	{
-		first_point_index = target_point_index-1;
+		//first_point_index = target_point_index-1;
+		first_point_index = target_point_index;
+		
 		second_point_index = target_point_index +1;
 	}
-	
+		
 	if(nearest_point_index_ptr != NULL)
 		*nearest_point_index_ptr = (first_point_index+second_point_index)/2;
 	
@@ -209,6 +237,7 @@ float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
 	float radius = 0.5*distance/sin(theta);
 	return generateRoadwheelAngleByRadius(radius);
 }
+
 
 
 /*

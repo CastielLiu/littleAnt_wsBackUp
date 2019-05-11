@@ -49,17 +49,18 @@ void Acc_esr::run()
 
 void Acc_esr::carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg)
 {
+	max_target_search_distance_ = 30.0;
 	for(size_t i=0; i< msg->objects.size(); i++)
 	{
 		max_target_search_distance_ = 
-				msg->objects[i].x > max_target_search_distance_ ? msg->objects[i].x : max_target_search_distance_;
+				msg->objects[i].y > max_target_search_distance_ ? msg->objects[i].y : max_target_search_distance_;
 	}
 	is_acc_ = true;
 }
 
 void Acc_esr::carFollowThread()
 {
-	ros::Rate loop_rate(20);
+	ros::Rate loop_rate(1); // nothing
 	while(ros::ok())
 	{
 		if(is_car_following_)

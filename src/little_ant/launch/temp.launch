@@ -4,6 +4,7 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
+	<arg name="pathTracking_file_name" default="_temp.txt"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control">
@@ -16,19 +17,19 @@
 	
 	
 	
-	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
+<!--避障-->	
+	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
 
-		<param name="port" value="$(arg gps_port)" />
-		<param name="baudrate" value="115200" />
-		<param name="odom_topic" value="/gps_odom" />
-		<!--<param name="log_commands" value="inspvaxb ontime 0.05" /> -->
-		<param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />
-		<!-- <param name="configure_port" value="COM2,9600,RTCM,NONE" /> -->
-		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
-		<param name="gps_default_logs_period" value="0.0" />
-		<param name="span_default_logs_period" value="0.0" />
+		<param name="objects_topic" value="/detection/lidar_objects" />
 		
-		<param name="inspvax_topic" value = "/gps" />
+		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
+		
+		<param name="safety_distance_side" value="0.4"/>    <!--   两侧安全距离       -->
+		<param name="danger_distance_side" value="0.25"/>
+		
+		<param name="max_deceleration" value="5.0" />
+
+		
 	</node>
 	
 	

@@ -4,9 +4,9 @@
 	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="max_speed"  default="20.0"/>
+	<arg name="max_speed"  default="30.0"/>
 	
-	<arg name="pathTracking_file_name" default="$(find data)/data/_1.txt"/>
+	<arg name="pathTracking_file_name" default="_temp.txt"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -19,7 +19,7 @@
 	
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(arg pathTracking_file_name)"/>
+		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
 		<param name="speed" value="$(arg max_speed)"/>						<!-- 跟踪速度  -->
 		
 		<param name="foreSightDis_speedCoefficient" value = "1.8"/>

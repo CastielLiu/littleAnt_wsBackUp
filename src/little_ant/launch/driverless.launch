@@ -7,7 +7,7 @@
 	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
 	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
 	
-	<arg name="pathTracking_file_name" default="_path.txt"/>
+	<arg name="pathTracking_file_name" default="_temp.txt"/>
 	
 	<arg name="max_speed"  default="30.0"/>
 	
@@ -31,8 +31,7 @@
 		<param name="danger_distance_side" value="0.25"/>
 		
 		<param name="max_deceleration" value="5.0" />
-		<param name="maxOffset_left" value="-1.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_right" value="1.0"/>
+
 		
 	</node>
 
@@ -79,7 +78,7 @@
 <!-- vehicle following  -->
 	<node name="acc_node" pkg="acc" type="acc_node" output="screen">
 		<param name="trackTargetAngle_range" value="6.0"/>
-		<param name="max_following_speed" value="$(arg max_speed)"/>	
+		<param name="max_following_speed" value="$(arg max_speed)"/>
 	</node>
 
 <!--调试-->

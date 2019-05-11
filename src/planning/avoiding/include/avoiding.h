@@ -38,8 +38,8 @@ private:
 	enum object_type_t
 	{
 		Unknown = 0,
-		//Person = 1,
-		Person = 3,
+		Person = 1,
+		////Person = 3,
 		Vehicle = 2
 	};
 	void utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg);

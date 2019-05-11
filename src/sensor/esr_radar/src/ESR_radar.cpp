@@ -9,7 +9,6 @@ using std::endl;
 using std::hex;
 
 
-
 ESR_RADAR::ESR_RADAR(int argc,char ** argv):
 	argc_(argc),
 	argv_(argv) 

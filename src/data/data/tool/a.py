@@ -10,21 +10,30 @@ class Points:
 		self.y = []
 		self.yaw = []
 		self.curvature = []
+		self.maxOffset_left = []
+		self.maxOffset_right =[]
+		self.traffic_sign = []
+		self.other_info = []
+		
 	def load(self,file_name):
 		with open(file_name,'r') as f:
 			lines = f.readlines()
-		
 		for line in lines:
-			x,y,yaw = line.split()
+			x,y,yaw,l,r,t,o = line.split()
 			self.x.append(float(x))
 			self.y.append(float(y))
 			self.yaw.append(float(yaw))
+			self.maxOffset_left.append(float(l))
+			self.maxOffset_right.append(float(r))
+			self.traffic_sign.append(int(t))
+			self.other_info.append(int(o))
 			
 	def clear(self):
 		self.x.clear()
 		self.y.clear()
 		self.yaw.clear()
 		self.curvature.clear()
+		
 	def calculateCurvature(self):
 		self.curvature = [0.0]*len(self.x)
 		for i in range(len(self.x)-1):
@@ -66,7 +75,7 @@ class Points:
 			
 def plot():
 	path_points = Points()
-	path_points.load('2.txt')
+	path_points.load('../raw/path1.txt')
 	path_points.calculateCurvature()
 	path_points.curvatureFilter(15)
 	
@@ -82,16 +91,16 @@ def plot():
 	
 	path_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	result_points = Points()
-	result_points.load('debug.txt')
+	#result_points = Points()
+	#result_points.load('../debug/path_debug.txt')
 	
-	result_points.offsetPoints(reference_point_x,reference_point_y)
+	#result_points.offsetPoints(reference_point_x,reference_point_y)
 	
 	#plt.plot(path_points.y,path_points.x,'r.',label="path")
 	#plt.plot(result_points.y,result_points.x,'k-',label="debug")
 	
 	plt.plot(path_points.x,path_points.y,'r.',label="path")
-	plt.plot(result_points.x,result_points.y,'k-',label="debug")
+	#plt.plot(result_points.x,result_points.y,'k-',label="debug")
 
 
 
@@ -110,11 +119,6 @@ def plot():
 
 def main():
 	plot()
-
-
-
-
-
 
 
 
