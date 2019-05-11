@@ -115,7 +115,6 @@ private:
 	float pedestrian_detection_area_side_; //行人检测区两侧距离
 	
 	float vehicle_speed_; //m/s
-	float vehicle_axis_dis_ ;
 	float deceleration_cofficient_;
 	
 	std::vector<gpsMsg_t> path_points_;

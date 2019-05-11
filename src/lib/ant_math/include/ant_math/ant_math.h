@@ -17,6 +17,29 @@
 #define AXIS_DISTANCE  1.5
 #define MAX_SPEED 30.0
 
+enum 
+{
+	TrafficSign_None = 0,
+	TrafficSign_TrafficLight =1,
+	TrafficSign_CarFollow = 4,
+	TrafficSign_LaneNarrow = 5,
+	TrafficSign_IllegalPedestrian = 6,
+	TrafficSign_NoTrafficLight = 7,
+	TrafficSign_PickUp = 8,
+	TrafficSign_Ambulance = 9,
+	TrafficSign_Railway = 10,
+	TrafficSign_TempStop = 11,
+	TrafficSign_School = 13,
+	TrafficSign_AvoidStartingCar = 14,
+	TrafficSign_OffDutyPerson = 15,
+	TrafficSign_Bridge = 16,
+	TrafficSign_AccidentArea = 17,
+	TrafficSign_JamArea = 18,
+	TrafficSign_BusStop = 19,
+	TrafficSign_NonVehicle = 20,
+	TrafficSign_StopArea = 21
+}
+
 typedef struct
 {
 	double longitude;

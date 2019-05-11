@@ -167,15 +167,17 @@ void PathTracking::run()
 		
 		if(is_laneChanging_)
 		{
-			float temp_max_roadwheelAngle = 
-				  maxRoadWheelAngleWhenChangeLane(lane_width_, safety_distance_front_);
-			//ROS_INFO("lane_width_:%f\t safety_distance_front_:%f",lane_width_,safety_distance_front_);  
-			//t_roadWheelAngle = saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle);
-			//ROS_ERROR("max_angle:........%f",saturationEqual(t_roadWheelAngle,temp_max_roadwheelAngle));
-			//t_roadWheelAngle = saturationEqual(t_roadWheelAngle,2.0);
-			
-			if(fabs(lateral_err_ - avoiding_offset_) < 0.6 && fabs(yaw_err) < 10.0*M_PI/180.0)
+			if(fabs(lateral_err_ - avoiding_offset_) < 0.15 && fabs(yaw_err) < 10.0*M_PI/180.0)
+			{
 				is_laneChanging_  = false;
+				gps_controlCmd_.cmd1.set_turnLight_R = false;
+				gps_controlCmd_.cmd1.set_turnLight_L = false;
+			}
+			
+			if(lane_width_ >= 1.0)
+				gps_controlCmd_.cmd1.set_turnLight_R = true;
+			else if(lane_width_ < -1.0)
+				gps_controlCmd_.cmd1.set_turnLight_L = true;
 		}
 		
 		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
@@ -286,10 +288,11 @@ void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPt
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
-	if(avoiding_offset_ !=- msg->data && is_laneChanging_ == false)
+	if(avoiding_offset_ != msg->data && is_laneChanging_ == false)
 	{
 		is_laneChanging_ = true;
-		lane_width_ = fabs(avoiding_offset_ - lateral_err_ ); 
+		//line change width  left(-)  right(+)
+		lane_width_ = avoiding_offset_ - lateral_err_ ;
 	}
 	
 	//avoid to left(-) or right(+) the value presents the offset

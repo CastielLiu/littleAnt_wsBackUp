@@ -78,9 +78,8 @@ float calculateDis2path(const double& X_,const double& Y_,
 	
 		//the direction of side c 
 		//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
-		float yaw_of_c = atan2(path_points[1].x-path_points[0].x,
-										   path_points[1].y-path_points[0].y);
-				
+		float yaw_of_c = atan2(path_points[1].x-path_points[0].x, path_points[1].y-path_points[0].y);
+	
 		//object : world coordination to local coordination
 		float x = (X_-path_points[0].x) * cos(yaw_of_c) - (Y_-path_points[0].y) * sin(yaw_of_c);
 		//float y = (X_-path_points[first_point_index].x) * sin(yaw_of_c) + (Y_-path_points[first_point_index].y) * cos(yaw_of_c);
@@ -116,7 +115,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	{
 		is_yawReverse = 1;
 		for(size_t i=1;true;i++)
-		{	
+		{
 		/*   prevent size_t index 0-1 data overflow    */
 			if(target_point_index >= i)
 				second_point_index = target_point_index-i;
@@ -165,8 +164,8 @@ float calculateDis2path(const double& X_,const double& Y_,
 	}
 	else //midile
 	{
-		//first_point_index = target_point_index-1;
-		first_point_index = target_point_index;
+		first_point_index = target_point_index-1;
+		//first_point_index = target_point_index;
 		
 		second_point_index = target_point_index +1;
 	}
@@ -174,7 +173,7 @@ float calculateDis2path(const double& X_,const double& Y_,
 	if(nearest_point_index_ptr != NULL)
 		*nearest_point_index_ptr = (first_point_index+second_point_index)/2;
 	
-	//the direction of side c 
+	//the direction of side c
 	//float yaw_of_c = (path_points[first_point_index].yaw + path_points[second_point_index].yaw)/2;
 	float yaw_of_c = is_yawReverse*M_PI + atan2(path_points[second_point_index].x-path_points[first_point_index].x,
 									   path_points[second_point_index].y-path_points[first_point_index].y);
