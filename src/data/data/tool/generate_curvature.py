@@ -108,7 +108,7 @@ def main(argv):
 	raw_file_path = '../raw/'
 	result_file_path = '../result/'
 	
-	raw_file_name = 'temp.txt'
+	raw_file_name = 'main.txt'
 	
 	if(len(argv)>1):
 		raw_file_name = argv[1]
