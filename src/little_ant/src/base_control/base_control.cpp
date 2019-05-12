@@ -363,10 +363,10 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	canMsg_cmd2.data[0] = 0x01; //set_gear drive
 	
-	uint16_t steeringAngle = 10800; //middle
+	//uint16_t steeringAngle = 10800; //middle
 	
-	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
-	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
+	//canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	//canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
 	/*int count = 0;
 	while(ros::ok())
@@ -390,6 +390,9 @@ void BaseControl::setDriverlessMode()
 	size_t count = 0;
 	while(ros::ok() && state1.act_gear != 1)
 	{
+		canMsg_cmd2.data[4] = uint8_t(uint16_t(state4.steeringAngle*10) / 256);
+		canMsg_cmd2.data[5] = uint8_t(uint16_t(state4.steeringAngle*10) % 256);
+		
 		can2serial.sendCanMsg(canMsg_cmd2);
 		usleep(10000);
 		count ++;
@@ -491,7 +494,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 
 	float set_brake = msg->set_brake;
 	
-	static float last_set_steeringAngle = 0;
+	static float last_set_steeringAngle = state4.steeringAngle;
 	
 	int currentSpeed = state2.vehicle_speed * 3.6;
 	
