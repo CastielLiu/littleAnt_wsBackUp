@@ -35,6 +35,7 @@ public:
 	
 	float point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2);
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
+	float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt=true);
 	
 	void pub_gps_cmd_callback(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
@@ -52,6 +53,8 @@ public:
 private:
 	void publishMaxTolerateSpeed();	
 	void publishRelatedIndex();
+	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
+									 const gpsMsg_t& current_point);
 private:
 	ros::Subscriber sub_gps_;
 	

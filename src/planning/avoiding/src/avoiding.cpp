@@ -215,7 +215,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		
 		//object is inside the avoding area!
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
-		if(object.label == Person)
+		if(object.label == Person && object.pose.position.x >0)
 		{
 			ROS_ERROR("Person........................");
 			if(dis2vehicle <= danger_distance_front_*1.5)
@@ -248,7 +248,9 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			continue;
 		}
 		//object is other type, start to avoid
-		try_offest[0] += dis2path - safety_center_distance_x; //try avoid in the left	
+		float offset_increment = dis2path - safety_center_distance_x;//try avoid in the left
+		if(offset_increment<0 && object.pose.position.x >0)
+			try_offest[0] += offset_increment; //try avoid in the left	
 		//ROS_INFO("left try offset:%f\t dis2path:%f safety_dis:%f",try_offest[0],dis2path,safety_center_distance_x);
 		//ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
 		//			offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);
@@ -276,7 +278,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			
 		//object is inside the avoding area!
 		//object is person, slow down(in the true avoid area) or pass(just in the false avoid area) 
-		if(object.label == Person)
+		if(object.label == Person && object.pose.position.x >0)
 		{
 			ROS_ERROR("Person........................");
 			if(dis2vehicle <= danger_distance_front_*1.5)
@@ -311,7 +313,9 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			vehicleObstacle_indexArray.push_back(indexArray[i]);
 			
 		//object is other type, start to avoid
-		try_offest[1] += dis2path + safety_center_distance_x; //try avoid in the right	
+		float offset_increment = dis2path + safety_center_distance_x; //try avoid in the right
+		if(offset_increment>0  && object.pose.position.x >0)
+			try_offest[1] += dis2path + safety_center_distance_x;
 		//ROS_INFO("right try offset:%f\t dis2path:%f safety_dis:%f",try_offest[1],dis2path,safety_center_distance_x);
 		//ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
 		//			offset_msg_.data,object.pose.position.x,object.pose.position.y,object.dimensions.y);

@@ -71,46 +71,25 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	if(!loadPathPoints(path_points_file_, path_points_))
 		return false;
-
 	
-	float last_distance = FLT_MAX;
-	float current_distance = 0;
-	
-	for(target_point_index_ =0; target_point_index_<path_points_.size()&& ros::ok(); )
+	while(ros::ok() && !is_gps_data_valid(current_point_))
 	{
-		if(!is_gps_data_valid(current_point_))
-		{
-			ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
-			sleep(1);
-			continue;
-		}
-		
-		target_point_ = path_points_[target_point_index_];
-		
-		current_distance = get_dis_yaw(target_point_ ,current_point_).first;
-		
-		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
-		
-		if(current_distance - last_distance > 0)
-			break;
-		
-		last_distance = current_distance;
-		
-		target_point_index_++;
+		ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
+		sleep(1);
 	}
 	
-	//ROS_INFO("first target index:%d   total index:%d",target_point_index_,path_points_.size());
+	target_point_index_ = findNearestPoint(path_points_,current_point_);
 	
-	if(target_point_index_ == path_points_.size())
+	if(target_point_index_ > path_points_.size() - 10)
 	{
-		ROS_ERROR("file read over, No target was found");
+		ROS_ERROR("file read over, No target point was found !!!");
 		return false;
 	}
 	
 	while(!vehicle_speed_status_ && ros::ok())
 	{
 		ROS_INFO("waiting for vehicle speed data ok ...");
-		usleep(20000);
+		usleep(200000);
 	}
 	
 	return true;
@@ -213,7 +192,7 @@ void PathTracking::run()
 				break;
 		}
 		
-		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
+		ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
 		
 		gps_controlCmd_.cmd2.set_speed = 
 				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
@@ -228,7 +207,7 @@ void PathTracking::run()
 		
 		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
 		
-		
+		/*
 		if(i%20==0)
 		{
 			ROS_INFO("curvature:%f",target_point_.curvature);
@@ -236,10 +215,44 @@ void PathTracking::run()
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",disThreshold_,t_roadWheelAngle);
 		}
-		i++;
+		i++;*/
 		
 		loop_rate.sleep();
 	}
+}
+
+size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
+									 const gpsMsg_t& current_point)
+{
+	size_t index = 0;
+	float min_dis = FLT_MAX;
+	float dis;
+	for(size_t i=0; i<path_points.size(); )
+	{
+		dis = dis2Points(path_points[i],current_point);
+		if(dis < min_dis)
+		{
+			min_dis = dis;
+			index = i;
+		}
+		if(dis>1000)
+			i += 1000;
+		else if(dis > 500)
+			i += 500;
+		else if(dis > 250)
+			i += 250;
+		else if(dis > 125)
+			i += 125;
+		else if(dis > 63)
+			i += 63;
+		else if(dis > 42)
+			i += 42;
+		else if(dis > 21)
+			i += 21;
+		else
+			i += 2;
+	}
+	return index;
 }
 
 void PathTracking::publishRelatedIndex()
@@ -366,6 +379,15 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
 }
+float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
+{
+	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
+	float y = (point1.latitude - point2.latitude ) *111000;
+	
+	if(is_sqrt)
+		return sqrt(x*x +y*y);
+	return x*x+y*y;
+}
 
 #else
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
@@ -388,6 +410,16 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	if(dis_yaw.second <0)
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
+}
+
+float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
+{
+	float x = point1.x - point2.x;
+	float y = point1.y - point2.y;
+	
+	if(is_sqrt)
+		return sqrt(x*x +y*y);
+	return x*x+y*y;
 }
 
 #endif
