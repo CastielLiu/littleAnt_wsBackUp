@@ -342,14 +342,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(try_offest[0] < maxOffset_left_ && try_offest[1] > maxOffset_right_)
-	{
-		//std::stringstream debug_msg;
-		//debug_msg << "Unable to avoid obstacle! slow down ! ";
-		//debug_msg << "  t_L: " <<  try_offest[0] << " max_L: "<< maxOffset_left_;
-		//debug_msg << "  t_R: " <<  try_offest[1] << " max_R: "<< maxOffset_right_ ;
-		
-		//publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
-		
+	{	
 		if(is_carFollow_ == false)
 		{
 			float _min_distance=100.0;  //a big number
@@ -405,8 +398,12 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		offset_msg_.data = try_offest[1];
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
-	//if(offset_msg_.data != 0.0)
-	//	ROS_INFO("offset:%f\n",offset_msg_.data);
+	
+	std::stringstream debug_msg;
+	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
+	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
+	debug_msg << "  offset: " << offset_msg_.data;
+	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 }
 
 inline void Avoiding::backToOriginalLane()
