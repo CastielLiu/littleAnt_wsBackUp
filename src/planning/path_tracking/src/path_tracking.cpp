@@ -9,7 +9,8 @@ PathTracking::PathTracking():
 	avoiding_offset_(0.0),
 	max_roadwheelAngle_(25.0),
 	is_avoiding_(false),
-	is_laneChanging_(false)
+	is_laneChanging_(false),
+	is_trafficLight_green_(true)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -34,13 +35,13 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);
 
-
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PathTracking::vehicleSpeed_callback,this);
 	
 	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PathTracking::vehicleState4_callback,this);
 	
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
+	sub_trafficLight_ = nh.subscribe("/traffic_light",1,&PathTracking::trafficLight_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	pub_max_tolerate_speed_ = nh.advertise<std_msgs::Float32>("/max_tolerate_speed",1);
@@ -181,12 +182,16 @@ void PathTracking::run()
 		}
 		
 		float _temp_limit_speed = 30.0;
-		gps_controlCmd_.cmd1.set_turnLight_L = false;   //cannot 
-		gps_controlCmd_.cmd1.set_turnLight_R = false;   //cannot
+		
 		switch(path_points_[nearest_point_index_].traffic_sign)
 		{
-			
+			case TrafficSign_TrafficLight:
+				if(!is_trafficLight_green_)
+					_temp_limit_speed = 0.0;
+				break;
+				
 			case TrafficSign_None:
+			case TrafficSign_CarFollow:
 				break;
 			
 			case TrafficSign_TurnLeft:
@@ -196,6 +201,11 @@ void PathTracking::run()
 			case TrafficSign_PickUp:
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
 				_temp_limit_speed = 8.0;
+				break;
+			
+			case TrafficSign_CloseTurnLight:
+				gps_controlCmd_.cmd1.set_turnLight_L = false;
+				gps_controlCmd_.cmd1.set_turnLight_R = false;
 				break;
 				
 			default :
@@ -324,6 +334,11 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg
 	
 	//avoid to left(-) or right(+) the value presents the offset
 	avoiding_offset_ = msg->data;
+}
+
+void PathTracking::trafficLight_callback(const std_msgs::Bool::ConstPtr& msg)
+{
+	is_trafficLight_green_ = msg->data;
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1

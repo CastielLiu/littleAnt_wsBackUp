@@ -39,7 +39,9 @@ enum
 	TrafficSign_JamArea = 18,
 	TrafficSign_BusStop = 19,
 	TrafficSign_NonVehicle = 20,
-	TrafficSign_StopArea = 21 //?
+	TrafficSign_StopArea = 21, //?
+	
+	TrafficSign_CloseTurnLight = 22,
 };
 
 typedef struct

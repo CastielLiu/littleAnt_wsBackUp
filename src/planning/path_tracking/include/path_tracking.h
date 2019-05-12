@@ -44,6 +44,8 @@ public:
 	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
+	void trafficLight_callback(const std_msgs::Bool::ConstPtr& msg);
+	
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread();
 
@@ -59,6 +61,7 @@ private:
 	ros::Subscriber sub_vehicleState4_;
 	
 	ros::Subscriber sub_avoiding_from_lidar_;
+	ros::Subscriber sub_trafficLight_;
 	
 	ros::Timer timer_;
 	
@@ -109,6 +112,8 @@ private:
 	float lane_width_;
 	float foreSightDis_speedCoefficient_;
 	float foreSightDis_latErrCoefficient_;
+	
+	bool is_trafficLight_green_;
 
 };
 
