@@ -161,6 +161,8 @@ void PathTracking::run()
 		}
 		
 		float _temp_limit_speed = 30.0;
+		static bool is_temp_stop = false;
+		static double temp_stop_time;
 		
 		switch(path_points_[nearest_point_index_].traffic_sign)
 		{
@@ -181,10 +183,26 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
 				_temp_limit_speed = 8.0;
 				break;
+			case TrafficSign_TempStop:
+				if(is_temp_stop == false)
+				{
+					temp_stop_time = ros::Time::now().toSec();
+					is_temp_stop = true;
+					_temp_limit_speed = 0.0;
+					gps_controlCmd_.cmd1.set_turnLight_R = false;
+				}
+				else if(ros::Time::now().toSec() - temp_stop_time > 60)
+				{
+					_temp_limit_speed = 20.0;
+					gps_controlCmd_.cmd1.set_turnLight_L = true;
+				}
+				
+				break;
 			
 			case TrafficSign_CloseTurnLight:
 				gps_controlCmd_.cmd1.set_turnLight_L = false;
 				gps_controlCmd_.cmd1.set_turnLight_R = false;
+				is_temp_stop = false;
 				break;
 				
 			default :
@@ -192,7 +210,7 @@ void PathTracking::run()
 				break;
 		}
 		
-		ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
+		//ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
 		
 		gps_controlCmd_.cmd2.set_speed = 
 				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);

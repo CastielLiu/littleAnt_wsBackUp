@@ -81,6 +81,9 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 	
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
+		danger_distance_front_ -= 1.0;
+	
 	static int i=0;
 	i++;
 	if(i%20==0)
