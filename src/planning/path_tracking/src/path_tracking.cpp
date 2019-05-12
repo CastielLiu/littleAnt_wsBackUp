@@ -180,10 +180,37 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
 		}
 		
+		float _temp_limit_speed = 30.0;
+		gps_controlCmd_.cmd1.set_turnLight_L = false;   //cannot 
+		gps_controlCmd_.cmd1.set_turnLight_R = false;   //cannot
+		switch(path_points_[nearest_point_index_].traffic_sign)
+		{
+			
+			case TrafficSign_None:
+				break;
+			
+			case TrafficSign_TurnLeft:
+			case TrafficSign_UTurn:
+				gps_controlCmd_.cmd1.set_turnLight_L = true;
+				break;
+			case TrafficSign_PickUp:
+				gps_controlCmd_.cmd1.set_turnLight_R = true;
+				_temp_limit_speed = 8.0;
+				break;
+				
+			default :
+				_temp_limit_speed = 20.0;
+				break;
+		}
+		
 		//ROS_INFO("1 t_roadWheelAngle :%f",t_roadWheelAngle);
 		
 		gps_controlCmd_.cmd2.set_speed = 
 				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
+		
+		if(_temp_limit_speed < 29.0)
+			gps_controlCmd_.cmd2.set_speed = 
+				saturationEqual(gps_controlCmd_.cmd2.set_speed,_temp_limit_speed);
 		
 		this->publishMaxTolerateSpeed();
 		

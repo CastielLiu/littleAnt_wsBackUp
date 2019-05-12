@@ -34,8 +34,6 @@ private:
 	
 	void updateCmdStatus_callback(const ros::TimerEvent&);
 	
-	void traffic_mark_callback(const little_ant_msgs::DetectedObjectArray::ConstPtr& msg);
-	
 	void maxTolerateSpeed_callback(const std_msgs::Float32::ConstPtr& msg);
 
 private:
@@ -53,7 +51,6 @@ private:
 	std::string sensors_decision_topic_;
 	std::string final_decision_topic1_;
 	std::string final_decision_topic2_;
-	std::string traffic_mark_topic_;
 	
 	little_ant_msgs::ControlCmd1 cmd1_;
 	little_ant_msgs::ControlCmd2 cmd2_;
@@ -64,17 +61,7 @@ private:
 		double time;
 		little_ant_msgs::ControlCmd cmd;
 	}cmdMsg_[SENSOR_NUM];
-	
-	enum 
-	{
-		TrafficLight_stop,
-		TrafficLight_go
-		
-	}traffic_light_status_;
-	
-	float speed_limit_sign_;
-	double speed_limit_time_; //限速时刻
-	
+	 
 	float max_tolerate_speed_;
 	
 };

@@ -17,5 +17,4 @@ float32                         angle       # Angle [0 to 2*PI), allow rotated r
 
 sensor_msgs/Image               roi_image
 
-
 string[]                        user_defined_info

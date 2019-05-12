@@ -237,8 +237,6 @@ float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
 	return generateRoadwheelAngleByRadius(radius);
 }
 
-
-
 /*
 void generateMaxOffset(const std::vector<gpsMsg_t>& path_points, 
 					   size_t nearest_point_index,

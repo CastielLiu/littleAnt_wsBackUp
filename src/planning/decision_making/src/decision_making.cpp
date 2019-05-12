@@ -1,8 +1,6 @@
 #include"decision_making.h"
 
 DecisionMaking::DecisionMaking():
-	traffic_light_status_(TrafficLight_go),
-	speed_limit_sign_(-1),
 	max_tolerate_speed_(MAX_SPEED)
 {
 	for(size_t i=0;i<SENSOR_NUM;i++)
@@ -24,17 +22,8 @@ bool DecisionMaking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<std::string>("final_decision_topic1",final_decision_topic1_,"/controlCmd1");
 	nh_private.param<std::string>("final_decision_topic2",final_decision_topic2_,"/controlCmd2");
 	
-	nh_private.param<std::string>("traffic_mark_topic",traffic_mark_topic_,"");
-	
-	if(traffic_mark_topic_.empty())
-	{
-		ROS_ERROR("please input the traffic_mark_topic");
-		return false;
-	}
-	
 	
 	sub_sensors_decision_ = nh.subscribe(sensors_decision_topic_,2,&DecisionMaking::sensor_decision_callback,this);
-	sub_traffic_mark_  =  nh.subscribe(traffic_mark_topic_,1,&DecisionMaking::traffic_mark_callback,this);
 	sub_max_tolerate_speed_ = nh.subscribe("/max_tolerate_speed",1,&DecisionMaking::maxTolerateSpeed_callback,this);
 	
 	sendCmd1Timer_20ms_ = nh.createTimer(ros::Duration(0.02), &DecisionMaking::sendCmd1_callback,this);
@@ -92,15 +81,7 @@ void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 			break;
 		}
 	}
-	//traffic mark
-	if(traffic_light_status_ == TrafficLight_stop)
-	{
-		cmd2_.set_speed = 5.0;   //waiting debug
-		cmd2_.set_brake = 40.0;  //waiting debug
-	}
-	else if(speed_limit_sign_ >0 && cmd2_.set_speed > speed_limit_sign_)
-		cmd2_.set_speed = speed_limit_sign_;
-		
+	
 	if(cmd2_.set_speed > max_tolerate_speed_)
 		cmd2_.set_speed = max_tolerate_speed_;
 		
@@ -115,27 +96,11 @@ void DecisionMaking::updateCmdStatus_callback(const ros::TimerEvent&)
 		if((cmdMsg_[i].status==true)&& (current_time-cmdMsg_[i].time > 0.1)) //over 100ms;
 			cmdMsg_[i].status = false;
 	}
-	
-	//限速超时，退出限速
-	if(current_time - speed_limit_time_ > 60.0)
-		speed_limit_sign_ = -1;
+ 
+ 
 }
 
-void DecisionMaking::traffic_mark_callback(const little_ant_msgs::DetectedObjectArray::ConstPtr& msg)
-{
-	for(int i=0;i<msg->objects.size(); i++)
-	{
-		if(msg->objects[i].label == "Traffic_Light_go")
-			traffic_light_status_ = TrafficLight_go;
-		else if(msg->objects[i].label == "Traffic_Light_stop")
-			traffic_light_status_ = TrafficLight_stop;
-		else if(msg->objects[i].label == "limit_speed_r")
-		{
-			speed_limit_sign_ = 20.0;  //固定限速值，修改此处
-			speed_limit_time_ = ros::Time::now().toSec();
-		}
-	}
-}
+ 
 
 int main(int argc,char ** argv)
 {

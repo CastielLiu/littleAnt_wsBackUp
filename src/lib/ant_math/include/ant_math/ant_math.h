@@ -17,18 +17,20 @@
 #define AXIS_DISTANCE  1.5
 #define MAX_SPEED 30.0
 
-enum 
+enum
 {
 	TrafficSign_None = 0,
 	TrafficSign_TrafficLight =1,
-	TrafficSign_CarFollow = 4,
+	TrafficSign_TurnLeft = 3,
+	TrafficSign_CarFollow = 4,//?
 	TrafficSign_LaneNarrow = 5,
 	TrafficSign_IllegalPedestrian = 6,
 	TrafficSign_NoTrafficLight = 7,
 	TrafficSign_PickUp = 8,
-	TrafficSign_Ambulance = 9,
+	TrafficSign_Ambulance = 9,//?
 	TrafficSign_Railway = 10,
-	TrafficSign_TempStop = 11,
+	TrafficSign_TempStop = 11,//?
+	TrafficSign_UTurn = 12,
 	TrafficSign_School = 13,
 	TrafficSign_AvoidStartingCar = 14,
 	TrafficSign_OffDutyPerson = 15,
@@ -37,8 +39,8 @@ enum
 	TrafficSign_JamArea = 18,
 	TrafficSign_BusStop = 19,
 	TrafficSign_NonVehicle = 20,
-	TrafficSign_StopArea = 21
-}
+	TrafficSign_StopArea = 21 //?
+};
 
 typedef struct
 {
@@ -53,8 +55,8 @@ typedef struct
 	
 	float maxOffset_left;
 	float maxOffset_right;
-	float traffic_sign;
-	float other_info;
+	uint8_t traffic_sign;
+	uint8_t other_info;
 	
 }gpsMsg_t;
 
