@@ -21,6 +21,7 @@ enum
 {
 	TrafficSign_None = 0,
 	TrafficSign_TrafficLight =1,
+	TrafficSign_Avoid = 2,
 	TrafficSign_TurnLeft = 3,
 	TrafficSign_CarFollow = 4,//?
 	TrafficSign_LaneNarrow = 5,
@@ -42,6 +43,7 @@ enum
 	TrafficSign_StopArea = 21, //?
 	
 	TrafficSign_CloseTurnLight = 22,
+	TrafficSign_TurnRight = 23,
 };
 
 typedef struct
