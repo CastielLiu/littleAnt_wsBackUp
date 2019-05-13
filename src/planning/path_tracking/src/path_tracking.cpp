@@ -92,6 +92,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		usleep(200000);
 	}
 	
+	target_point_ = path_points_[target_point_index_];
 	return true;
 }
 
@@ -108,9 +109,6 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
-		//publish the current target and nearest point index
-		this->publishRelatedIndex();
-		
 		if( avoiding_offset_ != 0.0)
 		{
 		//target point offset
@@ -125,13 +123,18 @@ void PathTracking::run()
 		}catch(const char* str){
 			ROS_INFO("%s",str);
 			break;
-		}								 
+		}	
+									 
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
+
 		if( dis_yaw.first < disThreshold_)
 		{
 			target_point_ = path_points_[target_point_index_++];
 			continue;
 		}
+		
+		//publish the current target and nearest point index
+		this->publishRelatedIndex();
 		
 		float yaw_err = dis_yaw.second - current_point_.yaw;
 		
@@ -161,7 +164,7 @@ void PathTracking::run()
 		}
 		
 		float _temp_limit_speed = 30.0;
-		static bool is_temp_stop = false;
+		static bool is_stop = false;
 		static double temp_stop_time;
 		
 		switch(path_points_[nearest_point_index_].traffic_sign)
@@ -176,18 +179,30 @@ void PathTracking::run()
 				break;
 			
 			case TrafficSign_TurnLeft:
+				gps_controlCmd_.cmd1.set_turnLight_L = true;
+				_temp_limit_speed = 20.0;
+				break;
+				
 			case TrafficSign_UTurn:
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
+				_temp_limit_speed = 5.0;
 				break;
+			case TrafficSign_TurnRight:
+				_temp_limit_speed = 20.0;
+				gps_controlCmd_.cmd1.set_turnLight_R = true;
+				break;
+				
 			case TrafficSign_PickUp:
+			case TrafficSign_TempStop:
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
 				_temp_limit_speed = 8.0;
 				break;
-			case TrafficSign_TempStop:
-				if(is_temp_stop == false)
+				
+			case TrafficSign_Stop:
+				if(is_stop == false)
 				{
 					temp_stop_time = ros::Time::now().toSec();
-					is_temp_stop = true;
+					is_stop = true;
 					_temp_limit_speed = 0.0;
 					gps_controlCmd_.cmd1.set_turnLight_R = false;
 				}
@@ -196,13 +211,14 @@ void PathTracking::run()
 					_temp_limit_speed = 20.0;
 					gps_controlCmd_.cmd1.set_turnLight_L = true;
 				}
-				
 				break;
+			case TrafficSign_StopArea:
+				_temp_limit_speed = 0.0;
 			
 			case TrafficSign_CloseTurnLight:
 				gps_controlCmd_.cmd1.set_turnLight_L = false;
 				gps_controlCmd_.cmd1.set_turnLight_R = false;
-				is_temp_stop = false;
+				is_stop = false;
 				break;
 				
 			default :
@@ -225,7 +241,7 @@ void PathTracking::run()
 		
 		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
 		
-		/*
+		
 		if(i%20==0)
 		{
 			ROS_INFO("curvature:%f",target_point_.curvature);
@@ -233,7 +249,7 @@ void PathTracking::run()
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",disThreshold_,t_roadWheelAngle);
 		}
-		i++;*/
+		i++;
 		
 		loop_rate.sleep();
 	}
@@ -270,6 +286,9 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 		else
 			i += 2;
 	}
+	if(min_dis >50)
+		return path_points.size();
+	
 	return index;
 }
 

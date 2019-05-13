@@ -44,6 +44,7 @@ enum
 	
 	TrafficSign_CloseTurnLight = 22,
 	TrafficSign_TurnRight = 23,
+	TrafficSign_Stop = 24,
 };
 
 typedef struct
@@ -85,7 +86,7 @@ inline double sinDeg(const double& deg)
 inline float saturationEqual(float value,float limit)
 {
 	//ROS_INFO("value:%f\t limit:%f",value,limit);
-	assert(limit>0);
+	assert(limit>=0);
 	if(value>limit)
 		value = limit;
 	else if(value < -limit)

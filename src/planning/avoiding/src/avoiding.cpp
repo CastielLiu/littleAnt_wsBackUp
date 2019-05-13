@@ -358,6 +358,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			if(t_deceleration < 0.0)
 			{
 				avoid_cmd_.cmd2.set_speed = 0.0;
+				publishDebugMsg(state_detection::Debug::WARN," set speed : 0.0");
 			}
 			else
 			{
@@ -377,7 +378,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	//avoid message is valid
 	//left offest is smaller,so avoid from left side
-	else if(( -try_offest[0] <= try_offest[1] && try_offest[0] > maxOffset_left_) ||
+	else if(( -try_offest[0] -0.2 <= try_offest[1] && try_offest[0] > maxOffset_left_) ||
 			(-try_offest[0] > try_offest[1] && try_offest[0] > maxOffset_left_ && 
 			try_offest[1] >maxOffset_right_))
 	{

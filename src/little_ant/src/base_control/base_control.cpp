@@ -335,7 +335,6 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 		if(stm32_msg1_.is_start && !stm32_msg1_.is_emergency_brake && !is_driverlessMode_)
 		{
 			this->setDriverlessMode();//启动无人驾驶模式
-			
 			stm32_serial_port_->flushInput();
 			this->is_driverlessMode_ = true;
 		}
@@ -344,7 +343,6 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 			this->is_driverlessMode_ = false;
 			this->exitDriverlessMode();
 		}
-			
 			
 		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
 		//mutex_.unlock();
@@ -363,10 +361,10 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	canMsg_cmd2.data[0] = 0x01; //set_gear drive
 	
-	//uint16_t steeringAngle = 10800; //middle
+	uint16_t steeringAngle = 10800; //middle
 	
-	//canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
-	//canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
+	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
 	/*int count = 0;
 	while(ros::ok())
@@ -390,17 +388,23 @@ void BaseControl::setDriverlessMode()
 	size_t count = 0;
 	while(ros::ok() && state1.act_gear != 1)
 	{
-		canMsg_cmd2.data[4] = uint8_t(uint16_t(state4.steeringAngle*10) / 256);
-		canMsg_cmd2.data[5] = uint8_t(uint16_t(state4.steeringAngle*10) % 256);
+		//canMsg_cmd2.data[4] = uint8_t(uint16_t(state4.steeringAngle*10) / 256);
+		//canMsg_cmd2.data[5] = uint8_t(uint16_t(state4.steeringAngle*10) % 256);
 		
 		can2serial.sendCanMsg(canMsg_cmd2);
 		usleep(10000);
 		count ++;
 		
-		if(count%5==0)
+		if(count%6==0)
 			canMsg_cmd2.data[0] = 0x00;
 		else
 			canMsg_cmd2.data[0] = 0x01;
+	}
+	//to Ensure steering stability at set value
+	for(count=0; count<100; count++)
+	{
+		can2serial.sendCanMsg(canMsg_cmd2);
+		usleep(10000);
 	}
 	
 	
