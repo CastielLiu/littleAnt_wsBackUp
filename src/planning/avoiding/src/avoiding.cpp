@@ -201,7 +201,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			dis2path = dis2pathArray[indexArray[i]];
 			if(object.pose.position.x < 2.0 && dis2path < 1.0)
 			{
-				try_offest[1] = 3.0;
+				try_offest[1] = 3.0; //right offset
 				break;
 			}
 		}
