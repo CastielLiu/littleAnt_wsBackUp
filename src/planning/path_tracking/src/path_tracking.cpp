@@ -195,7 +195,7 @@ void PathTracking::run()
 			case TrafficSign_PickUp:
 			case TrafficSign_TempStop:
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
-				_temp_limit_speed = 8.0;
+				_temp_limit_speed = 10.0;
 				break;
 				
 			case TrafficSign_Stop:
@@ -206,11 +206,14 @@ void PathTracking::run()
 					_temp_limit_speed = 0.0;
 					gps_controlCmd_.cmd1.set_turnLight_R = false;
 				}
-				else if(ros::Time::now().toSec() - temp_stop_time > 60)
+				else if(ros::Time::now().toSec() - temp_stop_time > 30)
 				{
 					_temp_limit_speed = 20.0;
 					gps_controlCmd_.cmd1.set_turnLight_L = true;
 				}
+				else
+					_temp_limit_speed = 0.0;
+					
 				break;
 			case TrafficSign_StopArea:
 				_temp_limit_speed = 0.0;
@@ -218,7 +221,13 @@ void PathTracking::run()
 			case TrafficSign_CloseTurnLight:
 				gps_controlCmd_.cmd1.set_turnLight_L = false;
 				gps_controlCmd_.cmd1.set_turnLight_R = false;
+				_temp_limit_speed = 20.0;
 				is_stop = false;
+				break;
+			case TrafficSign_AccidentArea:
+				gps_controlCmd_.cmd1.set_turnLight_L = false;
+				gps_controlCmd_.cmd1.set_turnLight_R = false;
+				_temp_limit_speed = 20.0;
 				break;
 				
 			default :

@@ -7,7 +7,7 @@
 	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
 	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
 	
-	<arg name="pathTracking_file_name" default="_main.txt"/>
+	<arg name="pathTracking_file_name" default="_new.txt"/>
 	
 	<arg name="max_speed"  default="30.0"/>
 	
@@ -21,13 +21,13 @@
 	</node>
 
 <!--避障-->	
-	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
+	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen"  respawn="true">
 
 		<param name="objects_topic" value="/detection/lidar_objects" />
 		
 		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
 		
-		<param name="safety_distance_side" value="0.4"/>    <!--   两侧安全距离       -->
+		<param name="safety_distance_side" value="0.6"/>    <!--   两侧安全距离       -->
 		<param name="danger_distance_side" value="0.25"/>
 		
 		<param name="max_deceleration" value="5.0" />
