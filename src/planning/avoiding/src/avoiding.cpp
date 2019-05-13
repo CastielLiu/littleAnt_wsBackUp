@@ -193,6 +193,20 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	
 	//float lateral_err = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_);
 	
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
+	{
+		for(size_t i=0; i<n_object; i++)
+		{
+			object = objects->boxes[indexArray[i]];
+			dis2path = dis2pathArray[indexArray[i]];
+			if(object.pose.position.x < 2.0 && dis2path < 1.0)
+			{
+				try_offest[1] = 3.0;
+				break;
+			}
+		}
+	}
+	
 	for(size_t i=0; i<n_object; i++)
 	{
 		dis2vehicle = dis2vehicleArray[i];
@@ -378,11 +392,11 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	
-	std::stringstream debug_msg;
+	/*std::stringstream debug_msg;
 	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
 	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
 	debug_msg << "  offset: " << offset_msg_.data;
-	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
+	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());*/
 }
 
 inline void Avoiding::backToOriginalLane()
@@ -403,7 +417,9 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 	{
 		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
 		
-		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && fabs(dis2pathArray[indexArray[i]]) <= safety_center_distance_x)
+		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && 
+		   objects->boxes[indexArray[i]].pose.position.x >20.0 &&
+		   fabs(dis2pathArray[indexArray[i]]) <= safety_center_distance_x)
 		{
 			is_ok = false;
 			break;
