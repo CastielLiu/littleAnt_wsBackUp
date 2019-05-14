@@ -23,6 +23,7 @@ class Record
 
 		std::string file_path_;
 		FILE *fp;
+		FILE *fp_lat_lon;
 		
 		gpsMsg_t last_point , current_point;
 		
@@ -54,7 +55,10 @@ Record::Record():
 
 Record::~Record()
 {
-	fclose(fp);
+	if(fp != NULL)
+		fclose(fp);
+	if(fp_lat_lon != NULL)
+		fclose(fp_lat_lon);
 }
 
 bool Record::init()
@@ -86,10 +90,16 @@ bool Record::init()
     }
     
 	fp = fopen(file_path_.c_str(),"w");
+	fp_lat_lon = fopen((file_path_+"_lat_lon").c_str(),"w");
 	
 	if(fp == NULL)
 	{
-		ROS_INFO("open record data file failed !!!!!");
+		ROS_INFO("open record data file %s failed !!!",file_path_.c_str());
+		return 0;
+	}
+	else if(fp_lat_lon == NULL)
+	{
+		ROS_INFO("open record data file %s failed !!!",(file_path_+"_lat_lon").c_str());
 		return 0;
 	}
 	return 1;
@@ -150,6 +160,11 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 													path_info_.maxOffset_left,path_info_.maxOffset_right,
 													path_info_.traffic_sign,path_info_.other_info);
 		fflush(fp);
+		
+		fprintf(fp_lat_lon,"%.8f\t%.8f\n",current_point.latitude,current_point.longitude);
+		
+		fflush(fp_lat_lon);
+		
 		
 		ROS_INFO("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
 													path_info_.maxOffset_left,path_info_.maxOffset_right,

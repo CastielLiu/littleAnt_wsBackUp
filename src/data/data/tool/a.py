@@ -75,7 +75,7 @@ class Points:
 			
 def plot():
 	path_points = Points()
-	path_points.load('../raw/path1.txt')
+	path_points.load('../raw/path514_3.txt')
 	path_points.calculateCurvature()
 	path_points.curvatureFilter(15)
 	

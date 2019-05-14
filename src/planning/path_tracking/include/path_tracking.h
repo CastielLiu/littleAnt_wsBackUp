@@ -24,6 +24,8 @@
 #include <boost/bind.hpp>
 #include <thread>
 
+#include<std_msgs/UInt8.h>
+
 class PathTracking
 {
 public:
@@ -74,6 +76,8 @@ private:
 	
 	ros::Publisher pub_max_tolerate_speed_;
 	
+	ros::Publisher pub_current_scene_;
+	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
 	std::string path_points_file_;
@@ -117,7 +121,9 @@ private:
 	float foreSightDis_latErrCoefficient_;
 	
 	bool is_trafficLight_green_;
-
+	
+	std_msgs::UInt8 scene_msg_;
+	
 };
 
 

@@ -82,9 +82,10 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 	
-	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_PickUp ||
+		path_points_[nearest_point_index_].traffic_sign == TrafficSign_TempStop)
 		danger_distance_front_ = 1.6;
-	
+		
 	static int i=0;
 	i++;
 	if(i%20==0)
@@ -172,8 +173,41 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 		backToOriginalLane();
 	}
 	
-	//dis2vehicleArray was sorted but dis2pathArray not!
-	decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
+	{
+		bool is_ambulance = false;
+		bool is_changLaneSafety = true;
+		jsk_recognition_msgs::BoundingBox object; 
+		for(size_t i=0; i<n_object; i++)
+		{
+			object = objects->boxes[indexArray[i]];
+			float dis2path = dis2pathArray[indexArray[i]];
+			float safety_center_distance_x = g_vehicle_width/2 + object.dimensions.y/2 + safety_distance_side_;
+			if(object.pose.position.x < -2.0 && dis2path < 1.0) //ambulance
+			{
+				is_ambulance = true;
+			}
+			else if(object.pose.position.x <20.0 && dis2path >0.0 &&
+			       dis2path-3.0 < safety_center_distance_x)
+			{
+				is_changLaneSafety  = false; 
+				break;
+			}
+		}
+		if(is_ambulance && is_changLaneSafety)
+		{
+			offset_msg_.data = 2.5;
+			pub_avoid_msg_to_gps_.publish(offset_msg_);
+		}
+	}
+	else if(path_points_[nearest_point_index_].traffic_sign != TrafficSign_PickUp &&
+		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_TempStop &&
+		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_UTurn)
+	{
+		//dis2vehicleArray was sorted but dis2pathArray not!
+		decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);
+	}
+	
 	delete [] indexArray;
 	delete [] dis2vehicleArray;
 	delete [] dis2pathArray;
@@ -192,20 +226,6 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	std::vector<size_t> vehicleObstacle_indexArray; //for car following
 	
 	//float lateral_err = calculateDis2path(current_point_.x,current_point_.y,path_points_,target_point_index_);
-	
-	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
-	{
-		for(size_t i=0; i<n_object; i++)
-		{
-			object = objects->boxes[indexArray[i]];
-			dis2path = dis2pathArray[indexArray[i]];
-			if(object.pose.position.x < 2.0 && dis2path < 1.0)
-			{
-				try_offest[1] = 3.0; //right offset
-				break;
-			}
-		}
-	}
 	
 	for(size_t i=0; i<n_object; i++)
 	{
@@ -309,14 +329,32 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	try_offest[0] += offset_msg_.data;
 	try_offest[1] += offset_msg_.data;
 	
-	if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_Avoid ||
-	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_Ambulance ||
-	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AvoidStartingCar ||
-	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AccidentArea ||
+	if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AccidentArea ||
 	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_JamArea)
 	{
-		maxOffset_left_ = path_points_[nearest_point_index_].maxOffset_left;
-		maxOffset_right_= path_points_[nearest_point_index_].maxOffset_right;
+		maxOffset_left_ = 3.5;
+		maxOffset_right_= 3.5;
+	}
+	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_AvoidStartingCar)
+	{
+		maxOffset_left = 0.3;
+		maxOffset_right = 0.0;
+	}
+	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
+	{
+		maxOffset_left = 0.0;
+		maxOffset_right = 3.2;
+	}
+	
+	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Avoid)
+	{
+		maxOffset_left_ = 3.5;
+		maxOffset_right = 0.0;
+	}
+	else if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_BusStop)
+	{
+		maxOffset_left_  =3.0;
+		maxOffset_right_ = 0.0;
 	}
 	else
 		maxOffset_left_ = maxOffset_right_ = 0.0;
@@ -329,7 +367,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(try_offest[0] < maxOffset_left_ && try_offest[1] > maxOffset_right_)
-	{	
+	{
 		if(is_carFollow_ == false)
 		{
 			float _min_distance=100.0;  //a big number
@@ -347,17 +385,13 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 				avoid_cmd_.cmd2.set_speed = 0.0;
 				publishDebugMsg(state_detection::Debug::WARN," set speed : 0.0");
 			}
-			else if(t_deceleration > 0.1)
+			else
 			{
 				avoid_cmd_.cmd2.set_speed = 20.0;
 				avoid_cmd_.cmd2.set_brake = t_deceleration/g_max_deceleration * 60 + 30.0;
 				ROS_DEBUG("t_deceleration:%f\t set_brake:%f",t_deceleration,avoid_cmd_.cmd2.set_brake);
 			}
-			else
-			{
-				avoid_cmd_.cmd2.set_speed = 5.0;
-				avoid_cmd_.cmd2.set_brake = 0.0;
-			}
+			
 			avoid_cmd_.status = true;
 			if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_CarFollow)
 				requestCarFollowing(objects,vehicleObstacle_indexArray);
@@ -365,12 +399,14 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		else
 		{
 			avoid_cmd_.status = false;
+			if(path_points_[nearest_point_index_].traffic_sign != TrafficSign_CarFollow)
+				is_carFollow_ = false;
 		}
 		pub_avoid_cmd_.publish(avoid_cmd_);
 	}
 	//avoid message is valid
 	//left offest is smaller,so avoid from left side
-	else if(( -try_offest[0] -0.2 <= try_offest[1] && try_offest[0] > maxOffset_left_) ||
+	else if(( -try_offest[0] <= try_offest[1] && try_offest[0] > maxOffset_left_) ||
 			(-try_offest[0] > try_offest[1] && try_offest[0] > maxOffset_left_ && 
 			try_offest[1] >maxOffset_right_))
 	{
@@ -418,7 +454,7 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
 		
 		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && 
-		   objects->boxes[indexArray[i]].pose.position.x >20.0 &&
+		   objects->boxes[indexArray[i]].pose.position.x > -20.0 &&
 		   fabs(dis2pathArray[indexArray[i]]) <= safety_center_distance_x)
 		{
 			is_ok = false;
@@ -431,6 +467,8 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 					const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object)
 {
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
+		return false;
 	float safety_center_distance_x; //the safety distance along x axis
 	float safety_center_distance_y; //the safety distance along y axis
 	float x,y;
@@ -441,7 +479,7 @@ inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray:
 		x = -objects->boxes[indexArray[i]].pose.position.y;
 		y = objects->boxes[indexArray[i]].pose.position.x;
 		
-		if(y <= safety_center_distance_y && y > -g_vehicle_length/2  && fabs(x) <= safety_center_distance_x)
+		if(y <= safety_center_distance_y && y > -g_vehicle_length/2  && fabs(x) <= safety_center_distance_x )
 		{
 			std::stringstream ss ;
 			ss << "safety_x:"<<safety_center_distance_x <<"  safety_y:"<<safety_center_distance_y<<"  x:"<<x <<"  y:"<<y;

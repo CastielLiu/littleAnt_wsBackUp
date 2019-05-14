@@ -1,7 +1,6 @@
 #include "acc/acc_esr.h"
 
 
-
 Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	nh_(nh),
 	nh_private_(nh_private),
@@ -29,6 +28,7 @@ bool Acc_esr::init()
 	sub_start_acc_ = nh_.subscribe("/is_acc",2,&Acc_esr::is_acc_callback,this);
 	
 	sub_carFollow_request_ = nh_.subscribe("/carFollow_request",1,&Acc_esr::carFollowRequest_callback,this);
+	sub_current_scene_ = nh_.subscribe("/current_scene",1,&Acc_esr::current_scene_callback,this);
 	
 	pub_car_follow_response_ = nh_.advertise<std_msgs::Bool>("/carFollow_response",1);
 	
@@ -86,7 +86,7 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 
 void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 {
-	if(!is_acc_) return;
+	if(!is_acc_ || current_scene_ != TrafficSign_CarFollow) return;
 	
 	if(acc_targetId_==0xff) //no track target
 	{
@@ -218,6 +218,11 @@ inline void Acc_esr::publishCarFollowingStats(bool status)
 	is_can_follow.data = status;
 	pub_car_follow_response_.publish(is_can_follow);
 	
+}
+
+void Acc_esr::current_scene_callback(const std_msgs::UInt8::ConstPtr& msg)
+{
+	current_scene_ = msg->data;
 }
 
 

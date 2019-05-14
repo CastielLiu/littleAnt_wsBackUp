@@ -1,6 +1,7 @@
 #include"path_tracking.h"
 
 
+
 PathTracking::PathTracking():
 	gps_status_(0x00),
 	vehicle_speed_status_(false),
@@ -45,6 +46,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	pub_max_tolerate_speed_ = nh.advertise<std_msgs::Float32>("/max_tolerate_speed",1);
+	pub_current_scene_ = nh.advertise<std_msgs::UInt8>("/current_scene",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
@@ -135,6 +137,8 @@ void PathTracking::run()
 		
 		//publish the current target and nearest point index
 		this->publishRelatedIndex();
+		scene_msg_.data = path_points_[nearest_point_index_].traffic_sign;
+		pub_current_scene_.publish(scene_msg_);
 		
 		float yaw_err = dis_yaw.second - current_point_.yaw;
 		
@@ -186,6 +190,7 @@ void PathTracking::run()
 			case TrafficSign_UTurn:
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
 				_temp_limit_speed = 5.0;
+				is_stop = false;
 				break;
 			case TrafficSign_TurnRight:
 				_temp_limit_speed = 20.0;
@@ -195,7 +200,7 @@ void PathTracking::run()
 			case TrafficSign_PickUp:
 			case TrafficSign_TempStop:
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
-				_temp_limit_speed = 10.0;
+				_temp_limit_speed = 13.0;
 				break;
 				
 			case TrafficSign_Stop:
@@ -261,7 +266,8 @@ void PathTracking::run()
 			ROS_INFO("curvature:%f",target_point_.curvature);
 			ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
-			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f\n",disThreshold_,t_roadWheelAngle);
+			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);
+			ROS_INFO("avoiding_offset_:%f\n",avoiding_offset_);
 		}
 		i++;
 		
@@ -373,8 +379,13 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	disThreshold_ = foreSightDis_speedCoefficient_ * vehicle_speed_ ;
 	if(disThreshold_ < min_foresight_distance_) 
 		disThreshold_  = min_foresight_distance_;
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
+		foreSightDis_latErrCoefficient_ = 0.6;
 	
 	disThreshold_ = disThreshold_ * (1.0 + foreSightDis_latErrCoefficient_ * fabs(lateral_err_) );
+	
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
+		disThreshold_ = 4.5;
 	
 	//ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
 	
