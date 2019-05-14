@@ -217,7 +217,8 @@ void PathTracking::run()
 				break;
 			case TrafficSign_StopArea:
 				_temp_limit_speed = 0.0;
-			
+				break;
+				
 			case TrafficSign_CloseTurnLight:
 				gps_controlCmd_.cmd1.set_turnLight_L = false;
 				gps_controlCmd_.cmd1.set_turnLight_R = false;
@@ -229,7 +230,11 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_R = false;
 				_temp_limit_speed = 20.0;
 				break;
-				
+			
+			case TrafficSign_Railway :
+				_temp_limit_speed = 15.0;
+				break;
+			
 			default :
 				_temp_limit_speed = 20.0;
 				break;
