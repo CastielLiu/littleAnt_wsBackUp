@@ -362,11 +362,17 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	else
 		maxOffset_left_ = maxOffset_right_ = 0.0;
 	
+	if(try_offest[0] >0)
+		try_offest[0] = -10.0;  //a big num
+	if(try_offest[1]<0)
+		try_offest[1] = 10.0;
+		
 	//no avoid message
 	if(try_offest[0]==0.0 && try_offest[1] ==0.0) 
 	{
 		avoid_cmd_.status = false;
 		pub_avoid_cmd_.publish(avoid_cmd_);
+		return;
 	}
 	//avoid message is invalid ,must slow down ,perhaps not brake!
 	else if(try_offest[0] < maxOffset_left_ && try_offest[1] > maxOffset_right_)
@@ -434,10 +440,10 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	
 	std::stringstream debug_msg;
-	//debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
-	//debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
-	//debug_msg << "  offset: " << offset_msg_.data;
-	//publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
+	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
+	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
+	debug_msg << "  offset: " << offset_msg_.data;
+	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 }
 
 inline void Avoiding::backToOriginalLane()
