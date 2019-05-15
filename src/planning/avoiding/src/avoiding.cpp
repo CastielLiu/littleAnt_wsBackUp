@@ -250,10 +250,9 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			expand_safty_width = 0.3;
 			
 		//object is outside the avoding area
-		if(dis2vehicle >= safety_distance_front)
+		if(dis2vehicle >= safety_distance_front || object.pose.position.x <0 || fabs(dis2path) >= safety_center_distance_x)
 			continue;
-		else if(fabs(dis2path) >= safety_center_distance_x &&
-				fabs(dis2path) <= safety_center_distance_x + expand_safty_width &&
+		else if(fabs(dis2path) <= safety_center_distance_x + expand_safty_width &&
 				object.pose.position.x > 1.0 &&
 				object.label == Person)
 		{
@@ -290,7 +289,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		}
 		//object is other type, start to avoid
 		float offset_increment = dis2path - safety_center_distance_x;//try avoid in the left
-		if(offset_increment<0 && object.pose.position.x >0)
+		if(offset_increment<0 )
 			try_offest[0] += offset_increment; //try avoid in the left	
 		//ROS_INFO("left try offset:%f\t dis2path:%f safety_dis:%f",try_offest[0],dis2path,safety_center_distance_x);
 		//ROS_INFO("trueOffset:%f\t x:%f\t y:%f\t width:%f",
@@ -314,7 +313,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			safety_distance_front = safety_distance_front_;
 		
 		//object is outside the avoding area
-		if((fabs(dis2path) >= safety_center_distance_x) || (dis2vehicle >= safety_distance_front))
+		if(dis2vehicle >= safety_distance_front || object.pose.position.x <0 || fabs(dis2path) >= safety_center_distance_x)
 			continue;
 		
 		if(object.label != Person)
@@ -322,7 +321,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			
 		//object is other type, start to avoid
 		float offset_increment = dis2path + safety_center_distance_x; //try avoid in the right
-		if(offset_increment>0  && object.pose.position.x >0)
+		if(offset_increment>0 )
 			try_offest[1] += dis2path + safety_center_distance_x;
 	}
 	
@@ -332,28 +331,28 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AccidentArea ||
 	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_JamArea)
 	{
-		maxOffset_left_ = 3.5;
+		maxOffset_left_ = -3.5;
 		maxOffset_right_= 3.5;
 	}
 	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_AvoidStartingCar)
 	{
-		maxOffset_left = 0.3;
-		maxOffset_right = 0.0;
+		maxOffset_left_ = -0.3;
+		maxOffset_right_ = 0.0;
 	}
 	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
 	{
-		maxOffset_left = 0.0;
-		maxOffset_right = 3.2;
+		maxOffset_left_ = 0.0;
+		maxOffset_right_ = 3.0;
 	}
 	
 	else if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Avoid)
 	{
-		maxOffset_left_ = 3.5;
-		maxOffset_right = 0.0;
+		maxOffset_left_ = -3.5;
+		maxOffset_right_ = 0.0;
 	}
 	else if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_BusStop)
 	{
-		maxOffset_left_  =3.0;
+		maxOffset_left_  =0.0;
 		maxOffset_right_ = 0.0;
 	}
 	else
@@ -375,8 +374,10 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			for(size_t i=0; i< vehicleObstacle_indexArray.size(); i++)
 			{
 				box = objects->boxes[vehicleObstacle_indexArray[i]];
-				_min_distance = 
-						box.pose.position.x < _min_distance ? box.pose.position.x : _min_distance;
+				float _dis = box.pose.position.x - box.dimensions.x/2;
+				if(_dis < _min_distance)
+					_min_distance = _dis;
+				
 			}
 			float t_deceleration = 0.5*vehicle_speed_*vehicle_speed_/(_min_distance-5.0);
 			
@@ -453,7 +454,7 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 	{
 		safety_center_distance_x = g_vehicle_width/2 + objects->boxes[indexArray[i]].dimensions.y/2 + safety_distance_side_;
 		
-		if(dis2vehicleArray[i] < safety_distance_front_*1.5 && 
+		if(dis2vehicleArray[i] < safety_distance_front_*1.2 && 
 		   objects->boxes[indexArray[i]].pose.position.x > -20.0 &&
 		   fabs(dis2pathArray[indexArray[i]]) <= safety_center_distance_x)
 		{
@@ -469,6 +470,7 @@ inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray:
 {
 	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
 		return false;
+		
 	float safety_center_distance_x; //the safety distance along x axis
 	float safety_center_distance_y; //the safety distance along y axis
 	float x,y;

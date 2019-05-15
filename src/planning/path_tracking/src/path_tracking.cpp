@@ -193,7 +193,7 @@ void PathTracking::run()
 				is_stop = false;
 				break;
 			case TrafficSign_TurnRight:
-				_temp_limit_speed = 20.0;
+				_temp_limit_speed = 15.0;
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
 				break;
 				

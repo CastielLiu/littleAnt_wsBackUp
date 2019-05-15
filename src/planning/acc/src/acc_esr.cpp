@@ -86,7 +86,9 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 
 void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 {
-	if(!is_acc_ || current_scene_ != TrafficSign_CarFollow) return;
+	if(!is_acc_ ) return;
+	if(current_scene_ != TrafficSign_BusStop && current_scene_ != TrafficSign_CarFollow )
+		return;
 	
 	if(acc_targetId_==0xff) //no track target
 	{
