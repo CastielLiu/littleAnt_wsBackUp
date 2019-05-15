@@ -247,21 +247,25 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		
 		float expand_safty_width = 0.0;
 		if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_IllegalPedestrian)
-			expand_safty_width = 0.3;
+			expand_safty_width = 0.6;
 			
 		//object is outside the avoding area
-		if(dis2vehicle >= safety_distance_front || object.pose.position.x <0 || fabs(dis2path) >= safety_center_distance_x)
+		if(dis2vehicle >= safety_distance_front || object.pose.position.x <0 || fabs(dis2path) >= safety_center_distance_x +expand_safty_width)
 			continue;
-		else if(fabs(dis2path) <= safety_center_distance_x + expand_safty_width &&
+		else if(fabs(dis2path) <= (safety_center_distance_x + expand_safty_width) &&
 				object.pose.position.x > 1.0 &&
 				object.label == Person)
 		{
-			publishDebugMsg(state_detection::Debug::ERROR,"pedestrian crossing.....");
+			std::stringstream ss;
+			ss << "pedestrian crossing..... dis2vehicle:" << dis2vehicle <<"  dis2path:"<< dis2path << " safe_x:" <<safety_center_distance_x  << " "
+				<< expand_safty_width;
 			
-			if(dis2vehicle <= danger_distance_front_*1.5)
+			publishDebugMsg(state_detection::Debug::ERROR,ss.str());
+			
+			if(dis2vehicle <= danger_distance_front_*2)
 			{
 				avoid_cmd_.status = true;
-				avoid_cmd_.cmd2.set_brake = 60.0;  //waiting test
+				avoid_cmd_.cmd2.set_brake = 80.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 3.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				return;
@@ -269,7 +273,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			else if(dis2vehicle <= danger_distance_front_*3)
 			{
 				avoid_cmd_.status = true;
-				avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
+				avoid_cmd_.cmd2.set_brake = 60.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 8.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				return;
@@ -278,7 +282,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			else if(dis2vehicle <= safety_distance_front_)
 			{
 				avoid_cmd_.status = true;
-				avoid_cmd_.cmd2.set_brake = 20.0;  //waiting test
+				avoid_cmd_.cmd2.set_brake = 40.0;  //waiting test
 				avoid_cmd_.cmd2.set_speed = 10.0;
 				pub_avoid_cmd_.publish(avoid_cmd_);
 				return;
@@ -430,10 +434,10 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	}
 	
 	std::stringstream debug_msg;
-	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
-	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
-	debug_msg << "  offset: " << offset_msg_.data;
-	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
+	//debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
+	//debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
+	//debug_msg << "  offset: " << offset_msg_.data;
+	//publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 }
 
 inline void Avoiding::backToOriginalLane()

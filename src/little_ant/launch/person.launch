@@ -7,12 +7,12 @@
 	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
 	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
 	
-	<arg name="pathTracking_file_name" default="_path514_3.txt"/>
+	<arg name="pathTracking_file_name" default="_person.txt"/>
 	
 	<arg name="max_speed"  default="30.0"/>
 	
 <!--底层 -->	
-	<node name="base_control" pkg="little_ant" type="base_control" output="screen" respawn="true">
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
 		<param name ="stm32_baudrate" value="115200"/>
@@ -36,7 +36,7 @@
 	</node>
 
 <!-- 跟踪   -->
-	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen" respawn="true">
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen" >
 		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
 		<param name="speed" value="$(arg max_speed)"/>						<!-- 跟踪速度  -->
 		
@@ -74,7 +74,7 @@
 	
 	
 <!-- vehicle following  -->
-	<node name="acc_node" pkg="acc" type="acc_node" output="screen" respawn="true">
+	<node name="acc_node" pkg="acc" type="acc_node" output="screen">
 		<param name="trackTargetAngle_range" value="6.0"/>
 		<param name="max_following_speed" value="$(arg max_speed)"/>
 	</node>
@@ -85,7 +85,7 @@
 	</node>
 
  <!--总决策-->
-	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" respawn="true">
+	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" >
 		<param name ="traffic_mark_topic" value="/traffic_mark" />
 	</node>  
 	

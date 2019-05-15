@@ -181,6 +181,9 @@ void PathTracking::run()
 			case TrafficSign_None:
 			case TrafficSign_CarFollow:
 				break;
+			case TrafficSign_IllegalPedestrian:
+				_temp_limit_speed = 15.0;
+				break;
 			
 			case TrafficSign_TurnLeft:
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
