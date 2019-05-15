@@ -57,6 +57,7 @@ private:
 	void publishRelatedIndex();
 	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 									 const gpsMsg_t& current_point);
+	void pointOffset(gpsMsg_t& point,float offset);
 private:
 	ros::Subscriber sub_gps_;
 	

@@ -103,6 +103,13 @@ void PathTracking::rosSpinThread()
 	ros::spin();
 }
 
+
+void PathTracking::pointOffset(gpsMsg_t& point,float offset)
+{
+	point.x =  offset * cos(point.yaw) + point.x;
+	point.y = -offset * sin(point.yaw) + point.y;
+}
+
 void PathTracking::run()
 {
 	size_t i =0;
