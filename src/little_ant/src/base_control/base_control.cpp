@@ -400,11 +400,16 @@ void BaseControl::setDriverlessMode()
 		else
 			canMsg_cmd2.data[0] = 0x01;
 	}
+	canMsg_cmd2.data[0] = 0x01;
+	
 	//to Ensure steering stability at set value
-	for(count=0; count<100; count++)
+	for(count=0; count<150; count++)
 	{
 		can2serial.sendCanMsg(canMsg_cmd2);
 		usleep(10000);
+		can2serial.sendCanMsg(canMsg_cmd2);
+		usleep(10000);
+		can2serial.sendCanMsg(canMsg_cmd1);
 	}
 	
 	

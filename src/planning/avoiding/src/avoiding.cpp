@@ -388,8 +388,8 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			}
 			else
 			{
-				avoid_cmd_.cmd2.set_speed = 20.0;
-				avoid_cmd_.cmd2.set_brake = t_deceleration/g_max_deceleration * 60 + 30.0;
+				avoid_cmd_.cmd2.set_speed = 15.0;
+				avoid_cmd_.cmd2.set_brake = t_deceleration/g_max_deceleration * 60 + 40.0;
 				ROS_DEBUG("t_deceleration:%f\t set_brake:%f",t_deceleration,avoid_cmd_.cmd2.set_brake);
 			}
 			
@@ -429,11 +429,11 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 		pub_avoid_msg_to_gps_.publish(offset_msg_);
 	}
 	
-	/*std::stringstream debug_msg;
+	std::stringstream debug_msg;
 	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
 	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
 	debug_msg << "  offset: " << offset_msg_.data;
-	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());*/
+	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 }
 
 inline void Avoiding::backToOriginalLane()

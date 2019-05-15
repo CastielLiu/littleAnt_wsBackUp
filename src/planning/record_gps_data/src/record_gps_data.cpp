@@ -150,6 +150,7 @@ float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 
 void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+	static size_t  line_num = 0;
 	current_point.x = msg->pose.pose.position.x;
 	current_point.y = msg->pose.pose.position.y;
 	if(gps_status_ == true && sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
@@ -165,8 +166,9 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 		
 		fflush(fp_lat_lon);
 		
+		line_num++;
 		
-		ROS_INFO("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
+		ROS_INFO("line:%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",line_num,current_point.x,current_point.y,current_point.yaw,
 													path_info_.maxOffset_left,path_info_.maxOffset_right,
 													path_info_.traffic_sign,path_info_.other_info);
 		last_point = current_point;
