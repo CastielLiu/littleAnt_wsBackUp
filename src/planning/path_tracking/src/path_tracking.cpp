@@ -74,6 +74,13 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	if(!loadPathPoints(path_points_file_, path_points_))
 		return false;
 	
+	ROS_INFO("pathPoints size:%d",path_points_.size());
+	
+	for(size_t i=0; i< path_points_.size();i++ )
+	{
+	  std::cout <<path_points_[i].x <<"\t " <<path_points_[i].y <<std::endl;
+	}
+	
 	while(ros::ok() && !is_gps_data_valid(current_point_))
 	{
 		ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
@@ -84,7 +91,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	if(target_point_index_ > path_points_.size() - 10)
 	{
-		ROS_ERROR("file read over, No target point was found !!!");
+		ROS_ERROR("target index:%d ?? file read over, No target point was found !!!",target_point_index_);
 		return false;
 	}
 	
@@ -297,9 +304,14 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 	size_t index = 0;
 	float min_dis = FLT_MAX;
 	float dis;
+	ROS_ERROR("size:%d",path_points.size());
+	
 	for(size_t i=0; i<path_points.size(); )
 	{
 		dis = dis2Points(path_points[i],current_point);
+		ROS_INFO("i=%d\t dis:%f",i,dis);
+		ROS_INFO("path_points[%d] x:%lf\t y:%lf",i,path_points[i].x,path_points[i].y);
+		ROS_INFO("current_point  x:%lf\t y:%lf",current_point.x,current_point.y);
 		if(dis < min_dis)
 		{
 			min_dis = dis;
@@ -320,10 +332,15 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 		else if(dis > 21)
 			i += 21;
 		else
-			i += 2;
+			i += 1;
 	}
 	if(min_dis >50)
+	{
+		ROS_ERROR("current_point x:%f\ty:%f",current_point.x,current_point.y);
+		ROS_ERROR("findNearestPoint error mindis:%f",min_dis);
 		return path_points.size();
+	}
+		
 	
 	return index;
 }

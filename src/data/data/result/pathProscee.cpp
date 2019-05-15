@@ -75,7 +75,7 @@ bool dumpPathPoints(std::string file_path,std::vector<gpsMsg_t>& points) //xy
 	for(size_t i=0;i<points.size();i++)
 	{
 		point = points[i];
-		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",point.x,point.y,point.yaw,
+		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.5f\t%.3f\t%.3f\t%d\t%d\r\n",point.x,point.y,point.yaw,point.curvature,
 														point.maxOffset_left,point.maxOffset_right,
 														point.traffic_sign,point.other_info);
 		fflush(fp);
@@ -173,18 +173,23 @@ int main()
 	vector<gpsMsg_t> path_points_xy;
 	vector<gpsMsg_t> path_points_lonlat;
 	
-	loadPathPoints("_path515.txt",path_points_xy,_XY); //x,y
+	loadPathPoints("a_raw.txt",path_points_xy,_XY); //x,y
+	//loadPathPoints("test.txt",path_points_xy,_XY); //x,y
 	loadPathPoints("path515_lonlat.txt",path_points_lonlat,_LATLON); //lon lat
 	
 	//cout << "size:" << path_points_xy.size() << "\t"<< path_points_lonlat.size()<<endl;
 	
 	gpsMsg_t pointA;
-	pointA.x = 530393.305;	
-	pointA.y = 4324085.142;
+	pointA.x = 530384.784996;	
+	pointA.y = 4324070.80623;
+
+
 	
 	//pointOffset(pointA,2.5);
 	
-	size_t nearest_index = findNearestPointIndex(path_points_xy,pointA,_XY);  //nearest index
+	//size_t nearest_index = findNearestPointIndex(path_points_xy,pointA,_XY);  //nearest index
+	
+	size_t nearest_index = 180;
 	size_t end_index = findIndexByDis(path_points_xy,nearest_index,10.0,true);
 	size_t start_index = findIndexByDis(path_points_xy,nearest_index,10.0,false);
 	
@@ -194,9 +199,10 @@ int main()
 	for(size_t i=start_index;i<=end_index;i++)
 	{
 		pointOffset(path_points_xy[i],2.5);
+		cout << i <<endl;
 	}
 	
-	dumpPathPoints("test.txt",path_points_xy);
+	dumpPathPoints("b.txt",path_points_xy);
 	
 	return 0;
 	
