@@ -7,9 +7,9 @@
 	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
 	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
 	
-	<arg name="pathTracking_file_name" default="b.txt"/>
+	<arg name="pathTracking_file_name" default="final.txt"/>
 	
-	<arg name="max_speed"  default="20.0"/>
+	<arg name="max_speed"  default="30.0"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">

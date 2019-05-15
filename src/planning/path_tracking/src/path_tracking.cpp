@@ -125,6 +125,16 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
+		if(path_points_[nearest_point_index_].other_info == 1)
+			gps_controlCmd_.cmd1.set_turnLight_L = true;
+		else if(path_points_[nearest_point_index_].other_info == 2)
+			gps_controlCmd_.cmd1.set_turnLight_R = true;
+		else if(path_points_[nearest_point_index_].other_info == 3)
+		{
+			gps_controlCmd_.cmd1.set_turnLight_R = false;
+			gps_controlCmd_.cmd1.set_turnLight_L = false;
+		}
+		
 		if( avoiding_offset_ != 0.0)
 		{
 		//target point offset
@@ -179,16 +189,6 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_R = true;
 			else if(lane_width_ < -1.0)
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
-		}
-		
-		if(path_points_[nearest_point_index_].other_info == 1)
-			gps_controlCmd_.cmd1.set_turnLight_L = true;
-		else if(path_points_[nearest_point_index_].other_info == 2)
-			gps_controlCmd_.cmd1.set_turnLight_R = true;
-		else if(path_points_[nearest_point_index_].other_info == 3)
-		{
-			gps_controlCmd_.cmd1.set_turnLight_R = false;
-			gps_controlCmd_.cmd1.set_turnLight_L = false;
 		}
 		
 		float _temp_limit_speed = 30.0;
@@ -254,7 +254,10 @@ void PathTracking::run()
 					_temp_limit_speed = 0.0;
 				}
 				else if(ros::Time::now().toSec() - temp_stop_time > 30)   //stop time
+				{
 					_temp_limit_speed = 20.0;
+					gps_controlCmd_.cmd1.set_turnLight_L = true;
+				}	
 				else
 					_temp_limit_speed = 0.0;
 				break;

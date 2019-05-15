@@ -205,6 +205,13 @@ void markScene(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endInde
 	}
 }
 
+void setTurnLight(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endIndex, uint8_t status)
+{
+	for(size_t i=startIndex; i<endIndex; i++)
+		path_points_xy[i].other_info = status ;
+}
+
+
 void pathOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offset)
 {
 	size_t A_index = findIndexByDis(path_points_xy,nearest_index,50.0,false);//down
@@ -224,18 +231,32 @@ void pathOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offs
 		float true_offset = offset*(i-A_index)/(B_index-A_index);
 		pointOffset(path_points_xy[i],true_offset);  /////offset
 		path_points_xy[i].other_info = 2;//right light on
+		path_points_xy[i].traffic_sign = TrafficSign_PickUp;
 		
 	}
 	for(size_t i=B_index; i<C_index; i++)
 	{
 		pointOffset(path_points_xy[i],offset);  /////offset
 		path_points_xy[i].other_info = 3;//light down
+		
+		float percentage = 1.0*(i-B_index)/(C_index-B_index);
+		
+		if(percentage > 0.3)
+			path_points_xy[i].traffic_sign = TrafficSign_Stop;
+		else
+			path_points_xy[i].traffic_sign = TrafficSign_PickUp;
+		
 	}
 	for(size_t i=C_index; i<D_index; i++)
 	{
 		float true_offset = offset - offset*(i-C_index)/(D_index-C_index);
 		pointOffset(path_points_xy[i],true_offset);  /////offset
-		path_points_xy[i].other_info = 1;//left light on
+		
+		float percentage = 1.0*(i-C_index)/(D_index-C_index);
+		if(percentage < 0.7)
+			path_points_xy[i].other_info = 1;//left light on
+		else
+			path_points_xy[i].other_info = 3;//light down
 	}
 }
 
@@ -244,15 +265,35 @@ int main()
 {
 	vector<gpsMsg_t> path_points_xy;
 	
-	loadPathPoints("../_path515.txt",path_points_xy,_XY); //x,y
+	loadPathPoints("../_end1.txt",path_points_xy,_XY); //x,y
 	
 	cout << "size:" << path_points_xy.size() <<endl;
 	
-	pathOffset(path_points_xy,200,3.0);  // points index offset
+	setTurnLight(path_points_xy,177,390,1);
+	setTurnLight(path_points_xy,390,450,3);
+	
+	markScene(path_points_xy,490,847,TrafficSign_CarFollow);
+	markScene(path_points_xy,976,1060,TrafficSign_IllegalPedestrian);
+	setTurnLight(path_points_xy,1100,1250,1);
+	markScene(path_points_xy,1100,1150,TrafficSign_TurnLeft);
+	markScene(path_points_xy,1150,1250,TrafficSign_NoTrafficLight);
+	setTurnLight(path_points_xy,1250,1300,3);
+	
+	pathOffset(path_points_xy,1336,2.8); //pickup
+	markScene(path_points,1400,1570,TrafficSign_Ambulance);
+	markScene
+	
+	
+	
+	
+	markScene(path_points_xy,)
+	
+	
+	pathOffset(path_points_xy,1620,2.5);  // points index offset
 	
 	//pathOffset(path_points_xy,1000,10.0);
 	
-	markScene(path_points_xy,100,200,TrafficSign_Ambulance);
+	//markScene(path_points_xy,100,200,TrafficSign_Ambulance);
 	
 	
 	dumpPathPoints("../final.txt",path_points_xy);
