@@ -9,7 +9,7 @@
 	
 	<arg name="pathTracking_file_name" default="b.txt"/>
 	
-	<arg name="max_speed"  default="30.0"/>
+	<arg name="max_speed"  default="20.0"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">

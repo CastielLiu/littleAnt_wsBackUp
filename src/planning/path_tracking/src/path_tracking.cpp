@@ -76,10 +76,10 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	ROS_INFO("pathPoints size:%d",path_points_.size());
 	
-	for(size_t i=0; i< path_points_.size();i++ )
+	/*for(size_t i=0; i< path_points_.size();i++ )
 	{
 	  std::cout <<path_points_[i].x <<"\t " <<path_points_[i].y <<std::endl;
-	}
+	}*/
 	
 	while(ros::ok() && !is_gps_data_valid(current_point_))
 	{
@@ -181,48 +181,69 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
 		}
 		
+		if(path_points_[nearest_point_index_].other_info == 1)
+			gps_controlCmd_.cmd1.set_turnLight_L = true;
+		else if(path_points_[nearest_point_index_].other_info == 2)
+			gps_controlCmd_.cmd1.set_turnLight_R = true;
+		else if(path_points_[nearest_point_index_].other_info == 3)
+		{
+			gps_controlCmd_.cmd1.set_turnLight_R = false;
+			gps_controlCmd_.cmd1.set_turnLight_L = false;
+		}
+		
 		float _temp_limit_speed = 30.0;
 		static bool is_stop = false;
 		static double temp_stop_time;
 		
 		switch(path_points_[nearest_point_index_].traffic_sign)
 		{
+			case TrafficSign_None:
+				break;
+				
 			case TrafficSign_TrafficLight:
 				if(!is_trafficLight_green_)
 					_temp_limit_speed = 0.0;
 				break;
 				
-			case TrafficSign_None:
-			case TrafficSign_CarFollow:
+			case TrafficSign_Avoid:
+				_temp_limit_speed = 15.0;
 				break;
-			case TrafficSign_IllegalPedestrian:
+				
+			case TrafficSign_TurnLeft:
 				_temp_limit_speed = 15.0;
 				break;
 			
-			case TrafficSign_TurnLeft:
-				gps_controlCmd_.cmd1.set_turnLight_L = true;
+			case TrafficSign_CarFollow:
+				break;
+				
+			case TrafficSign_LaneNarrow:
 				_temp_limit_speed = 20.0;
 				break;
 			
-			case TrafficSign_NoTrafficLight:
-				gps_controlCmd_.cmd1.set_turnLight_L = true;
-				_temp_limit_speed = 13.0;
+			case TrafficSign_IllegalPedestrian:
+				_temp_limit_speed = 15.0;
 				break;
 				
-			case TrafficSign_UTurn:
-				gps_controlCmd_.cmd1.set_turnLight_L = true;
-				_temp_limit_speed = 5.0;
-				is_stop = false;
-				break;
-			case TrafficSign_TurnRight:
-				_temp_limit_speed = 15.0;
-				gps_controlCmd_.cmd1.set_turnLight_R = true;
+			case TrafficSign_NoTrafficLight:
+				_temp_limit_speed = 10.0;
 				break;
 				
 			case TrafficSign_PickUp:
+				_temp_limit_speed = 15.0;
+				break;
+			
+			case TrafficSign_Ambulance:
+				_temp_limit_speed = 15.0;
+				is_stop = false;
+				break;
+				
+			case TrafficSign_Railway:
+				_temp_limit_speed = 15.0;
+				is_stop = false;
+				break;
+			
 			case TrafficSign_TempStop:
-				gps_controlCmd_.cmd1.set_turnLight_R = true;
-				_temp_limit_speed = 13.0;
+				_temp_limit_speed = 15.0;
 				break;
 				
 			case TrafficSign_Stop:
@@ -231,41 +252,54 @@ void PathTracking::run()
 					temp_stop_time = ros::Time::now().toSec();
 					is_stop = true;
 					_temp_limit_speed = 0.0;
-					gps_controlCmd_.cmd1.set_turnLight_R = false;
 				}
-				else if(ros::Time::now().toSec() - temp_stop_time > 30)
-				{
+				else if(ros::Time::now().toSec() - temp_stop_time > 30)   //stop time
 					_temp_limit_speed = 20.0;
-					gps_controlCmd_.cmd1.set_turnLight_L = true;
-				}
 				else
 					_temp_limit_speed = 0.0;
-					
-				break;
-			case TrafficSign_StopArea:
-				_temp_limit_speed = 0.0;
-				gps_controlCmd_.cmd1.set_turnLight_R = false;
 				break;
 				
-			case TrafficSign_CloseTurnLight:
-				gps_controlCmd_.cmd1.set_turnLight_L = false;
-				gps_controlCmd_.cmd1.set_turnLight_R = false;
-				_temp_limit_speed = 20.0;
-				is_stop = false;
+			case TrafficSign_UTurn:
+				gps_controlCmd_.cmd1.set_turnLight_L = true;
+				_temp_limit_speed = 5.0;
 				break;
+				
+			case TrafficSign_School:
+				_temp_limit_speed = 20.0;
+				break;
+				
+			case TrafficSign_AvoidStartingCar:
+				_temp_limit_speed = 20.0;
+				break;
+				
+			case TrafficSign_OffDutyPerson:
+				_temp_limit_speed = 15.0;
+				break;
+				
+			case TrafficSign_Bridge:
+				_temp_limit_speed = 15.0;
+				break;
+				
 			case TrafficSign_AccidentArea:
-				//gps_controlCmd_.cmd1.set_turnLight_L = false;
-				//gps_controlCmd_.cmd1.set_turnLight_R = false;
-				_temp_limit_speed = 20.0;
-				break;
-			
-			case TrafficSign_Railway :
 				_temp_limit_speed = 15.0;
 				break;
 			
-			default :
+			case TrafficSign_JamArea:
+				_temp_limit_speed = 15.0;
+				break;
+				
+			case TrafficSign_BusStop:
 				_temp_limit_speed = 20.0;
 				break;
+			
+			case TrafficSign_NonVehicle:
+				_temp_limit_speed = 15.0;
+				break;
+				
+			case TrafficSign_StopArea:
+				_temp_limit_speed = 0.0;
+				break;
+				
 		}
 		
 		//ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
@@ -304,14 +338,14 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 	size_t index = 0;
 	float min_dis = FLT_MAX;
 	float dis;
-	ROS_ERROR("size:%d",path_points.size());
+	//ROS_ERROR("size:%d",path_points.size());
 	
 	for(size_t i=0; i<path_points.size(); )
 	{
 		dis = dis2Points(path_points[i],current_point);
-		ROS_INFO("i=%d\t dis:%f",i,dis);
-		ROS_INFO("path_points[%d] x:%lf\t y:%lf",i,path_points[i].x,path_points[i].y);
-		ROS_INFO("current_point  x:%lf\t y:%lf",current_point.x,current_point.y);
+		//ROS_INFO("i=%d\t dis:%f",i,dis);
+		//ROS_INFO("path_points[%d] x:%lf\t y:%lf",i,path_points[i].x,path_points[i].y);
+		//ROS_INFO("current_point  x:%lf\t y:%lf",current_point.x,current_point.y);
 		if(dis < min_dis)
 		{
 			min_dis = dis;

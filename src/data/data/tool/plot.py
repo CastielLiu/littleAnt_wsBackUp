@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import sys
 
 
 class Points:
@@ -73,9 +74,10 @@ class Points:
 		
 
 			
-def plot():
+def plot(file_name):
 	path_points = Points()
-	path_points.load('../result/b.txt')
+	file_name = "../result/" + file_name
+	path_points.load(file_name)
 	#path_points.calculateCurvature()
 	#path_points.curvatureFilter(15)
 	
@@ -109,13 +111,7 @@ def plot():
 
 	plt.show()
 
-
-
-def main():
-	plot()
-
-
-
-
-if __name__ == '__main__':
-	main()
+if(len(sys.argv) == 1):
+	plot('b.txt')
+else:
+	plot(sys.argv[1])

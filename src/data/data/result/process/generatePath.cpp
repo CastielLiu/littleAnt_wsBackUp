@@ -27,6 +27,37 @@ typedef struct
 	
 }gpsMsg_t;
 
+enum traffic_sign_t
+{
+	TrafficSign_None = 0,
+	TrafficSign_TrafficLight =1,
+	TrafficSign_Avoid = 2,
+	TrafficSign_TurnLeft = 3,
+	TrafficSign_CarFollow = 4,
+	TrafficSign_LaneNarrow = 5,
+	TrafficSign_IllegalPedestrian = 6,
+	TrafficSign_NoTrafficLight = 7,
+	TrafficSign_PickUp = 8,
+	TrafficSign_Ambulance = 9,
+	TrafficSign_Railway = 10,
+	TrafficSign_TempStop = 11,
+	TrafficSign_UTurn = 12,
+	TrafficSign_School = 13,
+	TrafficSign_AvoidStartingCar = 14,
+	TrafficSign_OffDutyPerson = 15,
+	TrafficSign_Bridge = 16,
+	TrafficSign_AccidentArea = 17,
+	TrafficSign_JamArea = 18,
+	TrafficSign_BusStop = 19,
+	TrafficSign_NonVehicle = 20,
+	TrafficSign_StopArea = 21, 
+	
+	TrafficSign_CloseTurnLight = 22,
+	TrafficSign_TurnRight = 23,
+	TrafficSign_Stop = 24,
+};
+
+
 bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points,bool is_lon_lat)
 {
 	FILE *fp = fopen(file_path.c_str(),"r");
@@ -130,15 +161,14 @@ void pathPointsProcess(std::vector<gpsMsg_t>& path_points)
 	for(size_t i=0; i<path_points.size(); i++)
 	{
 		;
-	
-	
-	
 	}
 
 }
 
 void pointOffset(gpsMsg_t& point,float offset)
 {
+	if(offset == 0)
+		return;
 	point.x =  offset * cos(point.yaw) + point.x;
 	point.y = -offset * sin(point.yaw) + point.y;
 }
@@ -167,44 +197,65 @@ size_t findIndexByDis(const vector<gpsMsg_t>& path_points,size_t currentIndex, f
 	return 0;
 }
 
+void markScene(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endIndex,traffic_sign_t scene)
+{
+	for(size_t i=startIndex; i<endIndex; i++)
+	{
+		path_points_xy[i].traffic_sign = scene;
+	}
+}
+
+void pathOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offset)
+{
+	size_t A_index = findIndexByDis(path_points_xy,nearest_index,50.0,false);//down
+	size_t B_index = findIndexByDis(path_points_xy,nearest_index,20.0,false); //down
+	size_t C_index = findIndexByDis(path_points_xy,nearest_index,20.0,true);//up
+	size_t D_index = findIndexByDis(path_points_xy,nearest_index,50.0,true); //up
+	
+
+	cout << "nearest_index:"<< nearest_index <<"\t "
+		 << "A_index:" <<A_index <<"\t"
+		  << "B_index:" <<B_index <<"\t"
+		   << "C_index:" <<C_index <<"\t"
+		    << "D_index:" <<D_index <<"\t";
+	
+	for(size_t i=A_index; i<B_index; i++)
+	{
+		float true_offset = offset*(i-A_index)/(B_index-A_index);
+		pointOffset(path_points_xy[i],true_offset);  /////offset
+		path_points_xy[i].other_info = 2;//right light on
+		
+	}
+	for(size_t i=B_index; i<C_index; i++)
+	{
+		pointOffset(path_points_xy[i],offset);  /////offset
+		path_points_xy[i].other_info = 3;//light down
+	}
+	for(size_t i=C_index; i<D_index; i++)
+	{
+		float true_offset = offset - offset*(i-C_index)/(D_index-C_index);
+		pointOffset(path_points_xy[i],true_offset);  /////offset
+		path_points_xy[i].other_info = 1;//left light on
+	}
+}
+
 
 int main()
 {
 	vector<gpsMsg_t> path_points_xy;
-	vector<gpsMsg_t> path_points_lonlat;
 	
-	loadPathPoints("_path515.txt",path_points_xy,_XY); //x,y
-	//loadPathPoints("test.txt",path_points_xy,_XY); //x,y
-	loadPathPoints("path515_lonlat.txt",path_points_lonlat,_LATLON); //lon lat
+	loadPathPoints("../_path515.txt",path_points_xy,_XY); //x,y
 	
-	//cout << "size:" << path_points_xy.size() << "\t"<< path_points_lonlat.size()<<endl;
-	/*
-	gpsMsg_t pointA;
-	pointA.x = 530384.784996;	
-	pointA.y = 4324070.80623;
-
-	size_t nearest_index = findNearestPointIndex(path_points_xy,pointA,_XY);  //nearest index
-	size_t end_index = findIndexByDis(path_points_xy,nearest_index,10.0,true);
-	size_t start_index = findIndexByDis(path_points_xy,nearest_index,10.0,false);
-	*/
+	cout << "size:" << path_points_xy.size() <<endl;
 	
-	gpsMsg_t point_lonlat;
-	point_lonlat.latitude = 117.;
-	point_lonlat.longitude = 31.;
+	pathOffset(path_points_xy,200,3.0);  // points index offset
 	
-	size_t nearest_index = findNearestPointIndex(path_points_lonlat, point_lonlat,_LATLON);  //nearest index
-	size_t end_index = findIndexByDis(path_points_xy,nearest_index,10.0,true); //up
-	size_t start_index = findIndexByDis(path_points_xy,nearest_index,10.0,false); //down
+	//pathOffset(path_points_xy,1000,10.0);
 	
-	cout << "nearest_index:"<< nearest_index <<"\t start_index:"<<start_index <<"\t end_index:"<<end_index<<endl;
+	markScene(path_points_xy,100,200,TrafficSign_Ambulance);
 	
-	for(size_t i=start_index;i<=end_index;i++)
-	{
-		pointOffset(path_points_xy[i],2.5);  /////offset
-		cout << i <<endl;
-	}
 	
-	dumpPathPoints("b.txt",path_points_xy);
+	dumpPathPoints("../final.txt",path_points_xy);
 	
 	return 0;
 	

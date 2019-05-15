@@ -43,7 +43,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points,bool is_
 	while(!feof(fp))
 	{
 		if(is_lon_lat == _LATLON)
-			fscanf(fp,"%lf\t%lf\n",&point.longitude,&point.latitude);
+			fscanf(fp,"%lf\t%lf\n",&point.latitude,&point.longitude);
 		else
 		{
 			fscanf(fp,"%lf\t%lf\t%lf\t%f\t%f\t%f\t%d\t%d\n",&point.x,&point.y,&point.yaw,&point.curvature,
@@ -173,38 +173,22 @@ int main()
 	vector<gpsMsg_t> path_points_xy;
 	vector<gpsMsg_t> path_points_lonlat;
 	
-	loadPathPoints("_path515.txt",path_points_xy,_XY); //x,y
+	loadPathPoints("../_path515.txt",path_points_xy,_XY); //x,y
 	//loadPathPoints("test.txt",path_points_xy,_XY); //x,y
-	loadPathPoints("path515_lonlat.txt",path_points_lonlat,_LATLON); //lon lat
+	loadPathPoints("../path515_lonlat.txt",path_points_lonlat,_LATLON); //lon lat
 	
-	//cout << "size:" << path_points_xy.size() << "\t"<< path_points_lonlat.size()<<endl;
-	/*
-	gpsMsg_t pointA;
-	pointA.x = 530384.784996;	
-	pointA.y = 4324070.80623;
-
-	size_t nearest_index = findNearestPointIndex(path_points_xy,pointA,_XY);  //nearest index
-	size_t end_index = findIndexByDis(path_points_xy,nearest_index,10.0,true);
-	size_t start_index = findIndexByDis(path_points_xy,nearest_index,10.0,false);
-	*/
+	cout << "size:" << path_points_xy.size() << "\t"<< path_points_lonlat.size()<<endl;
+	
 	
 	gpsMsg_t point_lonlat;
-	point_lonlat.latitude = 117.;
-	point_lonlat.longitude = 31.;
+	point_lonlat.latitude = 39.06493551; ///////////////
+	point_lonlat.longitude = 117.35140154; //////////////
 	
 	size_t nearest_index = findNearestPointIndex(path_points_lonlat, point_lonlat,_LATLON);  //nearest index
-	size_t end_index = findIndexByDis(path_points_xy,nearest_index,10.0,true); //up
-	size_t start_index = findIndexByDis(path_points_xy,nearest_index,10.0,false); //down
 	
-	cout << "nearest_index:"<< nearest_index <<"\t start_index:"<<start_index <<"\t end_index:"<<end_index<<endl;
+	cout << "nearest_index:"<< nearest_index <<endl;
 	
-	for(size_t i=start_index;i<=end_index;i++)
-	{
-		pointOffset(path_points_xy[i],2.5);  /////offset
-		cout << i <<endl;
-	}
 	
-	dumpPathPoints("b.txt",path_points_xy);
 	
 	return 0;
 	
