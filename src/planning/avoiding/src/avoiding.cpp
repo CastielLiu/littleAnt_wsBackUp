@@ -480,7 +480,8 @@ inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::Bounding
 inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
 					const float dis2vehicleArray[],const size_t indexArray[],const float dis2pathArray[],const int& n_object)
 {
-	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
+	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn ||
+	   nearest_point_index_ > 4210)
 		return false;
 		
 	float safety_center_distance_x; //the safety distance along x axis

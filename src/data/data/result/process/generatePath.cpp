@@ -269,34 +269,43 @@ int main()
 	
 	cout << "size:" << path_points_xy.size() <<endl;
 	
-	markScene(path_points_xy,200,400,TrafficSign_Avoid);
+	markScene(path_points_xy,240,400,TrafficSign_Avoid);
 	
-	setTurnLight(path_points_xy,260,390,1);
-	setTurnLight(path_points_xy,390,450,3);
+	markScene(path_points_xy,400,560,TrafficSign_TurnRight);
+	
+	setTurnLight(path_points_xy,320,450,1);
+	setTurnLight(path_points_xy,495,620,3);
 	
 	markScene(path_points_xy,600,900,TrafficSign_CarFollow);
 	
-	pathOffset(path_points_xy,1047,2.8);
+	//pathOffset(path_points_xy,1047,2.8);
 	
 	markScene(path_points_xy,1060,1120,TrafficSign_IllegalPedestrian);
-	setTurnLight(path_points_xy,1158,1400,1);
+	setTurnLight(path_points_xy,1158,1320,1);
 	
 	markScene(path_points_xy,1300,1380,TrafficSign_NoTrafficLight);
 
-	setTurnLight(path_points_xy,1400,1450,3);
+	setTurnLight(path_points_xy,1364,1450,3);
 	
 	pathOffset(path_points_xy,1452,2.8); //pickup  1457->1452
+	
+	markScene(path_points_xy,1500,1560,TrafficSign_LaneNarrow);  //////////////
+	
+	
 	
 	markScene(path_points_xy,1550,1700,TrafficSign_Ambulance);
 	markScene(path_points_xy,1800,1900,TrafficSign_Railway);
 	
-	pathOffset(path_points_xy,1960,2.8); //stop temp   1970-> 1960
+	pathOffset(path_points_xy,1965,2.8); //stop temp   1970-> 1960 -> 1765
+	
+	markScene(path_points_xy,1965,2150,TrafficSign_LaneNarrow); 
 	
 	setTurnLight(path_points_xy,2020,2080,2);
 	setTurnLight(path_points_xy,2080,2110,3);
 	
 	setTurnLight(path_points_xy,2150,2300,1);
 	markScene(path_points_xy,2150,2300,TrafficSign_UTurn);
+	setTurnLight(path_points_xy,2280,2400,3);
 	
 	markScene(path_points_xy,2520,2740,TrafficSign_School);
 	
@@ -306,9 +315,13 @@ int main()
 	
 	markScene(path_points_xy,2990,3116,TrafficSign_Bridge);
 	
-	setTurnLight(path_points_xy,3116,3250,2);
-	setTurnLight(path_points_xy,3250,3300,3);
+	setTurnLight(path_points_xy,3116,3230,2);
+	setTurnLight(path_points_xy,3190,3250,3);
 	markScene(path_points_xy,3116,3340,TrafficSign_JamArea);
+	
+	setTurnLight(path_points_xy,3250,3330,1);
+	setTurnLight(path_points_xy,3330,3399,3);
+	
 	
 	markScene(path_points_xy,3340,3457,TrafficSign_AccidentArea);
 	

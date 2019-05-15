@@ -212,12 +212,16 @@ void PathTracking::run()
 			case TrafficSign_TurnLeft:
 				_temp_limit_speed = 15.0;
 				break;
+				
+			case TrafficSign_TurnRight:
+				_temp_limit_speed = 15.0;
+				break;
 			
 			case TrafficSign_CarFollow:
 				break;
 				
 			case TrafficSign_LaneNarrow:
-				_temp_limit_speed = 20.0;
+				_temp_limit_speed = 16.0;
 				break;
 			
 			case TrafficSign_IllegalPedestrian:
