@@ -186,6 +186,11 @@ void PathTracking::run()
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
 				_temp_limit_speed = 20.0;
 				break;
+			
+			case TrafficSign_NoTrafficLight:
+				gps_controlCmd_.cmd1.set_turnLight_L = true;
+				_temp_limit_speed = 13.0;
+				break;
 				
 			case TrafficSign_UTurn:
 				gps_controlCmd_.cmd1.set_turnLight_L = true;
@@ -222,6 +227,7 @@ void PathTracking::run()
 				break;
 			case TrafficSign_StopArea:
 				_temp_limit_speed = 0.0;
+				gps_controlCmd_.cmd1.set_turnLight_R = false;
 				break;
 				
 			case TrafficSign_CloseTurnLight:
@@ -231,8 +237,8 @@ void PathTracking::run()
 				is_stop = false;
 				break;
 			case TrafficSign_AccidentArea:
-				gps_controlCmd_.cmd1.set_turnLight_L = false;
-				gps_controlCmd_.cmd1.set_turnLight_R = false;
+				//gps_controlCmd_.cmd1.set_turnLight_L = false;
+				//gps_controlCmd_.cmd1.set_turnLight_R = false;
 				_temp_limit_speed = 20.0;
 				break;
 			
