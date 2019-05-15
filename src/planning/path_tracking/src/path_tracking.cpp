@@ -206,7 +206,7 @@ void PathTracking::run()
 				break;
 				
 			case TrafficSign_Avoid:
-				_temp_limit_speed = 15.0;
+				_temp_limit_speed = 10.0;
 				break;
 				
 			case TrafficSign_TurnLeft:
@@ -304,6 +304,9 @@ void PathTracking::run()
 				break;
 				
 		}
+		
+		if(nearest_point_index_ > 4210)
+			_temp_limit_speed = 5.0;
 		
 		//ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
 		

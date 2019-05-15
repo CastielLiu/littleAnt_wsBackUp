@@ -83,7 +83,8 @@ void Avoiding::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& ms
 	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
 	
 	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_PickUp ||
-		path_points_[nearest_point_index_].traffic_sign == TrafficSign_TempStop)
+		path_points_[nearest_point_index_].traffic_sign == TrafficSign_TempStop ||
+		path_points_[nearest_point_index_].traffic_sign == TrafficSign_Avoid )
 		danger_distance_front_ = 1.6;
 		
 	static int i=0;
@@ -202,7 +203,8 @@ void Avoiding::objects_callback(const jsk_recognition_msgs::BoundingBoxArray::Co
 	}
 	else if(path_points_[nearest_point_index_].traffic_sign != TrafficSign_PickUp &&
 		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_TempStop &&
-		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_UTurn)
+		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_UTurn &&
+		   path_points_[nearest_point_index_].traffic_sign != TrafficSign_Avoid)
 	{
 		//dis2vehicleArray was sorted but dis2pathArray not!
 		decision(objects, dis2vehicleArray,indexArray, dis2pathArray,n_object);

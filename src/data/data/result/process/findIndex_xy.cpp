@@ -181,8 +181,8 @@ int main()
 	
 	
 	gpsMsg_t pointA;
-	pointA.x = 531351.784;	
-	pointA.y = 4323554.707;
+	pointA.x = 531022.285;	
+	pointA.y = 4323499.505;
 
 	size_t nearest_index = findNearestPointIndex(path_points_xy,pointA,_XY);  //nearest index
 	

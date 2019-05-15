@@ -265,35 +265,65 @@ int main()
 {
 	vector<gpsMsg_t> path_points_xy;
 	
-	loadPathPoints("../_end1.txt",path_points_xy,_XY); //x,y
+	loadPathPoints("../_end3.txt",path_points_xy,_XY); //x,y
 	
 	cout << "size:" << path_points_xy.size() <<endl;
 	
-	setTurnLight(path_points_xy,177,390,1);
+	markScene(path_points_xy,200,400,TrafficSign_Avoid);
+	
+	setTurnLight(path_points_xy,260,390,1);
 	setTurnLight(path_points_xy,390,450,3);
 	
-	markScene(path_points_xy,490,847,TrafficSign_CarFollow);
-	markScene(path_points_xy,976,1060,TrafficSign_IllegalPedestrian);
-	setTurnLight(path_points_xy,1100,1250,1);
-	markScene(path_points_xy,1100,1150,TrafficSign_TurnLeft);
-	markScene(path_points_xy,1150,1250,TrafficSign_NoTrafficLight);
-	setTurnLight(path_points_xy,1250,1300,3);
+	markScene(path_points_xy,600,900,TrafficSign_CarFollow);
 	
-	pathOffset(path_points_xy,1336,2.8); //pickup
-	markScene(path_points,1400,1570,TrafficSign_Ambulance);
-	markScene
+	pathOffset(path_points_xy,1047,2.8);
 	
+	markScene(path_points_xy,1060,1120,TrafficSign_IllegalPedestrian);
+	setTurnLight(path_points_xy,1158,1400,1);
 	
+	markScene(path_points_xy,1300,1380,TrafficSign_NoTrafficLight);
+
+	setTurnLight(path_points_xy,1400,1450,3);
 	
+	pathOffset(path_points_xy,1452,2.8); //pickup  1457->1452
 	
-	markScene(path_points_xy,)
+	markScene(path_points_xy,1550,1700,TrafficSign_Ambulance);
+	markScene(path_points_xy,1800,1900,TrafficSign_Railway);
 	
+	pathOffset(path_points_xy,1960,2.8); //stop temp   1970-> 1960
 	
-	pathOffset(path_points_xy,1620,2.5);  // points index offset
+	setTurnLight(path_points_xy,2020,2080,2);
+	setTurnLight(path_points_xy,2080,2110,3);
 	
-	//pathOffset(path_points_xy,1000,10.0);
+	setTurnLight(path_points_xy,2150,2300,1);
+	markScene(path_points_xy,2150,2300,TrafficSign_UTurn);
 	
-	//markScene(path_points_xy,100,200,TrafficSign_Ambulance);
+	markScene(path_points_xy,2520,2740,TrafficSign_School);
+	
+	setTurnLight(path_points_xy,2769,2950,2);
+	setTurnLight(path_points_xy,2950,3000,3);
+	markScene(path_points_xy,2790,2940,TrafficSign_OffDutyPerson);
+	
+	markScene(path_points_xy,2990,3116,TrafficSign_Bridge);
+	
+	setTurnLight(path_points_xy,3116,3250,2);
+	setTurnLight(path_points_xy,3250,3300,3);
+	markScene(path_points_xy,3116,3340,TrafficSign_JamArea);
+	
+	markScene(path_points_xy,3340,3457,TrafficSign_AccidentArea);
+	
+	markScene(path_points_xy,3647,3780,TrafficSign_BusStop);
+	
+	setTurnLight(path_points_xy,3780,3950,2);
+	
+	setTurnLight(path_points_xy,3950,4000,3);
+	
+	markScene(path_points_xy,3850,3950,TrafficSign_TurnRight);
+	setTurnLight(path_points_xy,4110,4368,2);
+	setTurnLight(path_points_xy,4300,4368,3);
+	
+	markScene(path_points_xy,4220,4368,TrafficSign_TempStop);
+	
 	
 	
 	dumpPathPoints("../final.txt",path_points_xy);
