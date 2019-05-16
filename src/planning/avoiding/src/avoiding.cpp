@@ -334,8 +334,12 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	try_offest[0] += offset_msg_.data;
 	try_offest[1] += offset_msg_.data;
 	
-	if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AccidentArea ||
-	   path_points_[nearest_point_index_].traffic_sign ==TrafficSign_JamArea)
+	if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_AccidentArea)
+	{
+		maxOffset_left_ = 0.0;
+		maxOffset_right_ =0.0;
+	} 
+	else if(path_points_[nearest_point_index_].traffic_sign ==TrafficSign_JamArea)
 	{
 		maxOffset_left_ = -3.5;
 		maxOffset_right_= 3.5;

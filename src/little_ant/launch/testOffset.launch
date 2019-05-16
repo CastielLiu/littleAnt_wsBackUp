@@ -31,7 +31,6 @@
 		<param name="danger_distance_side" value="0.25"/>
 		
 		<param name="max_deceleration" value="5.0" />
-
 		
 	</node>
 

@@ -9,6 +9,8 @@ using namespace std;
 #define _XY 0
 #define _LATLON 1
 
+#define OFFSET 200
+
 typedef struct
 {
 	double longitude;
@@ -199,7 +201,7 @@ size_t findIndexByDis(const vector<gpsMsg_t>& path_points,size_t currentIndex, f
 
 void markScene(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endIndex,traffic_sign_t scene)
 {
-	for(size_t i=startIndex; i<endIndex; i++)
+	for(size_t i=startIndex+OFFSET; i<endIndex+OFFSET; i++)
 	{
 		path_points_xy[i].traffic_sign = scene;
 	}
@@ -207,13 +209,14 @@ void markScene(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endInde
 
 void setTurnLight(vector<gpsMsg_t>& path_points_xy,size_t startIndex,size_t endIndex, uint8_t status)
 {
-	for(size_t i=startIndex; i<endIndex; i++)
+	for(size_t i=startIndex+OFFSET; i<endIndex+OFFSET; i++)
 		path_points_xy[i].other_info = status ;
 }
 
 
 void pathOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offset)
 {
+	nearest_index += OFFSET; 
 	size_t A_index = findIndexByDis(path_points_xy,nearest_index,50.0,false);//down
 	size_t B_index = findIndexByDis(path_points_xy,nearest_index,20.0,false); //down
 	size_t C_index = findIndexByDis(path_points_xy,nearest_index,20.0,true);//up
@@ -260,6 +263,38 @@ void pathOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offs
 	}
 }
 
+void pathOffset_justOffset(vector<gpsMsg_t>& path_points_xy,size_t nearest_index,float offset)
+{
+	size_t A_index = findIndexByDis(path_points_xy,nearest_index,50.0,false);//down
+	size_t B_index = findIndexByDis(path_points_xy,nearest_index,20.0,false); //down
+	size_t C_index = findIndexByDis(path_points_xy,nearest_index,20.0,true);//up
+	size_t D_index = findIndexByDis(path_points_xy,nearest_index,50.0,true); //up
+
+	
+	for(size_t i=A_index; i<B_index; i++)
+	{
+		float true_offset = offset*(i-A_index)/(B_index-A_index);
+		pointOffset(path_points_xy[i],true_offset);  /////offset
+		path_points_xy[i].other_info = 2;//right light on
+		path_points_xy[i].traffic_sign = TrafficSign_LaneNarrow;
+		
+	}
+	for(size_t i=B_index; i<C_index; i++)
+	{
+		pointOffset(path_points_xy[i],offset);  /////offset
+		path_points_xy[i].other_info = 3;//light down
+	
+		path_points_xy[i].traffic_sign = TrafficSign_LaneNarrow;
+		
+	}
+	for(size_t i=C_index; i<D_index; i++)
+	{
+		float true_offset = offset - offset*(i-C_index)/(D_index-C_index);
+		pointOffset(path_points_xy[i],true_offset);  /////offset
+		
+	}
+}
+
 
 int main()
 {
@@ -283,14 +318,15 @@ int main()
 	markScene(path_points_xy,1060,1120,TrafficSign_IllegalPedestrian);
 	setTurnLight(path_points_xy,1158,1320,1);
 	
+	pathOffset_justOffset(path_points_xy,1215,2.8); //++++
+	
 	markScene(path_points_xy,1300,1380,TrafficSign_NoTrafficLight);
 
 	setTurnLight(path_points_xy,1364,1450,3);
 	
 	pathOffset(path_points_xy,1452,2.8); //pickup  1457->1452
 	
-	markScene(path_points_xy,1500,1560,TrafficSign_LaneNarrow);  //////////////
-	
+	markScene(path_points_xy,1520,1560,TrafficSign_LaneNarrow);  //////////////slow down
 	
 	
 	markScene(path_points_xy,1550,1700,TrafficSign_Ambulance);
@@ -298,7 +334,7 @@ int main()
 	
 	pathOffset(path_points_xy,1965,2.8); //stop temp   1970-> 1960 -> 1765
 	
-	markScene(path_points_xy,1965,2150,TrafficSign_LaneNarrow); 
+	markScene(path_points_xy,2050,2150,TrafficSign_LaneNarrow); ////////////
 	
 	setTurnLight(path_points_xy,2020,2080,2);
 	setTurnLight(path_points_xy,2080,2110,3);
@@ -311,19 +347,18 @@ int main()
 	
 	setTurnLight(path_points_xy,2769,2950,2);
 	setTurnLight(path_points_xy,2950,3000,3);
-	markScene(path_points_xy,2790,2940,TrafficSign_OffDutyPerson);
+	markScene(path_points_xy,2790,2940,TrafficSign_IllegalPedestrian);
 	
 	markScene(path_points_xy,2990,3116,TrafficSign_Bridge);
 	
 	setTurnLight(path_points_xy,3116,3230,2);
 	setTurnLight(path_points_xy,3190,3250,3);
-	markScene(path_points_xy,3116,3340,TrafficSign_JamArea);
+	markScene(path_points_xy,3116,3340,TrafficSign_AccidentArea);
 	
 	setTurnLight(path_points_xy,3250,3330,1);
 	setTurnLight(path_points_xy,3330,3399,3);
 	
-	
-	markScene(path_points_xy,3340,3457,TrafficSign_AccidentArea);
+	markScene(path_points_xy,3250,3457,TrafficSign_JamArea);
 	
 	markScene(path_points_xy,3647,3780,TrafficSign_BusStop);
 	
@@ -331,7 +366,11 @@ int main()
 	
 	setTurnLight(path_points_xy,3950,4000,3);
 	
-	markScene(path_points_xy,3850,3950,TrafficSign_TurnRight);
+	pathOffset_justOffset(path_points_xy,3950,2.8);
+	
+	markScene(path_points_xy,3800,3950,TrafficSign_TurnRight);
+	
+	
 	setTurnLight(path_points_xy,4110,4368,2);
 	setTurnLight(path_points_xy,4300,4368,3);
 	
