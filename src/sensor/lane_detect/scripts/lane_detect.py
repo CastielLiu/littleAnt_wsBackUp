@@ -23,6 +23,8 @@ def abs_sobel_thresh(img,orient='x',thresh_min=0,thresh_max=255):
         abs_sobel = np.absolute(cv2.Sobel(gray,cv2.CV_64F,1,0))
     if orient =='y':
         abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1))
+        
+    
     scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
     binary_output = np.zeros_like(scaled_sobel)
     
@@ -119,71 +121,71 @@ class Line():
 #----------------------------------------------------------------------------#
 
 def find_line(binary_warped):
-    # Take a histogram of the bottom half of the image
-    histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0)
-    # Find the peak of the left and right halves of the histogram
-    # These will be the starting point for the left and right lines
-    midpoint = np.int(histogram.shape[0] / 2)
-    leftx_base = np.argmax(histogram[:midpoint])
-    rightx_base = np.argmax(histogram[midpoint:]) + midpoint
+	# Take a histogram of the bottom half of the image
+	histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
+	# Find the peak of the left and right halves of the histogram
+	# These will be the starting point for the left and right lines
+	midpoint = np.int(histogram.shape[0] / 2)
+	leftx_base = np.argmax(histogram[:midpoint])
+	rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 
-    # Choose the number of sliding windows
-    nwindows = 9
-    # Set height of windows
-    window_height = np.int(binary_warped.shape[0] / nwindows)
-    # Identify the x and y positions of all nonzero pixels in the image
-    nonzero = binary_warped.nonzero()
-    nonzeroy = np.array(nonzero[0])
-    nonzerox = np.array(nonzero[1])
-    # Current positions to be updated for each window
-    leftx_current = leftx_base
-    rightx_current = rightx_base
-    # Set the width of the windows +/- margin
-    margin = 100
-    # Set minimum number of pixels found to recenter window
-    minpix = 50
-    # Create empty lists to receive left and right lane pixel indices
-    left_lane_inds = []
-    right_lane_inds = []
+	# Choose the number of sliding windows
+	nwindows = 9
+	# Set height of windows
+	window_height = np.int(binary_warped.shape[0] / nwindows)
+	# Identify the x and y positions of all nonzero pixels in the image
+	nonzero = binary_warped.nonzero()
+	nonzeroy = np.array(nonzero[0])
+	nonzerox = np.array(nonzero[1])
+	# Current positions to be updated for each window
+	leftx_current = leftx_base
+	rightx_current = rightx_base
+	# Set the width of the windows +/- margin
+	margin = 100
+	# Set minimum number of pixels found to recenter window
+	minpix = 50
+	# Create empty lists to receive left and right lane pixel indices
+	left_lane_inds = []
+	right_lane_inds = []
 
-    # Step through the windows one by one
-    for window in range(nwindows):
-        # Identify window boundaries in x and y (and right and left)
-        win_y_low = binary_warped.shape[0] - (window + 1) * window_height
-        win_y_high = binary_warped.shape[0] - window * window_height
-        win_xleft_low = leftx_current - margin
-        win_xleft_high = leftx_current + margin
-        win_xright_low = rightx_current - margin
-        win_xright_high = rightx_current + margin
-        # Identify the nonzero pixels in x and y within the window
-        good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                          (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
-        good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                           (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
-        # Append these indices to the lists
-        left_lane_inds.append(good_left_inds)
-        right_lane_inds.append(good_right_inds)
-        # If you found > minpix pixels, recenter next window on their mean position
-        if len(good_left_inds) > minpix:
-            leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
-        if len(good_right_inds) > minpix:
-            rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
+	# Step through the windows one by one
+	for window in range(nwindows):
+		# Identify window boundaries in x and y (and right and left)
+		win_y_low = binary_warped.shape[0] - (window + 1) * window_height
+		win_y_high = binary_warped.shape[0] - window * window_height
+		win_xleft_low = leftx_current - margin
+		win_xleft_high = leftx_current + margin
+		win_xright_low = rightx_current - margin
+		win_xright_high = rightx_current + margin
+		# Identify the nonzero pixels in x and y within the window
+		good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+				          (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
+		good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+				           (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
+		# Append these indices to the lists
+		left_lane_inds.append(good_left_inds)
+		right_lane_inds.append(good_right_inds)
+		# If you found > minpix pixels, recenter next window on their mean position
+		if len(good_left_inds) > minpix:
+			leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
+		if len(good_right_inds) > minpix:
+			rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
 
-    # Concatenate the arrays of indices
-    left_lane_inds = np.concatenate(left_lane_inds)
-    right_lane_inds = np.concatenate(right_lane_inds)
+	# Concatenate the arrays of indices
+	left_lane_inds = np.concatenate(left_lane_inds)
+	right_lane_inds = np.concatenate(right_lane_inds)
 
-    # Extract left and right line pixel positions
-    leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds]
-    rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
+	# Extract left and right line pixel positions
+	leftx = nonzerox[left_lane_inds]
+	lefty = nonzeroy[left_lane_inds]
+	rightx = nonzerox[right_lane_inds]
+	righty = nonzeroy[right_lane_inds]
 
-    # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 1)
-    right_fit = np.polyfit(righty, rightx, 1)
+	# Fit a second order polynomial to each
+	left_fit = np.polyfit(lefty, leftx, 1)
+	right_fit = np.polyfit(righty, rightx, 1)
 
-    return left_fit, right_fit, left_lane_inds, right_lane_inds
+	return left_fit, right_fit, left_lane_inds, right_lane_inds
 
 
 def find_line_by_previous(binary_warped, left_fit, right_fit):
@@ -211,73 +213,80 @@ def find_line_by_previous(binary_warped, left_fit, right_fit):
 #-------------------------------calculate the result-----------------------------------#
 #------------------------------------------------------------------------------------#
 def calculate_curv_and_pos(binary_warped, left_fit, right_fit):
-    # Define y-value where we want radius of curvature
+	# Define y-value where we want radius of curvature
+	
+	#ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+	#leftx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+	#rightx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+	#leftx = np.polyval(left_fit, ploty)
+	#rightx = np.polyval(right_fit, ploty)
+	# Define conversions in x and y from pixels space to meters
+	#ym_per_pix = 20.61 / 480  # meters per pixel in y dimension
 
-    ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
-    #leftx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
-    #rightx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
-    leftx = np.polyval(left_fit, ploty)
-    rightx = np.polyval(right_fit, ploty)
-    # Define conversions in x and y from pixels space to meters
-    ym_per_pix = 20.61 / 480  # meters per pixel in y dimension
-    
-    xm_per_pix = 2.84 / 320  # meters per pixel in x dimension
-    
-    # Fit new polynomials to x,y in world space
+	#xm_per_pix = 2.84 / 320  # meters per pixel in x dimension
 
-    left_fit_cr = np.polyfit(ploty * ym_per_pix, leftx * xm_per_pix, 1)
+	# Fit new polynomials to x,y in world space
 
-    right_fit_cr = np.polyfit(ploty * ym_per_pix, rightx * xm_per_pix, 1)
-    # Calculate the new radii of curvature
-    #left_curverad = ((1 + (2 * left_fit_cr[0] * y_eval * ym_per_pix + left_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit_cr[0])
-    #right_curverad = ((1 + (2 * right_fit_cr[0] * y_eval * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit_cr[0])
-    
-    left_angle=math.atan(left_fit[0])
-    right_angle=math.atan(right_fit[0])
- 
-    angle=((left_angle+right_angle)/2)
-    
-    #curvature = ((left_curverad + right_curverad) / 2)
-    lane_width = np.absolute(leftx[479] - rightx[479])
-    
-    lane_xm_per_pix = 2.84 / lane_width
-    veh_pos = (((leftx[479] + rightx[479]) * lane_xm_per_pix) / 2.)
-    cen_pos = ((binary_warped.shape[1] * lane_xm_per_pix) / 2.)
-    distance_from_center = cen_pos - veh_pos
-    global lane_msg
-    #lane_msg.curvature=curvature
-    lane_msg.err = -distance_from_center
-    lane_msg.theta = angle
-    #lane_msg.right_angle=right_angle
-    return distance_from_center,angle
+	#left_fit_cr = np.polyfit(ploty * ym_per_pix, leftx * xm_per_pix, 1)
+
+	#right_fit_cr = np.polyfit(ploty * ym_per_pix, rightx * xm_per_pix, 1)
+
+	# Calculate the new radii of curvature
+	#left_curverad = ((1 + (2 * left_fit_cr[0] * y_eval * ym_per_pix + left_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit_cr[0])
+	#right_curverad = ((1 + (2 * right_fit_cr[0] * y_eval * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit_cr[0])
+	
+	#curvature = ((left_curverad + right_curverad) / 2)
+	#lane_width = np.absolute(leftx[479] - rightx[479])
+	
+	
+	left_angle=math.atan(left_fit[0])
+	right_angle=math.atan(right_fit[0])
+
+	angle=((left_angle+right_angle)/2)
+	
+	height = binary_warped.shape[0]
+	width = binary_warped.shape[1]
+	
+	left_bottom_x = np.polyval(left_fit, height)
+	right_bottom_x = np.polyval(right_fit, height)
+	
+	lane_width = np.absolute(left_bottom_x - right_bottom_x)
+	
+	lane_xm_per_pix = 2.84 / lane_width
+	
+	veh_pos = ((left_bottom_x + right_bottom_x) * lane_xm_per_pix) / 2.
+	cen_pos = (binary_warped.shape[1] * lane_xm_per_pix) / 2.
+	distance_from_center = cen_pos - veh_pos
+	
+	return distance_from_center,angle
 
 
 #-------------------------------display the result-----------------------------------#
 #------------------------------------------------------------------------------------#
 def draw_area(undist, binary_warped, Minv, left_fit, right_fit,angle):
-    # Generate x and y values for plotting
-    ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
-    #left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
-    #right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
-    # Create an image to draw the lines on
-    left_fitx = np.polyval(left_fit, ploty)
-    right_fitx =np.polyval(right_fit, ploty)
-    warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
-    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+	
+	Ax = np.polyval(left_fit, 0)
+	Bx = np.polyval(right_fit,0)
+	Cx = np.polyval(right_fit,undist.shape[0])
+	Dx = np.polyval(left_fit,undist.shape[0])
+	
+	A = [Ax,0]
+	B = [Bx,0]
+	C = [Cx,undist.shape[0]]
+	D = [Dx,undist.shape[0]]
+	
+	rect = np.array([[A,B,C,D]]).astype(np.int)
+	
+	pure = np.zeros_like(undist)
+	
+	cv2.fillPoly(pure, rect, (0, 255, 0))
+	
+	# Warp the blank back to original image space using inverse perspective matrix (Minv)
+	newwarp = cv2.warpPerspective(pure, Minv, (undist.shape[1], undist.shape[0]))
+	# Combine the result with the original image
 
-    # Recast the x and y points into usable format for cv2.fillPoly()
-    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
-    pts = np.hstack((pts_left, pts_right))
-
-    # Draw the lane onto the warped blank image
-    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
-
-    # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, Minv, (undist.shape[1], undist.shape[0]))
-    # Combine the result with the original image
-    result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
-    return result
+	result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+	return result
 
 def draw_values(img, distance_from_center,angle):
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -303,62 +312,59 @@ def draw_values(img, distance_from_center,angle):
 #-----------------------------------------main process----------------------------------#
 #---------------------------------------------------------------------------------------#
 def processing(img, thresholded_wraped, Minv, left_line, right_line):
+	thresholded = thresholding(thresholded_wraped)
 
-    thresholded = thresholding(thresholded_wraped)
+	#cv2.imshow("thresholded",thresholded)
+	#cv2.waitKey(1)
+
+	if left_line.detected and right_line.detected:
+		left_fit, right_fit, left_lane_inds, right_lane_inds = find_line_by_previous(thresholded,
+		                                                                                      left_line.current_fit,
+		                                                                                      right_line.current_fit)
+	else:
+		left_fit, right_fit, left_lane_inds, right_lane_inds = find_line(thresholded)
+	#left_line.update(left_fit)
+	#right_line.update(right_fit)
+
+	pos_from_center,angle = calculate_curv_and_pos(thresholded, left_fit, right_fit)
+	
+	global lane_msg
+	lane_msg.err = -pos_from_center
+	lane_msg.theta = angle
+	
+	
+	area_img = draw_area(img, thresholded, Minv, left_fit, right_fit,angle)
+	result = draw_values(area_img,pos_from_center,angle)
     
-    #cv2.imshow("thresholded",thresholded)
-    #cv2.waitKey(1)
-
-    if left_line.detected and right_line.detected:
-        left_fit, right_fit, left_lane_inds, right_lane_inds = find_line_by_previous(thresholded,
-                                                                                              left_line.current_fit,
-                                                                                              right_line.current_fit)
-    else:
-        left_fit, right_fit, left_lane_inds, right_lane_inds = find_line(thresholded)
-    left_line.update(left_fit)
-    right_line.update(right_fit)
-    pos_from_center,angle = calculate_curv_and_pos(thresholded, left_fit, right_fit)
-    area_img = draw_area(img, thresholded, Minv, left_fit, right_fit,angle)
-    result = draw_values(area_img,pos_from_center,angle)
-    
-    return result
-
+	cv2.imshow("result",result)
+	cv2.waitKey(1)
 
 class image_converter:
   global lane_msg
   def __init__(self):
   
-    self.image_pub = rospy.Publisher("/lane",Lane)
+    self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
    
  	
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/image_rectified",Image,self.callback)
-      ######
+    self.image_sub = rospy.Subscriber("/image_raw",Image,self.callback)
+    
+    self.M,self.Minv = get_M_Minv() 
  
   def callback(self,data):
     try:
       frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
       print(e)
-      
-    #lane_msg.header.stamp =  rospy.Time.now()
     
-    frame = cv2.resize(frame,(640,480))
-    #cv2.namedWindow("Imagewindow")  
-    #cv2.imshow("Imagewindow", frame) 
+    thresholded_wraped = cv2.warpPerspective(frame,self.M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
     
-    M,Minv=get_M_Minv() 
-    
-    thresholded_wraped = cv2.warpPerspective(frame,M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-    
-    cv2.namedWindow("2222")
-    cv2.imshow("2222",thresholded_wraped)
+    #cv2.imshow("2222",thresholded_wraped)
 
     left_lane=Line()
     right_lane=Line()
-    result_video=processing(frame,thresholded_wraped,Minv,left_lane,right_lane)
-    cv2.imshow("result",result_video)
-    cv2.waitKey(1)
+    result_video=processing(frame,thresholded_wraped,self.Minv,left_lane,right_lane)
+    
     self.image_pub.publish(lane_msg)
 	
 def main(args):
