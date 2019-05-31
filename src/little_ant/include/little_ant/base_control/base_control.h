@@ -85,8 +85,8 @@ public:
 	
 private:
 	void Stm32BufferIncomingData(unsigned char *message, unsigned int length);
-	void parse_stm32_msgs(unsigned char *msg);
-	uint8_t generateCheckNum(const uint8_t* ptr,size_t len);
+	void parse_stm32_msgs();
+	uint8_t generateCheckNum(const void* voidPtr,size_t len);
 	void setDriverlessMode();
 	void exitDriverlessMode();
 	
@@ -94,7 +94,7 @@ private:
 	Can2serial can2serial;
 	serial::Serial * stm32_serial_port_;
 	
-	stm32Msg1_t stm32_msg1_;
+	const stm32Msg1_t *stm32_msg1Ptr_;
 	
 	bool is_driverlessMode_;
 	

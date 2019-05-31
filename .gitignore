@@ -1,2 +1,5 @@
 devel/
 build/
+*cpp~
+*h~
+*~

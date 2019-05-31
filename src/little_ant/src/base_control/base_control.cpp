@@ -35,10 +35,10 @@ static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int bau
 	}
 	
 	return true;
-
 }
 
-BaseControl::BaseControl()
+BaseControl::BaseControl():
+	stm32_msg1Ptr_((const stm32Msg1_t *)stm32_pkg_buf)
 {
 	is_driverlessMode_ = false;
 	stm32_serial_port_ = NULL;
@@ -115,8 +115,6 @@ bool BaseControl::init(int argc,char**argv)
 	can2serial.configBaudrate(500);
 	*/
 	can2serial.StartReading();
-	
-	
 		
 	ROS_INFO("System initialization completed");
 	
@@ -310,7 +308,7 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 				bytes_remaining --;
 				if(bytes_remaining == 0)
 				{
-					parse_stm32_msgs(stm32_pkg_buf);
+					parse_stm32_msgs();
 					buffer_index = 0;
 				}
 				break;
@@ -318,27 +316,21 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 	}// end for
 }
 
-void BaseControl::parse_stm32_msgs(unsigned char *msg)
+void BaseControl::parse_stm32_msgs()
 {
-	unsigned char pkgId = msg[4];
-	if(pkgId == 0x01)
+	if(stm32_msg1Ptr_->checkNum != generateCheckNum(stm32_msg1Ptr_,ntohs(stm32_msg1Ptr_->pkgLen)+4))
+		return ;
+
+	if(stm32_msg1Ptr_->id == 0x01)
 	{
-		stm32Msg1_t *msg = (stm32Msg1_t *)stm32_pkg_buf;
-		if(msg->checkNum != generateCheckNum(stm32_pkg_buf,ntohs(msg->pkgLen)+4))
-		{
-			//ROS_ERROR("check error %x != %x",msg->checkNum,generateCheckNum(stm32_pkg_buf,ntohs(msg->pkgLen)+4));
-			return ;
-		}
-			
 		//mutex_.lock();
-		stm32_msg1_ = *msg;
-		if(stm32_msg1_.is_start && !stm32_msg1_.is_emergency_brake && !is_driverlessMode_)
+		if(stm32_msg1Ptr_->is_start && !stm32_msg1Ptr_->is_emergency_brake && !is_driverlessMode_)
 		{
 			this->setDriverlessMode();//启动无人驾驶模式
 			stm32_serial_port_->flushInput();
 			this->is_driverlessMode_ = true;
 		}
-		else if(!stm32_msg1_.is_start && is_driverlessMode_)
+		else if(!stm32_msg1Ptr_->is_start && is_driverlessMode_)
 		{
 			this->is_driverlessMode_ = false;
 			this->exitDriverlessMode();
@@ -366,19 +358,6 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
-	/*int count = 0;
-	while(ros::ok())
-	{
-		usleep(10000);
-		can2serial.sendCanMsg(canMsg_cmd1);
-		usleep(10000);
-		count ++ ;
-		if(count >50)
-			can2serial.sendCanMsg(canMsg_cmd2);
-		if(count >80)
-			break;
-	}*/
-	
 	while(ros::ok() && state4.driverless_mode==false)
 	{
 		can2serial.sendCanMsg(canMsg_cmd1);
@@ -403,7 +382,7 @@ void BaseControl::setDriverlessMode()
 	canMsg_cmd2.data[0] = 0x01;
 	
 	//to Ensure steering stability at set value
-	for(count=0; count<150; count++)
+	for(count=0; count<50; count++)
 	{
 		can2serial.sendCanMsg(canMsg_cmd2);
 		usleep(10000);
@@ -411,7 +390,6 @@ void BaseControl::setDriverlessMode()
 		usleep(10000);
 		can2serial.sendCanMsg(canMsg_cmd1);
 	}
-	
 	
 	stm32_serial_port_->flushInput();
 }
@@ -570,8 +548,9 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	stm32_serial_port_->write(send_to_stm32_buf,8);
 }
 
-uint8_t BaseControl::generateCheckNum(const uint8_t* ptr,size_t len)
+uint8_t BaseControl::generateCheckNum(const void* voidPtr,size_t len)
 {
+	const uint8_t *ptr = (const uint8_t *)voidPtr;
     uint8_t sum=0;
 
     for(int i=2; i<len-1 ; i++)
