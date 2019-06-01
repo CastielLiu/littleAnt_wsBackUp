@@ -55,9 +55,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 #if IS_POLAR_COORDINATE_GPS == 1
 		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,&point.yaw);
 #else
-		fscanf(fp,"%lf\t%lf\t%lf\t%f\t%f\t%f\t%d\t%d\n",&point.x,&point.y,&point.yaw,&point.curvature,
-														&point.maxOffset_left,&point.maxOffset_right,
-														&point.traffic_sign,&point.other_info);
+		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
 #endif
 		points.push_back(point);
 	}

@@ -33,7 +33,6 @@ public:
 	~PathTracking();
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
-	void limitRoadWheelAngle(float& angle);
 	
 	float point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2);
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
@@ -47,8 +46,7 @@ public:
 	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
-	void trafficLight_callback(const std_msgs::Bool::ConstPtr& msg);
-	
+
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread();
 
@@ -67,7 +65,6 @@ private:
 	ros::Subscriber sub_vehicleState4_;
 	
 	ros::Subscriber sub_avoiding_from_lidar_;
-	ros::Subscriber sub_trafficLight_;
 	
 	ros::Timer timer_;
 	
@@ -76,8 +73,6 @@ private:
 	ros::Publisher pub_related_index_;
 	
 	ros::Publisher pub_max_tolerate_speed_;
-	
-	ros::Publisher pub_current_scene_;
 	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
@@ -116,14 +111,8 @@ private:
 	
 	float lateral_err_;
 	
-	bool is_laneChanging_;
-	float lane_width_;
 	float foreSightDis_speedCoefficient_;
 	float foreSightDis_latErrCoefficient_;
-	
-	bool is_trafficLight_green_;
-	
-	std_msgs::UInt8 scene_msg_;
 	
 };
 

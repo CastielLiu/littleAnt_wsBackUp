@@ -19,9 +19,9 @@ class Record
 #endif
 		float calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2);
 		
-		void path_info_callback(const little_ant_msgs::PathInfo::ConstPtr& info);
-
 		std::string file_path_;
+		std::string	file_name_;
+		
 		FILE *fp;
 		FILE *fp_lat_lon;
 		
@@ -32,11 +32,7 @@ class Record
 		
 		ros::Subscriber sub_cartesian_gps_ ;
 		
-		ros::Subscriber sub_pathInfo_;
-		
 		bool gps_status_;
-		
-		little_ant_msgs::PathInfo path_info_;
 		
 	public:
 		Record();
@@ -50,7 +46,6 @@ Record::Record():
 {
 	last_point = {0.0,0.0,0.0,0.0,0.0};
 	current_point = last_point;
-	path_info_.other_info = 0;
 }
 
 Record::~Record()
@@ -66,43 +61,38 @@ bool Record::init()
 	ros::NodeHandle nh;
 	ros::NodeHandle private_nh("~");
 	
-	private_nh.param<std::string>("file_path",file_path_,"/home/wendao/projects/littleAnt_ws/a.txt");
+	private_nh.param<std::string>("file_path",file_path_,"");
+	private_nh.param<std::string>("file_name",file_name_,"");
+	
+	if(file_path_.empty() || file_name_.empty())
+	{
+		ROS_ERROR("please input record file path and file name in launch file!!!");
+		return false;
+	}
+	
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
-	
-	private_nh.param<float>("initial_maxOffset_left",path_info_.maxOffset_left,0.0);
-	private_nh.param<float>("initial_maxOffset_right",path_info_.maxOffset_right,0.0);
-	
-	int _temp;
-	private_nh.param<int>("traffic_sign",_temp,0);
-	path_info_.traffic_sign = _temp;
-	
 
 	sub_gps_= nh.subscribe("/gps",1,&Record::gps_callback,this);
-	sub_pathInfo_= nh.subscribe("/path_info",1,&Record::path_info_callback,this);
 	
 #if IS_POLAR_COORDINATE_GPS==0
 	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&Record::cartesian_gps_callback,this);
 #endif    
-    if(file_path_.empty())
-    {
-    	ROS_ERROR("no input file...");
-    	return false;
-    }
     
-	fp = fopen(file_path_.c_str(),"w");
-	fp_lat_lon = fopen((file_path_+"_lat_lon").c_str(),"w");
+	fp = fopen((file_path_+file_name_).c_str(),"w");
+	
+	fp_lat_lon = fopen((file_path_+"0"+file_name_).c_str(),"w");
 	
 	if(fp == NULL)
 	{
-		ROS_INFO("open record data file %s failed !!!",file_path_.c_str());
-		return 0;
+		ROS_INFO("open record data file %s failed !!!",(file_path_+file_name_).c_str());
+		return false;
 	}
 	else if(fp_lat_lon == NULL)
 	{
-		ROS_INFO("open record data file %s failed !!!",(file_path_+"_lat_lon").c_str());
-		return 0;
+		ROS_INFO("open record data file %s failed !!!",(file_path_+"0"+file_name_).c_str());
+		return false;
 	}
-	return 1;
+	return true;
 	
 	
 }
@@ -150,38 +140,28 @@ float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 
 void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-	static size_t  line_num = 0;
+	static size_t  row_num = 0;
 	current_point.x = msg->pose.pose.position.x;
 	current_point.y = msg->pose.pose.position.y;
 	if(gps_status_ == true && sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
 		gps_status_ = false;
 		//x,y,theta,offset_l,offset_r,traffic_sign
-		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",current_point.x,current_point.y,current_point.yaw,
-													path_info_.maxOffset_left,path_info_.maxOffset_right,
-													path_info_.traffic_sign,path_info_.other_info);
+		fprintf(fp,"%.3f\t%.3f\t%.3f\r\n",current_point.x,current_point.y,current_point.yaw);
 		fflush(fp);
 		
-		fprintf(fp_lat_lon,"%.8f\t%.8f\n",current_point.latitude,current_point.longitude);
+		fprintf(fp_lat_lon,"%.8f\t%.8f\t%.3f\n",current_point.latitude,current_point.longitude,current_point.yaw);
 		
 		fflush(fp_lat_lon);
 		
-		line_num++;
+		row_num++;
 		
-		ROS_INFO("line:%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\r\n",line_num,current_point.x,current_point.y,current_point.yaw,
-													path_info_.maxOffset_left,path_info_.maxOffset_right,
-													path_info_.traffic_sign,path_info_.other_info);
+		ROS_INFO("row:%d\t%.3f\t%.3f\t%.3f\r\n",row_num,current_point.x,current_point.y,current_point.yaw);
 		last_point = current_point;
 	}
 }
 
 #endif
-
-void Record::path_info_callback(const little_ant_msgs::PathInfo::ConstPtr& info)
-{
-	path_info_ = *info;
-}
-
 
 int main(int argc,char**argv)
 {

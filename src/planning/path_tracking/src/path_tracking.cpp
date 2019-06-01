@@ -1,7 +1,6 @@
 #include"path_tracking.h"
 
 
-
 PathTracking::PathTracking():
 	gps_status_(0x00),
 	vehicle_speed_status_(false),
@@ -9,9 +8,7 @@ PathTracking::PathTracking():
 	nearest_point_index_(0),
 	avoiding_offset_(0.0),
 	max_roadwheelAngle_(25.0),
-	is_avoiding_(false),
-	is_laneChanging_(false),
-	is_trafficLight_green_(true)
+	is_avoiding_(false)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -42,11 +39,8 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
-	sub_trafficLight_ = nh.subscribe("/traffic_light",1,&PathTracking::trafficLight_callback,this);
-	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	pub_max_tolerate_speed_ = nh.advertise<std_msgs::Float32>("/max_tolerate_speed",1);
-	pub_current_scene_ = nh.advertise<std_msgs::UInt8>("/current_scene",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
@@ -58,7 +52,6 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 	nh_private.param<float>("foreSightDis_speedCoefficient", foreSightDis_speedCoefficient_,1.8);
 	nh_private.param<float>("foreSightDis_latErrCoefficient", foreSightDis_latErrCoefficient_,0.3);
-	
 	
 	nh_private.param<float>("min_foresight_distance",min_foresight_distance_,5.0);
 	
@@ -125,23 +118,8 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
-		if(path_points_[nearest_point_index_].other_info == 1)
-			gps_controlCmd_.cmd1.set_turnLight_L = true;
-		else if(path_points_[nearest_point_index_].other_info == 2)
-			gps_controlCmd_.cmd1.set_turnLight_R = true;
-		else if(path_points_[nearest_point_index_].other_info == 3)
-		{
-			gps_controlCmd_.cmd1.set_turnLight_R = false;
-			gps_controlCmd_.cmd1.set_turnLight_L = false;
-		}
-		
 		if( avoiding_offset_ != 0.0)
-		{
-		//target point offset
-			target_point_.x =  avoiding_offset_ * cos(target_point_.yaw) + path_points_[target_point_index_].x;
-			target_point_.y = -avoiding_offset_ * sin(target_point_.yaw) + path_points_[target_point_index_].y;
-			//printf("new__ x:%lf \ty:%lf \t yaw:%f\n",target_point_.x,target_point_.y,target_point_.yaw);
-		}
+			pointOffset(target_point_,avoiding_offset_);
 		
 		try{
 			lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
@@ -161,8 +139,6 @@ void PathTracking::run()
 		
 		//publish the current target and nearest point index
 		this->publishRelatedIndex();
-		scene_msg_.data = path_points_[nearest_point_index_].traffic_sign;
-		pub_current_scene_.publish(scene_msg_);
 		
 		float yaw_err = dis_yaw.second - current_point_.yaw;
 		
@@ -176,154 +152,10 @@ void PathTracking::run()
 		
 		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
-		if(is_laneChanging_)
-		{
-			if(fabs(lateral_err_ - avoiding_offset_) < 0.15 && fabs(yaw_err) < 10.0*M_PI/180.0)
-			{
-				is_laneChanging_  = false;
-				gps_controlCmd_.cmd1.set_turnLight_R = false;
-				gps_controlCmd_.cmd1.set_turnLight_L = false;
-			}
-			
-			if(lane_width_ >= 1.0)
-				gps_controlCmd_.cmd1.set_turnLight_R = true;
-			else if(lane_width_ < -1.0)
-				gps_controlCmd_.cmd1.set_turnLight_L = true;
-		}
-		
-		float _temp_limit_speed = 30.0;
-		static bool is_stop = false;
-		static double temp_stop_time;
-		
-		switch(path_points_[nearest_point_index_].traffic_sign)
-		{
-			case TrafficSign_None:
-				break;
-				
-			case TrafficSign_TrafficLight:
-				if(!is_trafficLight_green_)
-					_temp_limit_speed = 0.0;
-				break;
-				
-			case TrafficSign_Avoid:
-				_temp_limit_speed = 13.0;
-				break;
-				
-			case TrafficSign_TurnLeft:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_TurnRight:
-				_temp_limit_speed = 15.0;
-				break;
-			
-			case TrafficSign_CarFollow:
-				break;
-				
-			case TrafficSign_LaneNarrow:
-				_temp_limit_speed = 16.0;
-				break;
-			
-			case TrafficSign_IllegalPedestrian:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_NoTrafficLight:
-				_temp_limit_speed = 10.0;
-				break;
-				
-			case TrafficSign_PickUp:
-				_temp_limit_speed = 15.0;
-				break;
-			
-			case TrafficSign_Ambulance:
-				_temp_limit_speed = 15.0;
-				is_stop = false;
-				break;
-				
-			case TrafficSign_Railway:
-				_temp_limit_speed = 15.0;
-				is_stop = false;
-				break;
-			
-			case TrafficSign_TempStop:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_Stop:
-				if(is_stop == false)
-				{
-					temp_stop_time = ros::Time::now().toSec();
-					is_stop = true;
-					_temp_limit_speed = 0.0;
-				}
-				else if(ros::Time::now().toSec() - temp_stop_time > 30)   //stop time
-				{
-					_temp_limit_speed = 20.0;
-					gps_controlCmd_.cmd1.set_turnLight_L = true;
-				}	
-				else
-					_temp_limit_speed = 0.0;
-				break;
-				
-			case TrafficSign_UTurn:
-				gps_controlCmd_.cmd1.set_turnLight_L = true;
-				_temp_limit_speed = 5.0;
-				break;
-				
-			case TrafficSign_School:
-				_temp_limit_speed = 20.0;
-				break;
-				
-			case TrafficSign_AvoidStartingCar:
-				_temp_limit_speed = 20.0;
-				break;
-				
-			case TrafficSign_OffDutyPerson:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_Bridge:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_AccidentArea:
-				_temp_limit_speed = 15.0;
-				break;
-			
-			case TrafficSign_JamArea:
-				_temp_limit_speed = 8.0;
-				break;
-				
-			case TrafficSign_BusStop:
-				_temp_limit_speed = 20.0;
-				break;
-			
-			case TrafficSign_NonVehicle:
-				_temp_limit_speed = 15.0;
-				break;
-				
-			case TrafficSign_StopArea:
-				_temp_limit_speed = 0.0;
-				break;
-				
-		}
-		
-		if(nearest_point_index_ > 4210+200)
-			_temp_limit_speed = 5.0;
-		
-		//ROS_DEBUG("status:%d",path_points_[nearest_point_index_].traffic_sign);
-		
 		gps_controlCmd_.cmd2.set_speed = 
 				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
 		
-		if(_temp_limit_speed < 29.0)
-			gps_controlCmd_.cmd2.set_speed = 
-				saturationEqual(gps_controlCmd_.cmd2.set_speed,_temp_limit_speed);
-		
 		this->publishMaxTolerateSpeed();
-		
-		//gps_controlCmd_.cmd2.set_speed =  limitSpeedByCurrentRoadwheelAngle(path_tracking_speed_,current_roadwheelAngle_);
 		
 		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
 		
@@ -477,20 +309,8 @@ void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPt
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
 {
-	if(avoiding_offset_ != msg->data && is_laneChanging_ == false)
-	{
-		is_laneChanging_ = true;
-		//line change width  left(-)  right(+)
-		lane_width_ = avoiding_offset_ - lateral_err_ ;
-	}
-	
 	//avoid to left(-) or right(+) the value presents the offset
 	avoiding_offset_ = msg->data;
-}
-
-void PathTracking::trafficLight_callback(const std_msgs::Bool::ConstPtr& msg)
-{
-	is_trafficLight_green_ = msg->data;
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1
@@ -579,7 +399,6 @@ int main(int argc,char**argv)
 	
 	ROS_INFO("path tracking completed.");
 	ros::shutdown();
-	
 
 	return 0;
 }

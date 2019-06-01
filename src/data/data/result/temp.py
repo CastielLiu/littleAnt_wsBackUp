@@ -15,7 +15,7 @@ class Points:
 		with open(file_name,'r') as f:
 			lines = f.readlines()
 		for line in lines:
-			x,y,yaw = line.split()
+			x,y,yaw,a,s,d,f,g = line.split()
 			self.x.append(float(x))
 			self.y.append(float(y))
 			self.yaw.append(float(yaw))
@@ -23,7 +23,7 @@ class Points:
 	def dump(self,file_name):
 		with open(file_name,'w') as f:
 			for i in range(len(self.x)):
-				f.write('%.3f\t%.3f\t%.3f\t%.5f\n' %(self.x[i],self.y[i],self.yaw[i],self.curvature[i]))
+				f.write('%.3f\t%.3f\t%.3f\n' %(self.x[i],self.y[i],self.yaw[i]))
 	
 	def clear(self):
 		self.x.clear()
@@ -64,8 +64,8 @@ def main(argv):
 	path_points = Points()
 	
 	file_name = 'final.txt'
-	raw_file = '../raw/' + file_name
-	result_file = '../result/' + file_name
+	raw_file = './' + file_name
+	result_file = './' + file_name
 	
 	if(len(argv)>2):
 		raw_file = argv[1]
@@ -74,8 +74,6 @@ def main(argv):
 			
 	path_points.load(raw_file)
 	
-	path_points.calculateCurvature()
-	path_points.curvatureFilter(15)
 	path_points.dump(result_file)
 
 
