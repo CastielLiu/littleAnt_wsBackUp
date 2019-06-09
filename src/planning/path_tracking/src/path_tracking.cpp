@@ -217,7 +217,6 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 		return path_points.size();
 	}
 		
-	
 	return index;
 }
 

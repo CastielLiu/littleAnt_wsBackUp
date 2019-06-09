@@ -79,7 +79,7 @@ bool BaseControl::init(int argc,char**argv)
 	
 	nh_private.param<std::string>("obd_can_port_name", obd_can_port_name_, "");
 	nh_private.param<std::string>("stm32_port_name", stm32_port_name_, "");
-	nh_private.param<float>("max_steering_speed",max_steering_speed_,5.0);
+	nh_private.param<float>("max_steering_speed",max_steering_speed_,2.0);
 	nh_private.param<int>("stm32_baudrate",stm32_baudrate_,115200);
 	
 	
@@ -481,8 +481,6 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 
 	float set_brake = msg->set_brake;
 	
-	static float last_set_steeringAngle = state4.steeringAngle;
-	
 	int currentSpeed = state2.vehicle_speed * 3.6;
 	
 	//当设定速度低于当前速度时，制动
@@ -517,7 +515,11 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
 	
+	static float last_set_steeringAngle = state4.steeringAngle;
 	float current_set_steeringAngle = msg->set_steeringAngle;  // -540~540deg
+	
+	if(current_set_steeringAngle>480.0) current_set_steeringAngle=480.0;
+	else if(current_set_steeringAngle<-480.0) current_set_steeringAngle =-480.0;
 	
 	if(current_set_steeringAngle - last_set_steeringAngle > max_steering_speed_)
 		current_set_steeringAngle = last_set_steeringAngle + max_steering_speed_;
@@ -526,10 +528,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	last_set_steeringAngle = current_set_steeringAngle;
 	
-	uint16_t steeringAngle = 10800 - last_set_steeringAngle*10 +30; //steering offset
-	
-	if(steeringAngle>480.0) steeringAngle=480.0;
-	else if(steeringAngle<-480.0) steeringAngle =-480.0;
+	uint16_t steeringAngle = 10800 - current_set_steeringAngle*10 +30; //steering offset
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);

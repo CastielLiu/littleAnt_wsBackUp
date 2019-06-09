@@ -6,7 +6,7 @@
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="max_speed"  default="30.0"/>
 	
-	<arg name="pathTracking_file_name" default="_temp.txt"/>
+	<arg name="pathTracking_file_name" default="path.txt"/>
 	
 <!--底层 -->	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -16,7 +16,6 @@
 		<param name ="max_steering_speed" value="2.0"/> <!--前后帧转角最大差值 -->
 		
 	</node>
-	
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
 		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
@@ -44,7 +43,7 @@
 	
 	
 	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node">
-		<param name="file_path" value="$(find data)/data/debug.txt"/>
+		<param name="file_path" value="$(find data)/data/debug/$(arg pathTracking_file_name)"/>
 	</node>
 	
 
