@@ -130,8 +130,9 @@ float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_poin
 											const size_t& nearest_point_index,
 											const size_t& target_point_index);
 
-
-
+float disBetweenPoints(const gpsMsg_t& point1, const gpsMsg_t& point2);
+size_t findIndexForGivenDis(const std::vector<gpsMsg_t>& path_points, size_t startIndex,float dis);
+float minCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t startIndex,size_t endIndex);
 
 
 

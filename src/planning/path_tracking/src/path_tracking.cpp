@@ -152,13 +152,21 @@ void PathTracking::run()
 		
 		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
+		//find the index of a path point 8.0meters from the current point
+		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,8.0); 
+		if(index ==0)
+		{
+			ROS_INFO("findIndexForGivenDis faild!");
+			break;
+		}
+		float min_curvature = minCurvatureInRange(path_points_, nearest_point_index_, index);
+		
 		gps_controlCmd_.cmd2.set_speed = 
-				limitSpeedByPathCurvature(path_tracking_speed_,path_points_[target_point_index_+10].curvature);
+				limitSpeedByPathCurvature(path_tracking_speed_,min_curvature);
 		
 		this->publishMaxTolerateSpeed();
 		
 		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
-		
 		
 		if(i%20==0)
 		{
