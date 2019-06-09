@@ -89,8 +89,8 @@ def plot(file_name):
 	
 	result_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	plt.plot(path_points.y,path_points.x,'r.',label="path")
-	plt.plot(result_points.y,result_points.x,'k-',label="debug")
+	plt.plot(path_points.y,path_points.x,'r.',label="reference path")
+	plt.plot(result_points.y,result_points.x,'k-',label="trajectory")
 
 	plt.legend()
 
