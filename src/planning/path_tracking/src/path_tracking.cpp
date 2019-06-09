@@ -114,7 +114,7 @@ void PathTracking::run()
 {
 	size_t i =0;
 	
-	ros::Rate loop_rate(20);
+	ros::Rate loop_rate(30);
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
@@ -171,6 +171,16 @@ void PathTracking::run()
 		i++;
 		
 		loop_rate.sleep();
+	}
+	
+	ROS_INFO("driverless completed...");
+	
+	gps_controlCmd_.cmd2.set_steeringAngle = 0.0;
+	gps_controlCmd_.cmd2.set_speed = 0.0;
+	
+	while(ros::ok())
+	{
+		sleep(1);
 	}
 }
 

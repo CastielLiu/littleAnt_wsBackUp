@@ -8,7 +8,7 @@
 	
 	<arg name="pathTracking_file_name" default="path.txt"/>
 	
-<!--底层 -->	
+<!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
@@ -41,9 +41,9 @@
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
 	
-	
 	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node">
-		<param name="file_path" value="$(find data)/data/debug/$(arg pathTracking_file_name)"/>
+		<param name="file_path" value="$(find data)/data/debug/"/>
+		<param name="file_name" value="$(arg pathTracking_file_name)"/>
 	</node>
 	
 
