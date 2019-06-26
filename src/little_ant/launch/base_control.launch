@@ -12,6 +12,6 @@
 	</node>
 	
 	 <!--总决策-->
-	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node"  />  
+	<!-- node  type="decision_making_node" pkg ="decision_making" name="decision_making_node"  /-->  
 
 </launch>

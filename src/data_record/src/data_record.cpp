@@ -80,9 +80,9 @@ int main(int argc,char **argv)
 	}
 	ros::init(argc,argv,"data_record_node");
 	ros::NodeHandle nh;
-	ros::Subscriber sub_imu= nh.subscribe("/imu",1,&imu_callback);
-	ros::Subscriber sub_speed=nh.subscribe("/state2",1,&state2_callback);
-	ros::Subscriber sub_steering = nh.subscribe("/state4",1,&state4_callback);
+	ros::Subscriber sub_imu= nh.subscribe("/raw_imu",1,&imu_callback);
+	ros::Subscriber sub_speed=nh.subscribe("/vehicleState2",1,&state2_callback);
+	ros::Subscriber sub_steering = nh.subscribe("/vehicleState4",1,&state4_callback);
 	ros::Subscriber sub_gps = nh.subscribe("/gps",1,&gps_callback);
 	fp = fopen(argv[1],"w");
 	if(fp==NULL)
