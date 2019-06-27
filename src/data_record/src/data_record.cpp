@@ -19,22 +19,26 @@ bool is_imu_ok = false,
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& imu)
 {
-	is_imu_ok = true;
+	if(!is_imu_ok)
+		is_imu_ok = true;
 	imuData = *imu;
 }
 void gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
 {
-	is_gps_ok =true;
+	if(!is_gps_ok)
+		is_gps_ok =true;
 	gpsMsg = *gps;
 }
 void state2_callback(const little_ant_msgs::State2::ConstPtr& state2)
 {
-	is_state2_ok = true;
+	if(!is_state2_ok)
+		is_state2_ok = true;
 	vehicleSpeed = state2->vehicle_speed;
 }
 void state4_callback(const little_ant_msgs::State4::ConstPtr& state4)
 {
-	is_state4_ok = true;
+	if(!is_state4_ok)
+		is_state4_ok = true;
 	steeringAngle = state4->steeringAngle;
 }
 
@@ -62,6 +66,7 @@ void timerCallback(const ros::TimerEvent&)
 		
 		++i;
 	}
+
 	else
 	{
 		static size_t count=0;
@@ -91,6 +96,19 @@ int main(int argc,char **argv)
 		return 1;
 	}
 	fprintf(fp,"  longitude ,  latitude ,high;roll,yaw,pitch;n_vel,e_vel,u_vel;angleSpeedx_y_z;lineAccx_y_z;speed,steeringAngle\r\n");
+	while(ros::ok())
+	{
+		static size_t count=0;
+		if(count%10==0)
+		{
+			ROS_INFO("wait for sensors init....");
+			if(is_gps_ok && is_imu_ok && is_state2_ok && is_state4_ok )
+			break;
+		}
+		++count;
+		ros::spinOnce();
+		usleep(20000);
+	}
 	ros::Timer timer = nh.createTimer(ros::Duration(0.05), &timerCallback);
 	ros::spin();
 	return 0;
