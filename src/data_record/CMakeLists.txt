@@ -132,8 +132,18 @@ include_directories(
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 
-add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}.cpp)
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+add_executable(record_state_node src/record_state.cpp)
+add_dependencies(record_state_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(record_state_node ${catkin_LIBRARIES})
+
+add_executable(record_gps_node src/record_gps.cpp)
+add_dependencies(record_gps_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(record_gps_node ${catkin_LIBRARIES})
+
+add_executable(record_imu_node src/record_imu.cpp)
+add_dependencies(record_imu_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(record_imu_node ${catkin_LIBRARIES})
+
+
 
 
