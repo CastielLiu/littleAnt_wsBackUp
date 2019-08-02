@@ -1,12 +1,6 @@
 #include "ant_math/ant_math.h"
 
-#define MAX_STEERING_ANGLE 540.0
 #define MAX_ROAD_WHEEL_ANGLE 25.0
-
-
-
-//方向盘最大转角/前轮最大转角
-const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 const float g_vehicle_width = 1.7 ;// m
 const float g_vehicle_length = 3.5; 
@@ -119,8 +113,8 @@ float calculateDis2path(const double& X_,const double& Y_,
 				second_point_index = target_point_index-i;
 			else
 			{
-				first_point_index = 0;
-				second_point_index = 1;
+				first_point_index = 1;
+				second_point_index = 0;
 				break;
 			}
 		/*   prevent size_t index 0-1 data overflow    */

@@ -17,7 +17,7 @@ PathTracking::PathTracking():
 	gps_controlCmd_.cmd2.set_speed =0.0;
 	gps_controlCmd_.cmd2.set_brake=0.0;
 	gps_controlCmd_.cmd2.set_accelerate =0.0;
-	gps_controlCmd_.cmd2.set_steeringAngle=0.0;
+	gps_controlCmd_.cmd2.set_roadWheelAngle =0.0;
 	gps_controlCmd_.cmd2.set_emergencyBrake =0;
 	
 	gps_controlCmd_.cmd1.set_driverlessMode =true;
@@ -121,19 +121,30 @@ void PathTracking::run()
 		if( avoiding_offset_ != 0.0)
 			pointOffset(target_point_,avoiding_offset_);
 		
-		try{
+		try
+		{
 			lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
 											 target_point_index_,&nearest_point_index_) - avoiding_offset_;
-		}catch(const char* str){
+		}catch(const char* str)
+		{
 			ROS_INFO("%s",str);
 			break;
-		}	
+		}
+		
+		disThreshold_ = foreSightDis_speedCoefficient_ * vehicle_speed_ + foreSightDis_latErrCoefficient_ * fabs(lateral_err_);
+	
+		if(disThreshold_ < min_foresight_distance_) 
+			disThreshold_  = min_foresight_distance_;
+			
+		// disThreshold_ = min_foresight_distance_ + foreSightDis_speedCoefficient_ * vehicle_speed_ + foreSightDis_latErrCoefficient_ * fabs(lateral_err_);
+	
+		//ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
 									 
 		std::pair<float, float> dis_yaw = get_dis_yaw(target_point_, current_point_);
 
 		if( dis_yaw.first < disThreshold_)
 		{
-			target_point_ = path_points_[target_point_index_++];
+			target_point_ = path_points_[++target_point_index_];
 			continue;
 		}
 		
@@ -166,7 +177,7 @@ void PathTracking::run()
 		
 		this->publishMaxTolerateSpeed();
 		
-		gps_controlCmd_.cmd2.set_steeringAngle = t_roadWheelAngle * g_steering_gearRatio;
+		gps_controlCmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
 		
 		if(i%20==0)
 		{
@@ -183,7 +194,7 @@ void PathTracking::run()
 	
 	ROS_INFO("driverless completed...");
 	
-	gps_controlCmd_.cmd2.set_steeringAngle = 0.0;
+	gps_controlCmd_.cmd2.set_roadWheelAngle = 0.0;
 	gps_controlCmd_.cmd2.set_speed = 0.0;
 	
 	while(ros::ok())
@@ -296,32 +307,15 @@ void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& ms
 
 void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
-	vehicle_speed_status_ = true;
-	vehicle_speed_ = msg->vehicle_speed; //  m/s
-	
 	if(vehicle_speed_ >20.0)
 		return;
-	
-	disThreshold_ = foreSightDis_speedCoefficient_ * vehicle_speed_ ;
-	if(disThreshold_ < min_foresight_distance_) 
-		disThreshold_  = min_foresight_distance_;
-	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_Ambulance)
-		foreSightDis_latErrCoefficient_ = 0.6;
-	
-	disThreshold_ = disThreshold_ * (1.0 + foreSightDis_latErrCoefficient_ * fabs(lateral_err_) );
-	
-	if(path_points_[nearest_point_index_].traffic_sign == TrafficSign_UTurn)
-		disThreshold_ = 4.5;
-	
-	//ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
-	
-	danger_distance_front_ = generateDangerDistanceBySpeed(vehicle_speed_);  
-	safety_distance_front_ = generateSafetyDisByDangerDis(danger_distance_front_);
+	vehicle_speed_status_ = true;
+	vehicle_speed_ = msg->vehicle_speed; //  m/s
 }
 
 void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
 {
-	current_roadwheelAngle_ = msg->steeringAngle/g_steering_gearRatio;
+	current_roadwheelAngle_ = msg->roadwheelAngle;
 }
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)

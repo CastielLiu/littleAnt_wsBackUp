@@ -65,7 +65,6 @@ typedef struct
 	
 }gpsMsg_t;
 
-extern const float g_steering_gearRatio;
 extern const float g_vehicle_width;
 extern const float g_vehicle_length;
 extern const float g_max_deceleration;

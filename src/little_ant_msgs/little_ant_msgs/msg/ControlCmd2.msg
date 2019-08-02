@@ -8,6 +8,6 @@ float32 set_brake
 
 float32 set_accelerate
 
-float32 set_steeringAngle
+float32 set_roadWheelAngle
 
 bool set_emergencyBrake

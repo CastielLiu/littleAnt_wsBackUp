@@ -3,6 +3,7 @@
 bool driverless_mode
 
 float32 steeringAngle
+float32 roadwheelAngle
 
 bool steeringAngle_valid
 

@@ -109,9 +109,9 @@ void LaneKeeping::keepLane()
 	
 	float steering_radius = 0.5*foresight_distance_ / sin(delta) ;
 	
-	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
+	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) ;
 		
-	cmd_.cmd2.set_steeringAngle = fabs(angle) * get_steeringDir(lane_msg_.err, lane_msg_.theta,alpha);
+	cmd_.cmd2.set_roadWheelAngle = fabs(angle) * get_steeringDir(lane_msg_.err, lane_msg_.theta,alpha);
 	
 	cmd_.cmd2.set_speed = lane_keeping_speed_;
 	
@@ -289,7 +289,7 @@ void LaneKeeping::changeLane(int dir,float widthOfLane)
 		t_roadWheelAngle = saturationEqual(t_roadWheelAngle, 20.0);
 		
 		cmd_.cmd2.set_speed = changeLane_speed_;
-		cmd_.cmd2.set_steeringAngle = -t_roadWheelAngle * g_steering_gearRatio;
+		cmd_.cmd2.set_roadWheelAngle = -t_roadWheelAngle;
 		//ROS_INFO("lane changing... distance:%f  yaw_err:%f ",distance,yaw_err*180.0/M_PI);
 	}
 }

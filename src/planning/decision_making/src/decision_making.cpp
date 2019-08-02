@@ -72,7 +72,7 @@ void DecisionMaking::sendCmd2_callback(const ros::TimerEvent&)
 			{
 				cmd2_.set_brake = cmdMsg_[i].cmd.cmd2.set_brake;
 				cmd2_.set_speed = cmdMsg_[i].cmd.cmd2.set_speed;
-				cmd2_.set_steeringAngle = cmdMsg_[_GPS].cmd.cmd2.set_steeringAngle;
+				cmd2_.set_roadWheelAngle = cmdMsg_[_GPS].cmd.cmd2.set_roadWheelAngle;
 			}
 			else
 			{

@@ -3,6 +3,8 @@
 
 using namespace state_detection;
 
+static float g_steering_gearRatio = 540.0/25.0;
+
 static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int baud_rate)
 {
 	try 
@@ -208,6 +210,7 @@ void BaseControl::parse_obdCanMsg()
 			case ID_STATE4:
 				state4.driverless_mode = bool(canMsg.data[0]&0x01);
 				state4.steeringAngle = 1080.0-(canMsg.data[1]*256+canMsg.data[2])*0.1;
+				state4.roadwheelAngle = state4.steeringAngle/g_steering_gearRatio;
 				if(state4.steeringAngle==6553.5)
 					state4.steeringAngle_valid = 0;
 				else
@@ -516,7 +519,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
 	
 	static float last_set_steeringAngle = state4.steeringAngle;
-	float current_set_steeringAngle = msg->set_steeringAngle;  // -540~540deg
+	float current_set_steeringAngle = msg->set_roadWheelAngle * g_steering_gearRatio;  // -540~540deg
 	
 	if(current_set_steeringAngle>480.0) current_set_steeringAngle=480.0;
 	else if(current_set_steeringAngle<-480.0) current_set_steeringAngle =-480.0;
