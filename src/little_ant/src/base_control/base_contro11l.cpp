@@ -210,7 +210,6 @@ void BaseControl::parse_obdCanMsg()
 			case ID_STATE4:
 				state4.driverless_mode = bool(canMsg.data[0]&0x01);
 				state4.steeringAngle = 1080.0-(canMsg.data[1]*256+canMsg.data[2])*0.1;
-				//std::cout << state4.steeringAngle << std::endl;
 				state4.roadwheelAngle = state4.steeringAngle/g_steering_gearRatio;
 				if(state4.steeringAngle==6553.5)
 					state4.steeringAngle_valid = 0;
@@ -331,7 +330,6 @@ void BaseControl::parse_stm32_msgs()
 		if(stm32_msg1Ptr_->is_start && !stm32_msg1Ptr_->is_emergency_brake && !is_driverlessMode_)
 		{
 			this->setDriverlessMode();//启动无人驾驶模式
-			ROS_INFO("setDriverlessMode ok ^-^");
 			stm32_serial_port_->flushInput();
 			this->is_driverlessMode_ = true;
 		}
@@ -339,7 +337,6 @@ void BaseControl::parse_stm32_msgs()
 		{
 			this->is_driverlessMode_ = false;
 			this->exitDriverlessMode();
-			ROS_INFO("exitDriverlessMode ok ^-^");
 		}
 			
 		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
@@ -357,43 +354,38 @@ void BaseControl::setDriverlessMode()
 	*(unsigned long int*)canMsg_cmd2.data = 0;
 
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
-	//send driverless mode cmd
-	while(ros::ok() )
+	canMsg_cmd2.data[0] = 0x01; //set_gear drive
+	
+	uint16_t steeringAngle = 10800; //middle
+	
+	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
+	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
+	
+	while(ros::ok() && state4.driverless_mode==false)
 	{
 		can2serial.sendCanMsg(canMsg_cmd1);
 		usleep(20000);
-		static int count =  0;
-	//when setting the vehicle into driverless mode
-	//the steering will be back to the middle automaticly, and the steer rotate speed is suitable
-	//but if we immdiately send the steering cmd, the steer will rotate very fast, even cause EPS to fail
-	//so we should wait a minute before we send steering cmd
-	//if we just use sleep(x) but not keep cmd being sending ,the driverless system in vehicle may exit
-		if(state4.driverless_mode)
-		{
-			++count;
-			if(count == 5)
-				break;
-		}
 	}
 	
-	const uint16_t middle_steeringValue = 10800; //middle
-	canMsg_cmd2.data[4] =  uint8_t(middle_steeringValue / 256);
-	canMsg_cmd2.data[5] = uint8_t(middle_steeringValue % 256);
-	
-	for(size_t count = 0; ros::ok() && state1.act_gear != 1; ++count)
+	size_t count = 0;
+	while(ros::ok() && state1.act_gear != 1)
 	{
+		//canMsg_cmd2.data[4] = uint8_t(uint16_t(state4.steeringAngle*10) / 256);
+		//canMsg_cmd2.data[5] = uint8_t(uint16_t(state4.steeringAngle*10) % 256);
+		
+		can2serial.sendCanMsg(canMsg_cmd2);
+		usleep(10000);
+		count ++;
+		
 		if(count%6==0)
 			canMsg_cmd2.data[0] = 0x00;
 		else
 			canMsg_cmd2.data[0] = 0x01;
-			
-		can2serial.sendCanMsg(canMsg_cmd2);
-		usleep(10000);
 	}
 	canMsg_cmd2.data[0] = 0x01;
 	
 	//to Ensure steering stability at set value
-	for(size_t count=0; count<50; count++)
+	for(count=0; count<50; count++)
 	{
 		can2serial.sendCanMsg(canMsg_cmd2);
 		usleep(10000);

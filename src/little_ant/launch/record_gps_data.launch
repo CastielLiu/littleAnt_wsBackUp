@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 
-	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
+	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	
 	<arg name="file_path" default="$(find data)/data/raw/"/>
 	<arg name="file_name" default="path.txt" />
