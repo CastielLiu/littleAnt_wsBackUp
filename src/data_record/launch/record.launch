@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 	<arg name="file"/>
-	
+	 
 	<node pkg="data_record" type="record_gps_node" name="gps_record_node" output="screen">
 		<param name="file_name" value="$(find data_record)/tools/data/$(arg file)" />
 	</node>

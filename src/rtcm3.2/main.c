@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]) {
 	if(argc ==2)
 		fd_rtcm = dev_open(argv[1]);
 	else
-		fd_rtcm = dev_open("/dev/ttyS4");
+		fd_rtcm = dev_open("/dev/ttyS3");
 	if(fd_rtcm == -1)
 		return 0;
 		
@@ -95,9 +95,9 @@ int main(int argc, const char * argv[]) {
     pthread_create(&qxwz_rtcm_test,NULL,test_qxwz_rtcm_start_stop,NULL);
 	#endif
 	
-	write(fd_rtcm,"UNLOGALL THISPORT",17);
+	//write(fd_rtcm,"UNLOGALL THISPORT",17);
 	
-	char log_command[] = "LOG COM3 GPGGA ONTIME 1";
+	char log_command[] = "LOG COM3 GPGGA ONTIME 1\r\n";
 	
 	int i=0 , try_num = 5;
 	
