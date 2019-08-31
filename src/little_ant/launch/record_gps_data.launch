@@ -15,7 +15,6 @@
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node" >
-
 		<param name="port" value="$(arg gps_port)" />
 		<param name="baudrate" value="115200" />
 		<param name="odom_topic" value="/gps_odom" />
