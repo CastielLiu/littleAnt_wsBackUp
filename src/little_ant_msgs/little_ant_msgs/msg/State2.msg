@@ -1,5 +1,7 @@
 #VCU_ABS_1  0x300
 
+std_msgs/Header header
+
 #  km/s
 float32 wheel_speed_FL
 float32 wheel_speed_FR
