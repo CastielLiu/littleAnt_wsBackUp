@@ -163,7 +163,7 @@ void BaseControl::parse_obdCanMsg()
 				state1.act_gear_valid = !(canMsg.data[2]&0x10);
 				state1.vehicle_ready = bool(canMsg.data[2]&0x20);
 				state1.driverless_mode = bool(canMsg.data[2]&0x40);
-				
+				state1.header.stamp = ros::Time::now();
 				state1_pub.publish(state1);
 				break;
 				
@@ -189,7 +189,7 @@ void BaseControl::parse_obdCanMsg()
 				
 				state2.vehicle_speed = speed/i /3.6; //m/s
 				}
-				
+				state2.header.stamp = ros::Time::now();
 				state2_pub.publish(state2);
 				break;
 				
@@ -203,7 +203,7 @@ void BaseControl::parse_obdCanMsg()
 				state3.low_beam = bool(canMsg.data[1]&0x20);
 				state3.brake_light = bool(canMsg.data[2]&0x01);
 				state3.horn = bool(canMsg.data[2]&0x02);
-				
+				state3.header.stamp = ros::Time::now();
 				state3_pub.publish(state3);
 				break;
 				
@@ -217,6 +217,8 @@ void BaseControl::parse_obdCanMsg()
 				else
 					state4.steeringAngle_valid = 1;
 				state4.steeringAngle_speed = canMsg.data[3]*4; // deg/s
+				
+				state4.header.stamp = ros::Time::now();
 				state4_pub.publish(state4);
 				break;
 				

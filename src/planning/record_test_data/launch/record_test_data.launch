@@ -1,0 +1,9 @@
+<!-- -->
+
+<launch>
+	<arg name="file" />
+	<node name="record_test_data_node" pkg="record_test_data" type="record_test_data_node" output="screen">
+		<param name="file_path" value="$(find data)/data/debug/"/>
+		<param name="file_name" value="$(arg file)"/>
+	</node>
+</launch>

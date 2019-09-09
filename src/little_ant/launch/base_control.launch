@@ -1,7 +1,7 @@
 <!-- little Ant -->
 
 <launch>
-	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
+	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">

@@ -28,7 +28,7 @@ private:
 					 const nav_msgs::Odometry::ConstPtr& utm,
 					 const little_ant_msgs::State2::ConstPtr& state2,
 					 const little_ant_msgs::State4::ConstPtr& state4);
-	FILE *fp;
+	FILE *fp; 
 	gpsMsg_t last_point_ , current_point_;
 	float sample_distance_;
 	
@@ -65,13 +65,13 @@ bool Record::init()
 		ROS_ERROR("please input record file path and file name in launch file!!!");
 		return false;
 	}
-	if(file_name[file_name.length()-1] != '/')
-		file_name += '/';
+	if(file_path[file_path.length()-1] != '/')
+		file_path += '/';
 	fp = fopen((file_path + file_name).c_str(),"w");
 	
 	if(fp == NULL)
 	{
-		ROS_INFO("open record data file %s failed !!!",(file_path+file_name).c_str());
+		ROS_ERROR("open record data file %s failed !!!",(file_path+file_name).c_str());
 		return false;
 	}
 	
@@ -79,12 +79,12 @@ bool Record::init()
 	
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
 	
-	sub_gps_.reset(new message_filters::Subscriber<gps_msgs::Inspvax>(nh,"/gps",10));
-	sub_utm_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh,"/gps_odom",10));
-	sub_state2_.reset(new message_filters::Subscriber<little_ant_msgs::State2>(nh,"/vehicleState2",10));
-	sub_state4_.reset(new message_filters::Subscriber<little_ant_msgs::State4>(nh,"/vehicleState4",10));
+	sub_gps_.reset(new message_filters::Subscriber<gps_msgs::Inspvax>(nh,"/gps",5));
+	sub_utm_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh,"/gps_odom",5));
+	sub_state2_.reset(new message_filters::Subscriber<little_ant_msgs::State2>(nh,"/vehicleState2",5));
+	sub_state4_.reset(new message_filters::Subscriber<little_ant_msgs::State4>(nh,"/vehicleState4",5));
 	
-	sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10),*sub_gps_,*sub_utm_,*sub_state2_,*sub_state4_));
+	sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(5),*sub_gps_,*sub_utm_,*sub_state2_,*sub_state4_));
 	sync_->registerCallback(boost::bind(&Record::record_callback, this, _1, _2,_3,_4));
 			
 	return true;
@@ -118,7 +118,10 @@ void Record::record_callback(const gps_msgs::Inspvax::ConstPtr& gps,
 		ROS_INFO("row:%3d recording...", row_num);
 		last_point_ = current_point_;
 	}
-	
+//	else
+//		printf("pass..%.3f\t%.3f\t%.3f\t%.7f\t%.7f\t%.2f\t%.2f\r\n",
+//			current_point_.x,current_point_.y,current_point_.yaw,current_point_.longitude,current_point_.latitude,
+//			speed,roadwheelAngle);
 	
 }
 
