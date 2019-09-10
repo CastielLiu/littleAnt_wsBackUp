@@ -1,45 +1,129 @@
-#include"path_tracking.h"
+#include<ros/ros.h>
+#include<little_ant_msgs/ControlCmd.h>
+#include<vector>
+#include<memory>
+#include<little_ant_msgs/State2.h>  //speed
+#include<little_ant_msgs/State4.h>  //steerAngle
+
+#include<message_filters/subscriber.h>
+#include<message_filters/time_synchronizer.h>
+#include<message_filters/sync_policies/approximate_time.h>
+
+#include"gps_msgs/Inspvax.h"
+#include<nav_msgs/Odometry.h> 
+#include<ant_math/ant_math.h>
+#include<climits>
+
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <thread>
+using std::unique_ptr;
+
+class PurePursuit
+{
+public:
+	typedef message_filters::sync_policies::ApproximateTime<gps_msgs::Inspvax, nav_msgs::Odometry> MySyncPolicy;
+	PurePursuit();
+	~PurePursuit();
+	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
+	void run();
+	
+	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
+	float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt=true);
+	void pub_cmd_callback(const ros::TimerEvent&);
+	void gps_callback(const gps_msgs::Inspvax::ConstPtr & gps,
+					  const nav_msgs::Odometry::ConstPtr& utm);
+					  
+	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
+	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
+
+	bool is_gps_data_valid(gpsMsg_t& point);
+	void rosSpinThread(){ros::spin();}
+
+private:
+	void publishRelatedIndex();
+	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
+									 const gpsMsg_t& current_point);
+	bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points);
+	
+private:
+
+	unique_ptr<message_filters::Subscriber<gps_msgs::Inspvax>> sub_gps_;
+	unique_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_utm_;
+	unique_ptr<message_filters::Synchronizer<MySyncPolicy>> sync_;
+	
+	ros::Subscriber sub_vehicleState2_;
+	ros::Subscriber sub_vehicleState4_;
+	
+	ros::Timer timer_;
+	ros::Publisher pub_gps_cmd_;
+	
+	boost::shared_ptr<boost::thread> new_thread_;
+	
+	std::string path_points_file_;
+	
+	std::vector<gpsMsg_t> path_points_;
+	
+	size_t target_point_index_;
+	size_t nearest_point_index_;
+	
+	gpsMsg_t current_point_;
+	gpsMsg_t target_point_;
+	
+	float disThreshold_;
+	
+	little_ant_msgs::ControlCmd cmd_;
+	
+	float path_tracking_speed_;
+	
+	bool vehicle_speed_status_;
+	
+	float vehicle_speed_;
+	float current_roadwheelAngle_;
+	
+	float max_roadwheelAngle_;
+	
+	float lateral_err_;
+};
 
 
-PathTracking::PathTracking():
-	gps_status_(0x00),
+PurePursuit::PurePursuit():
 	vehicle_speed_status_(false),
 	target_point_index_(0),
 	nearest_point_index_(0),
-	avoiding_offset_(0.0),
-	max_roadwheelAngle_(25.0),
-	is_avoiding_(false)
+	max_roadwheelAngle_(25.0)
 {
-	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
-	gps_controlCmd_.status = true;
+	cmd_.origin = little_ant_msgs::ControlCmd::_GPS;
+	cmd_.status = true;
 	
-	gps_controlCmd_.cmd2.set_gear =1;
-	gps_controlCmd_.cmd2.set_speed =0.0;
-	gps_controlCmd_.cmd2.set_brake=0.0;
-	gps_controlCmd_.cmd2.set_accelerate =0.0;
-	gps_controlCmd_.cmd2.set_roadWheelAngle =0.0;
-	gps_controlCmd_.cmd2.set_emergencyBrake =0;
+	cmd_.cmd2.set_gear =1;
+	cmd_.cmd2.set_speed =0.0;
+	cmd_.cmd2.set_brake=0.0;
+	cmd_.cmd2.set_accelerate =0.0;
+	cmd_.cmd2.set_roadWheelAngle =0.0;
+	cmd_.cmd2.set_emergencyBrake =0;
 	
-	gps_controlCmd_.cmd1.set_driverlessMode =true;
+	cmd_.cmd1.set_driverlessMode =true;
 }
 
-PathTracking::~PathTracking()
+PurePursuit::~PurePursuit()
 {
 }
 
-bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
+bool PurePursuit::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
+	sub_gps_.reset(new message_filters::Subscriber<gps_msgs::Inspvax>(nh,"/gps",5));
+	sub_utm_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh,"/gps_odom",5));
+	sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(5),*sub_gps_,*sub_utm_));
+	sync_->registerCallback(boost::bind(&PurePursuit::gps_callback, this, _1, _2));
 
-	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);
-
-	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PathTracking::vehicleSpeed_callback,this);
+	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PurePursuit::vehicleSpeed_callback,this);
 	
-	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PathTracking::vehicleState4_callback,this);
+	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PurePursuit::vehicleState4_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	
-	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
+	timer_ = nh.createTimer(ros::Duration(0.01),&PurePursuit::pub_cmd_callback,this);
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
@@ -54,7 +138,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	}
 	
 	//start the ros::spin() thread
-	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
+	new_thread_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PurePursuit::rosSpinThread, this)));
 	
 	if(!loadPathPoints(path_points_file_, path_points_))
 		return false;
@@ -85,12 +169,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
-void PathTracking::rosSpinThread()
-{
-	ros::spin();
-}
-
-void PathTracking::run()
+void PurePursuit::run()
 {
 	size_t i =0;
 	
@@ -101,7 +180,7 @@ void PathTracking::run()
 		try
 		{
 			lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
-											 target_point_index_,&nearest_point_index_) - avoiding_offset_;
+											 target_point_index_,&nearest_point_index_) ;
 		}catch(const char* str)
 		{
 			ROS_INFO("%s",str);
@@ -124,13 +203,16 @@ void PathTracking::run()
 
 		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
-		t_roadWheelAngle = limitRoadwheelAngleBySpeed(t_roadWheelAngle,vehicle_speed_);
+		if(t_roadWheelAngle > max_roadwheelAngle_)
+			t_roadWheelAngle = max_roadwheelAngle_;
+		else if(t_roadWheelAngle < -max_roadwheelAngle_)
+			t_roadWheelAngle = -max_roadwheelAngle_;
 		
-		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;
+		cmd_.cmd2.set_speed = path_tracking_speed_;
 		
-		gps_controlCmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
+		cmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
 		
-		if(i%20==0)
+		if(i%30==0)
 		{
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);
@@ -142,8 +224,8 @@ void PathTracking::run()
 	
 	ROS_INFO("driverless completed...");
 	
-	gps_controlCmd_.cmd2.set_roadWheelAngle = 0.0;
-	gps_controlCmd_.cmd2.set_speed = 0.0;
+	cmd_.cmd2.set_roadWheelAngle = 0.0;
+	cmd_.cmd2.set_speed = 0.0;
 	
 	while(ros::ok())
 	{
@@ -151,13 +233,12 @@ void PathTracking::run()
 	}
 }
 
-size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
+size_t PurePursuit::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 									 const gpsMsg_t& current_point)
 {
 	size_t index = 0;
 	float min_dis = FLT_MAX;
 	float dis;
-	//ROS_ERROR("size:%d",path_points.size());
 	
 	for(size_t i=0; i<path_points.size(); )
 	{
@@ -197,63 +278,25 @@ size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 	return index;
 }
 
-void PathTracking::publishRelatedIndex()
+
+void PurePursuit::pub_cmd_callback(const ros::TimerEvent&)
 {
-	array_msgs::UInt32Array msg;
-	msg.data.push_back(target_point_index_);
-	msg.data.push_back(nearest_point_index_) ;
-	pub_related_index_.publish(msg);
+	pub_gps_cmd_.publish(cmd_);
 }
 
-void PathTracking::publishMaxTolerateSpeed()
+void PurePursuit::gps_callback(const gps_msgs::Inspvax::ConstPtr & gps,
+							   const nav_msgs::Odometry::ConstPtr& utm)
 {
-	std_msgs::Float32 msg;
-	msg.data = generateMaxTolarateSpeedByCurvature(path_points_[target_point_index_+10].curvature);
-	pub_max_tolerate_speed_.publish(msg);
-}
-
-float PathTracking::point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	return  sqrt(x * x + y * y);
-}
-
-
-void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
-{
-	pub_gps_cmd_.publish(gps_controlCmd_);
-}
-
-void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
-{
-	if(gps_status_!=0x03)
-		gps_status_ |= 0x01;
-	
-	current_point_.longitude = msg->longitude;
-	current_point_.latitude = msg->latitude;
-	current_point_.yaw = deg2rad(msg->azimuth);
+	current_point_.longitude = gps->longitude;
+	current_point_.latitude = gps->latitude;
+	current_point_.yaw = deg2rad(gps->azimuth);
+	current_point_.x = utm->pose.pose.position.x;
+	current_point_.y = utm->pose.pose.position.y;
 	//std::cout << "call_back ID: "<< std::this_thread::get_id()  << std::endl;
 }
 
-void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
-{
-	if(gps_status_!=0x03)
-		gps_status_ |= 0x02;
-	
-	current_point_.x = msg->pose.pose.position.x;
-	current_point_.y = msg->pose.pose.position.y;
-	/*
-	tf::Quaternion quat;
-	tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
-	
-	double roll,pitch;
-	
-	tf::Matrix3x3(quat).getRPY(roll, pitch, current_point_.yaw);
-*/
-}
 
-void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
+void PurePursuit::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
 	if(vehicle_speed_ >20.0)
 		return;
@@ -261,62 +304,43 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 	vehicle_speed_ = msg->vehicle_speed; //  m/s
 }
 
-void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
+void PurePursuit::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
 {
 	current_roadwheelAngle_ = msg->roadwheelAngle;
 }
 
-void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
+
+bool PurePursuit::loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
-	//avoid to left(-) or right(+) the value presents the offset
-	avoiding_offset_ = msg->data;
+	FILE *fp = fopen(file_path.c_str(),"r");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
+		points.push_back(point);
+	}
+	fclose(fp);
+	
+	return true;
 }
 
-#if IS_POLAR_COORDINATE_GPS ==1
-bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
+bool PurePursuit::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(	gps_status_ > 0 &&
-		point.longitude >10.0 && point.longitude < 170.0 && 
-		point.latitude >15.0 && point.latitude <70.0)
-		return true;
-	return false;
-}
-
-std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	//ROS_INFO("second:%f")
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	return dis_yaw;
-}
-float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	
-	if(is_sqrt)
-		return sqrt(x*x +y*y);
-	return x*x+y*y;
-}
-
-#else
-bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
-{
-	if(gps_status_ == 0x03 && point.x !=0 && point.y !=0)
+	if(point.x !=0 && point.y !=0)
 		return true;
 	return false;
 }
 
 
-std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
+std::pair<float, float> PurePursuit::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
 {
 	float x = point1.x - point2.x;
 	float y = point1.y - point2.y;
@@ -330,7 +354,7 @@ std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poi
 	return dis_yaw;
 }
 
-float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
+float PurePursuit::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
 {
 	float x = point1.x - point2.x;
 	float y = point1.y - point2.y;
@@ -340,18 +364,15 @@ float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bo
 	return x*x+y*y;
 }
 
-#endif
 
 
 int main(int argc,char**argv)
 {
-	ros::init(argc,argv,"path_tracking");
+	ros::init(argc,argv,"pure_pursuit");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
-	state_detection::debugSystemInitial();
-	
-	PathTracking path_tracking;
+	PurePursuit path_tracking;
 	if(!path_tracking.init(nh,nh_private))
 		return 1;
 	path_tracking.run();

@@ -5,8 +5,7 @@
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="max_speed"  default="30.0"/>
-	
-	<arg name="pathTracking_file_name" default="path.txt"/>
+	<arg name="path_file" default="path.txt"/>
 	
 <!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -18,7 +17,7 @@
 	</node>
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find data)/data/result/$(arg pathTracking_file_name)"/>
+		<param name="path_points_file" value="$(find data)/data/result/$(arg path_file)"/>
 		<param name="speed" value="$(arg max_speed)"/>						<!-- 跟踪速度  -->
 		
 		<param name="foreSightDis_speedCoefficient" value = "1.8"/>
@@ -37,13 +36,12 @@
 		<!-- <param name="log_commands" value="BESTUTMB ONTIME 1.0; BESTVELB ONTIME 1.0" /> -->
 		<param name="gps_default_logs_period" value="0.0" />
 		<param name="span_default_logs_period" value="0.0" />
-		
 		<param name="inspvax_topic" value = "/gps" />
 	</node>
 	
-	<node name="record_gps_data" pkg="record_gps_data" type="record_gps_data_node">
+	<node name="record_test_data_node" pkg="record_test_data" type="record_test_data_node">
 		<param name="file_path" value="$(find data)/data/debug/"/>
-		<param name="file_name" value="$(arg pathTracking_file_name)"/>
+		<param name="file_name" value="$(arg path_file)"/>
 	</node>
 	
 

@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   array_msgs
   serial
   jsk_recognition_msgs
+  message_filters
   ant_math
   state_detection
 )
@@ -44,6 +45,6 @@ target_link_libraries(path_tracking_node   ${catkin_LIBRARIES})
 
 add_executable(purepursuit_node src/pure_pursuit.cpp)
 add_dependencies(purepursuit_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(purepursuit_node   ${catkin_LIBRARIES})
+target_link_libraries(purepursuit_node  ${catkin_LIBRARIES})
 
 
