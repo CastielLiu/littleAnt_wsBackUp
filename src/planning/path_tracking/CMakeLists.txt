@@ -17,8 +17,18 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   ant_math
   state_detection
+  message_generation
 )
 
+add_message_files(
+	FILES
+	State.msg
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -26,6 +36,10 @@ catkin_package(
 #  CATKIN_DEPENDS little_ant_msgs roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
+
+
+
+
 
 ###########
 ## Build ##

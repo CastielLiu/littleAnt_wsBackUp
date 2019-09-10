@@ -18,6 +18,7 @@
 #include<std_msgs/Bool.h>
 #include<ant_math/ant_math.h>
 #include<state_detection/state_detection.h>
+#include<path_tracking/State.h>
 #include<climits>
 
 #include <boost/thread.hpp>
@@ -52,10 +53,10 @@ public:
 
 private:
 	void publishMaxTolerateSpeed();	
-	void publishRelatedIndex();
 	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 									 const gpsMsg_t& current_point);
 	void pointOffset(gpsMsg_t& point,float offset);
+	void publishPathTrackingState();
 private:
 	ros::Subscriber sub_gps_;
 	
@@ -69,8 +70,7 @@ private:
 	ros::Timer timer_;
 	
 	ros::Publisher pub_gps_cmd_;
-	
-	ros::Publisher pub_related_index_;
+	ros::Publisher pub_tracking_state_;
 	
 	ros::Publisher pub_max_tolerate_speed_;
 	
@@ -80,8 +80,7 @@ private:
 	
 	std::vector<gpsMsg_t> path_points_;
 	
-	size_t target_point_index_;
-	size_t nearest_point_index_;
+	path_tracking::State tracking_state_;
 	
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;
@@ -110,6 +109,10 @@ private:
 	bool is_avoiding_;
 	
 	float lateral_err_;
+	float yaw_err_;
+	
+	size_t target_point_index_;
+	size_t nearest_point_index_;
 	
 	float foreSightDis_speedCoefficient_;
 	float foreSightDis_latErrCoefficient_;

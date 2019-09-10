@@ -8,6 +8,7 @@
 #include<message_filters/subscriber.h>
 #include<message_filters/time_synchronizer.h>
 #include<message_filters/sync_policies/approximate_time.h>
+#include<path_tracking/State.h>
 
 #include"gps_msgs/Inspvax.h"
 #include<nav_msgs/Odometry.h> 
@@ -41,13 +42,12 @@ public:
 	void rosSpinThread(){ros::spin();}
 
 private:
-	void publishRelatedIndex();
+	void publishPathTrackingState();
 	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 									 const gpsMsg_t& current_point);
 	bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points);
 	
 private:
-
 	unique_ptr<message_filters::Subscriber<gps_msgs::Inspvax>> sub_gps_;
 	unique_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_utm_;
 	unique_ptr<message_filters::Synchronizer<MySyncPolicy>> sync_;
@@ -57,6 +57,7 @@ private:
 	
 	ros::Timer timer_;
 	ros::Publisher pub_gps_cmd_;
+	ros::Publisher pub_tracking_state_;
 	
 	boost::shared_ptr<boost::thread> new_thread_;
 	
@@ -73,6 +74,7 @@ private:
 	float disThreshold_;
 	
 	little_ant_msgs::ControlCmd cmd_;
+	path_tracking::State tracking_state_;
 	
 	float path_tracking_speed_;
 	
@@ -84,6 +86,7 @@ private:
 	float max_roadwheelAngle_;
 	
 	float lateral_err_;
+	float yaw_err_;
 };
 
 
@@ -122,6 +125,7 @@ bool PurePursuit::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PurePursuit::vehicleState4_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
+	pub_tracking_state_ = nh.advertise<path_tracking::State>("/tracking_state",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PurePursuit::pub_cmd_callback,this);
 	
@@ -169,6 +173,17 @@ bool PurePursuit::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
+void PurePursuit::publishPathTrackingState()
+{
+	tracking_state_.header.stamp = ros::Time::now();
+	tracking_state_.target_index = target_point_index_;
+	tracking_state_.current_index = nearest_point_index_;
+	tracking_state_.lateral_error = lateral_err_;
+	tracking_state_.yaw_error = yaw_err_;
+	tracking_state_.vehicle_speed =  vehicle_speed_;
+	pub_tracking_state_.publish(tracking_state_);
+}
+
 void PurePursuit::run()
 {
 	size_t i =0;
@@ -195,11 +210,11 @@ void PurePursuit::run()
 			continue;
 		}
 		
-		float yaw_err = dis_yaw.second - current_point_.yaw;
+		yaw_err_ = dis_yaw.second - current_point_.yaw;
 		
-		if(yaw_err==0.0) continue;
+		if(yaw_err_==0.0) continue;
 		
-		float turning_radius = (-0.5 * dis_yaw.first)/sin(yaw_err);
+		float turning_radius = (-0.5 * dis_yaw.first)/sin(yaw_err_);
 
 		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
@@ -212,9 +227,11 @@ void PurePursuit::run()
 		
 		cmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
 		
+		this->publishPathTrackingState();
+		
 		if(i%30==0)
 		{
-			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err*180.0/M_PI,lateral_err_);
+			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err_*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);
 		}
 		i++;

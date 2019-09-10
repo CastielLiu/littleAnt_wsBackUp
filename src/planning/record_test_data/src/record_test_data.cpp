@@ -10,6 +10,7 @@
 #include<message_filters/subscriber.h>
 #include<message_filters/time_synchronizer.h>
 #include<message_filters/sync_policies/approximate_time.h>
+#include<path_tracking/State.h>
 
 using namespace std;
 
@@ -28,9 +29,13 @@ private:
 					 const nav_msgs::Odometry::ConstPtr& utm,
 					 const little_ant_msgs::State2::ConstPtr& state2,
 					 const little_ant_msgs::State4::ConstPtr& state4);
+	void trackingState_callback(const path_tracking::State::ConstPtr& );
 	FILE *fp; 
 	gpsMsg_t last_point_ , current_point_;
 	float sample_distance_;
+	
+	ros::Subscriber sub_tracking_state_;
+	path_tracking::State tracking_state_;
 	
 	unique_ptr<message_filters::Subscriber<gps_msgs::Inspvax>> sub_gps_;
 	unique_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_utm_;
@@ -75,7 +80,7 @@ bool Record::init()
 		return false;
 	}
 	
-	
+	sub_tracking_state_ = nh.subscribe<path_tracking::State>("/tracking_state",1,&Record::trackingState_callback,this);
 	
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
 	
@@ -108,9 +113,9 @@ void Record::record_callback(const gps_msgs::Inspvax::ConstPtr& gps,
 	
 	if(sample_distance_*sample_distance_ <= dis2points(current_point_,last_point_))
 	{
-		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.7f\t%.7f\t%.2f\t%.2f\r\n",
+		fprintf(fp,"%.3f\t%.3f\t%.3f\t%.7f\t%.7f\t%.2f\t%.2f\t%.2f\t%.2f\r\n",
 					current_point_.x,current_point_.y,current_point_.yaw,current_point_.longitude,current_point_.latitude,
-					speed,roadwheelAngle);
+					speed,roadwheelAngle,tracking_state_.lateral_error,tracking_state_.yaw_error);
 		fflush(fp);
 		
 		row_num++;
@@ -123,6 +128,11 @@ void Record::record_callback(const gps_msgs::Inspvax::ConstPtr& gps,
 //			current_point_.x,current_point_.y,current_point_.yaw,current_point_.longitude,current_point_.latitude,
 //			speed,roadwheelAngle);
 	
+}
+
+void Record::trackingState_callback(const path_tracking::State::ConstPtr& state)
+{
+	tracking_state_ = *state;
 }
 
 float Record::dis2points(gpsMsg_t & point1,gpsMsg_t& point2)

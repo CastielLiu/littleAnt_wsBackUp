@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   gps_msgs
   serial
   ant_math
+  path_tracking
 )
 
 
