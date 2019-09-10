@@ -161,7 +161,7 @@ void PathTracking::run()
 		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
 		//find the index of a path point 8.0meters from the current point
-		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,8.0); 
+		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,15.0); 
 		if(index ==0)
 		{
 			ROS_INFO("findIndexForGivenDis faild!");

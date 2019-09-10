@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 
-	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
+	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="max_speed"  default="30.0"/>
@@ -41,7 +41,7 @@
 	
 	<node name="record_test_data_node" pkg="record_test_data" type="record_test_data_node">
 		<param name="file_path" value="$(find data)/data/debug/"/>
-		<param name="file_name" value="$(arg path_file)"/>
+		<param name="file_name" value="new_$(arg path_file)"/>
 	</node>
 	
 

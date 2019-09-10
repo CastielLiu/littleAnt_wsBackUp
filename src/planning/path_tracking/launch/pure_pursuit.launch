@@ -40,7 +40,7 @@
 	
 	<node name="record_test_data_node" pkg="record_test_data" type="record_test_data_node">
 		<param name="file_path" value="$(find data)/data/debug/"/>
-		<param name="file_name" value="$(arg path_file)"/>
+		<param name="file_name" value="pure_$(arg path_file)_$(arg forsight_dis)"/>
 	</node>
 	
 	<node  type="decision_making_node" pkg ="decision_making" name="decision_making_node" >  

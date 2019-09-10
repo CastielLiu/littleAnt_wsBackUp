@@ -351,7 +351,7 @@ bool PurePursuit::loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& po
 
 bool PurePursuit::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(point.x !=0 && point.y !=0)
+	if(fabs(point.x) > 100 && fabs(point.y) > 100)
 		return true;
 	return false;
 }
