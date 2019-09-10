@@ -1,9 +1,10 @@
+#from mpl_toolkits.mplot3d import axes3d
 
+from mpl_toolkits.mplot3d import axes3d
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 import sys
-
 
 def main(argv):
 	file_name = argv[1]
@@ -11,48 +12,33 @@ def main(argv):
 		lines = f.readlines()
 	if lines is None:
 		return False
-		
+	
+	msgs = []
+	
 	for line in lines:
-		x,y,yaw,curvature = line.split()
-		self.x.append(float(x))
-		self.y.append(float(y))
-		self.yaw.append(float(yaw))
-		self.curvature.append(float(curvature))	
+		#[x,y,yaw,lon,lat,speed,roadwheelAngle,lat_err,yaw_err] 
 		
+		msg = line.split()
+		msg = [float(i) for i in msg]
+		msgs.append(msg)
+	msgs = np.array(msgs)
 	
+	fig1 = plt.figure(1)
+	ax1 = fig1.gca(projection='3d')
 
-			
-def plot(file_name):
-	path_points = Points()
-	file_name = "../result/" + file_name
-	path_points.load(file_name)
-	
-	reference_point_x = path_points.x[0]
-	reference_point_y = path_points.y[0]
-	
-	path_points.offsetPoints(reference_point_x,reference_point_y)
-	
-	result_points = Points()
-	file_name = "../raw/" + file_name
-	result_points.load(file_name)
-	
-	result_points.offsetPoints(reference_point_x,reference_point_y)
-	
-	plt.plot(path_points.y,path_points.x,'r.',label="reference path")
-	plt.plot(result_points.y,result_points.x,'k-',label="trajectory")
+	ax1.set_title("3D_Curve")
+	ax1.set_xlabel("x")
+	ax1.set_ylabel("y")
+	ax1.set_zlabel("z")
 
-	plt.legend()
-
-	#plt.ylim((0,30))
+	figure = ax1.plot(msgs[:,0], msgs[:,1], msgs[:,5], c='r')
+	figure = ax1.plot(msgs[:,0], msgs[:,1], np.zeros(msgs.shape[0]), c='k')
 	
-	#plt.xticks(np.arange(0,200,2))
-	plt.grid('on')
-
-	plt.savefig('a.pdf')
 
 	plt.show()
 
-if(len(sys.argv) != 2):
-	print("please input file name")
-else:
-	plot(sys.argv[1])
+if __name__ == '__main__':
+	if(len(sys.argv) != 2):
+		print("please input file name")
+	else:
+		main(sys.argv)
