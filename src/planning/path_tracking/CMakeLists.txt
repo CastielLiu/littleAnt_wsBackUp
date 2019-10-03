@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(path_tracking)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -I /usr/include/eigen3/)
 
 
 find_package(catkin REQUIRED COMPONENTS
@@ -61,4 +61,7 @@ add_executable(purepursuit_node src/pure_pursuit.cpp)
 add_dependencies(purepursuit_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(purepursuit_node  ${catkin_LIBRARIES})
 
+add_executable(pid_tracking_node src/pid_tracking.cpp)
+add_dependencies(pid_tracking_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(pid_tracking_node  ${catkin_LIBRARIES})
 
