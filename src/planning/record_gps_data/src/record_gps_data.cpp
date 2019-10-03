@@ -75,7 +75,7 @@ bool Record::init()
 	sub_gps_= nh.subscribe("/gps",1,&Record::gps_callback,this);
 	
 #if IS_POLAR_COORDINATE_GPS==0
-	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&Record::cartesian_gps_callback,this);
+	sub_cartesian_gps_ = nh.subscribe("/best_utm",2,&Record::cartesian_gps_callback,this);
 #endif    
     
 	fp = fopen((file_path_+file_name_).c_str(),"w");
@@ -119,7 +119,6 @@ float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 	float y = (point1.latitude - point2.latitude) *111000;
 	return x*x+y*y;
 }
-
 
 #else
 void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)

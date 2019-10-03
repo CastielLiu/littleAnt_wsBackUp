@@ -188,9 +188,16 @@ void PidTracking::run()
 			continue;
 		}
 		
+		ROS_INFO("t_yaw: %f\t yaw:%f",dis_yaw.second*180.0/M_PI, current_point_.yaw*180.0/M_PI);
+		
 		yaw_err_ = dis_yaw.second - current_point_.yaw;
+	
+		if(yaw_err_ >= M_PI)
+			yaw_err_ -= 2*M_PI;
+		else if(yaw_err_ <= -M_PI)
+			yaw_err_ += 2*M_PI;
 
-		float t_roadWheelAngle = yaw_err_ * kp_;
+		float t_roadWheelAngle = yaw_err_ *180.0/M_PI * kp_;
 		
 		if(t_roadWheelAngle > max_roadwheelAngle_)
 			t_roadWheelAngle = max_roadwheelAngle_;
@@ -260,15 +267,16 @@ void PidTracking::gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm)
 {
 	current_point_.x = utm->pose.pose.position.x;
 	current_point_.y = utm->pose.pose.position.y;
+	current_point_.yaw = utm->pose.covariance[0];
 	
-	Eigen::Quaterniond q;
-	q.x() = utm->pose.pose.orientation.x;
-	q.y() = utm->pose.pose.orientation.y;
-	q.z() = utm->pose.pose.orientation.z;
-	q.w() = utm->pose.pose.orientation.w;
-	
-	Eigen::Vector3d eulerAngle=q.matrix().eulerAngles(2,1,0);
-	current_point_.yaw = eulerAngle[2];
+//	Eigen::Quaterniond q;
+//	q.x() = utm->pose.pose.orientation.x;
+//	q.y() = utm->pose.pose.orientation.y;
+//	q.z() = utm->pose.pose.orientation.z;
+//	q.w() = utm->pose.pose.orientation.w;
+//	
+//	Eigen::Vector3d eulerAngle=q.matrix().eulerAngles(0,1,2); //x,y,z
+//	current_point_.yaw = -eulerAngle[2] + M_PI/2;
 }
 
 void PidTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)

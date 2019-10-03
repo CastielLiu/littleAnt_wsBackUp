@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 
-	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
+	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="max_speed"  default="30.0"/>
@@ -20,7 +20,7 @@
 		<param name="path_points_file" value="$(find data)/data/raw/$(arg path_file)"/>
 		<param name="speed" value="$(arg max_speed)"/>						<!-- 跟踪速度  -->
 		<param name="disThreshold" value="$(arg forsight_dis)"/>
-		<param name="kp" value="0.5"/>
+		<param name="kp" value="-0.5"/>
 	</node>
 	
 	
