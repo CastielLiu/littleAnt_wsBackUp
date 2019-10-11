@@ -2,9 +2,6 @@
 #include<cstdio>
 #include<ros/ros.h>
 #include<sensor_msgs/Imu.h>
-#include<little_ant_msgs/State4.h>  //steeringAngle
-#include<little_ant_msgs/State2.h>  //vehicle_speed
-#include<gps_msgs/Inspvax.h>
 
 using namespace std;
 
@@ -14,10 +11,9 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& imu)
 {
 	//imu
 	static size_t i=0;
+	ROS_INFO("imu:%d",i++);
 	
-	ROS_INFO("imu:%d",i);
-	i++;
-	fprintf(fp,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\r\n",
+	fprintf(fp,"%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\r\n", imu->header.stamp.toSec(),
 			imu->angular_velocity.x,imu->angular_velocity.y,imu->angular_velocity.z,
 			imu->linear_acceleration.x,imu->linear_acceleration.y,imu->linear_acceleration.z);
 	
@@ -43,7 +39,7 @@ int main(int argc,char **argv)
 	else
 		ROS_INFO("open %s ok",_file_name.c_str());
 	
-	fprintf(fp,"angleSpeedx_y_z;lineAccx_y_z\r\n");
+	fprintf(fp,"stamp    angle_speed_x_y_z \t line_acc_x_y_z\r\n");
 	ros::spin();
 
 	return 0;

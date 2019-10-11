@@ -1,23 +1,26 @@
-#include<vector>
-#include<memory>
-#include<climits>
-#include<ros/ros.h>
+
 #include<little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/State2.h>  //speed
 #include<little_ant_msgs/State4.h>  //steerAngle
+#include<path_tracking/State.h>
+#include<sstream>
+#include<ros/ros.h>
+#include<fstream>
+#include<climits>
+#include<vector>
+#include<memory>
 
 #include<message_filters/subscriber.h>
 #include<message_filters/time_synchronizer.h>
 #include<message_filters/sync_policies/approximate_time.h>
-#include<path_tracking/State.h>
 
 #include<gps_msgs/Inspvax.h>
-#include<nav_msgs/Odometry.h> 
+#include<nav_msgs/Odometry.h>
 #include<ant_math/ant_math.h>
-#include<Eigen/Dense>
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include<Eigen/Dense>
 #include <thread>
 using std::unique_ptr;
 
@@ -154,11 +157,16 @@ bool PidTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 void PidTracking::publishPathTrackingState()
 {
 	tracking_state_.header.stamp = ros::Time::now();
-	tracking_state_.target_index = target_point_index_;
-	tracking_state_.current_index = nearest_point_index_;
+	tracking_state_.position_x = current_point_.x;
+	tracking_state_.position_y = current_point_.y;
+	tracking_state_.yaw = current_point_.yaw;
+	tracking_state_.vehicle_speed =  vehicle_speed_;
+	tracking_state_.roadwheel_angle = current_roadwheelAngle_;
 	tracking_state_.lateral_error = lateral_err_;
 	tracking_state_.yaw_error = yaw_err_;
-	tracking_state_.vehicle_speed =  vehicle_speed_;
+	
+	tracking_state_.target_index = target_point_index_;
+	tracking_state_.current_index = nearest_point_index_;
 	pub_tracking_state_.publish(tracking_state_);
 }
 
@@ -292,26 +300,26 @@ void PidTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr
 	current_roadwheelAngle_ = msg->roadwheelAngle;
 }
 
-
 bool PidTracking::loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
-	FILE *fp = fopen(file_path.c_str(),"r");
-	
-	if(fp==NULL)
+	std::ifstream in_file(file_path);
+	if(!in_file.is_open())
 	{
 		ROS_ERROR("open %s failed",file_path.c_str());
 		return false;
 	}
-	
 	gpsMsg_t point;
+	std::string line;
 	
-	while(!feof(fp))
+	while(in_file.good())
 	{
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
+		getline(in_file,line);
+		std::stringstream ss(line);
+		ss >> point.x >> point.y >> point.yaw;
 		points.push_back(point);
 	}
-	fclose(fp);
 	
+	in_file.close();
 	return true;
 }
 

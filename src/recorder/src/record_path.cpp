@@ -6,16 +6,13 @@
 #include<ant_math/ant_math.h>
 #include<little_ant_msgs/PathInfo.h>
 
-#ifndef PI_
-#define PI_ 3.141592653589
-#endif
-
 class Record
 {
 	private:
-		void gps_callback(const gps_msgs::Inspvax::ConstPtr& gpsMsg);
 #if IS_POLAR_COORDINATE_GPS==0
 		void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
+#else
+		void gps_callback(const gps_msgs::Inspvax::ConstPtr& gpsMsg);
 #endif
 		float calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2);
 		
@@ -23,7 +20,7 @@ class Record
 		std::string	file_name_;
 		
 		FILE *fp;
-		FILE *fp_lat_lon;
+		FILE *fp_wgs84;
 		
 		gpsMsg_t last_point , current_point;
 		
@@ -32,8 +29,6 @@ class Record
 		
 		ros::Subscriber sub_cartesian_gps_ ;
 		
-		bool gps_status_;
-		
 	public:
 		Record();
 		~Record();
@@ -41,8 +36,7 @@ class Record
 		void recordToFile();
 };
 
-Record::Record():
-	gps_status_(0)
+Record::Record()
 {
 	last_point = {0.0,0.0,0.0,0.0,0.0};
 	current_point = last_point;
@@ -52,8 +46,8 @@ Record::~Record()
 {
 	if(fp != NULL)
 		fclose(fp);
-	if(fp_lat_lon != NULL)
-		fclose(fp_lat_lon);
+	if(fp_wgs84 != NULL)
+		fclose(fp_wgs84);
 }
 
 bool Record::init()
@@ -71,30 +65,30 @@ bool Record::init()
 	}
 	
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
-
-	sub_gps_= nh.subscribe("/gps",1,&Record::gps_callback,this);
+	std::string gps_topic = private_nh.param<std::string>("gps_topic","/gps");
+	std::string utm_topic = private_nh.param<std::string>("utm_topic","/ll2utm_odom");
 	
 #if IS_POLAR_COORDINATE_GPS==0
-	sub_cartesian_gps_ = nh.subscribe("/best_utm",2,&Record::cartesian_gps_callback,this);
-#endif    
-    
+	sub_cartesian_gps_ = nh.subscribe(utm_topic ,1,&Record::cartesian_gps_callback,this);
+#else
+	sub_gps_= nh.subscribe(gps_topic, 1, &Record::gps_callback,this);
+#endif
+
 	fp = fopen((file_path_+file_name_).c_str(),"w");
 	
-	fp_lat_lon = fopen((file_path_+"0"+file_name_).c_str(),"w");
+	fp_wgs84 = fopen((file_path_+"wgs84"+file_name_).c_str(),"w");
 	
 	if(fp == NULL)
 	{
 		ROS_INFO("open record data file %s failed !!!",(file_path_+file_name_).c_str());
 		return false;
 	}
-	else if(fp_lat_lon == NULL)
+	if(fp_wgs84 == NULL)
 	{
-		ROS_INFO("open record data file %s failed !!!",(file_path_+"0"+file_name_).c_str());
+		ROS_INFO("open record data file %s failed !!!",(file_path_+"wgs84"+file_name_).c_str());
 		return false;
 	}
 	return true;
-	
-	
 }
 
 #if IS_POLAR_COORDINATE_GPS ==1
@@ -121,13 +115,6 @@ float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 }
 
 #else
-void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
-{
-	gps_status_ = true;
-	current_point.latitude = gps->latitude;
-	current_point.longitude = gps->longitude;
-	current_point.yaw = gps->azimuth*M_PI/180.0;
-}
 
 float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
 {
@@ -142,20 +129,17 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	static size_t  row_num = 0;
 	current_point.x = msg->pose.pose.position.x;
 	current_point.y = msg->pose.pose.position.y;
-	if(gps_status_ == true && sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
+	current_point.yaw = msg->pose.covariance[0];
+	
+	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
-		gps_status_ = false;
-		//x,y,theta,offset_l,offset_r,traffic_sign
 		fprintf(fp,"%.3f\t%.3f\t%.3f\r\n",current_point.x,current_point.y,current_point.yaw);
 		fflush(fp);
 		
-		fprintf(fp_lat_lon,"%.8f\t%.8f\t%.3f\n",current_point.latitude,current_point.longitude,current_point.yaw);
+		fprintf(fp_wgs84,"%.7f\t%.7f\r\n",msg->pose.covariance[1],msg->pose.covariance[2]);
+		fflush(fp_wgs84);
 		
-		fflush(fp_lat_lon);
-		
-		row_num++;
-		
-		ROS_INFO("row:%d\t%.3f\t%.3f\t%.3f\r\n",row_num,current_point.x,current_point.y,current_point.yaw);
+		ROS_INFO("row:%d\t%.3f\t%.3f\t%.3f\r\n",row_num++,current_point.x,current_point.y,current_point.yaw);
 		last_point = current_point;
 	}
 }

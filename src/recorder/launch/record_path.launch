@@ -1,0 +1,28 @@
+<!-- -->
+<launch>
+	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
+	
+	<arg name="file_path" default="$(find recorder)/data/path_data/raw/"/>
+	<arg name="file_name" default="path.txt" />
+
+	<node name="record_path_node" pkg="recorder" type="record_path_node" output= "screen">
+		<param name="file_path" value="$(arg file_path)"/>
+		<param name="file_name" value="$(arg file_name)"/>
+		<param name="sample_distance" value="0.2" />
+		<param name="utm_topic" value="/ll2utm_odom" />
+	</node>
+	
+	<node pkg="novatel" type="novatel_node" name="novatel_node" >
+		<param name="port" value="$(arg gps_port)" />
+		<param name="baudrate" value="115200" />
+	
+		<param name="log_commands" value="inspvaxb ontime 0.05; bestutmb ontime 0.05" />
+		<param name="bestutm_topic" value="/best_utm" />
+		<param name="inspvax_topic" value = "/gps" />
+		<param name="is_lltoutm"   value="true"/>
+		<param name="ll2utm_topic" value="/ll2utm_odom"/>
+		<param name="inspvax_topic" value = "/gps" />
+		
+	</node>
+
+</launch>
