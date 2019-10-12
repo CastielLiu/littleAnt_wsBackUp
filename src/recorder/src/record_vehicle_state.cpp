@@ -49,7 +49,7 @@ public:
 	void state4_callback(const little_ant_msgs::State4::ConstPtr& state4)
 	{
 		out_file_ << std::fixed << std::setprecision(3) << state4->header.stamp.toSec() << "\t"
-				  << state4->roadwheelAngle << "\t" << speed_ << "\r\n";
+				  << state4->roadwheelAngle << "\t" << speed_ << "\n";
 	}
 	
 	

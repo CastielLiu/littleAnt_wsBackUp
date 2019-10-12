@@ -99,10 +99,10 @@ void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
 	current_point.yaw = gps->azimuth;
 	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
-		fprintf(fp,"%.8f\t%.8f\t%.3f\r\n",current_point.longitude,current_point.latitude,current_point.azimuth);
+		fprintf(fp,"%.8f\t%.8f\t%.3f\n",current_point.longitude,current_point.latitude,current_point.azimuth);
 		fflush(fp);
 		
-		ROS_INFO("%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);
+		ROS_INFO("%.8f\t%.8f",current_point.longitude,current_point.latitude);
 		last_point = current_point;
 	}
 }
@@ -133,13 +133,13 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	
 	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
 	{
-		fprintf(fp,"%.3f\t%.3f\t%.3f\r\n",current_point.x,current_point.y,current_point.yaw);
+		fprintf(fp,"%.3f\t%.3f\t%.3f\n",current_point.x,current_point.y,current_point.yaw);
 		fflush(fp);
 		
-		fprintf(fp_wgs84,"%.7f\t%.7f\r\n",msg->pose.covariance[1],msg->pose.covariance[2]);
+		fprintf(fp_wgs84,"%.7f\t%.7f\n",msg->pose.covariance[1],msg->pose.covariance[2]);
 		fflush(fp_wgs84);
 		
-		ROS_INFO("row:%d\t%.3f\t%.3f\t%.3f\r\n",row_num++,current_point.x,current_point.y,current_point.yaw);
+		ROS_INFO("row:%d\t%.3f\t%.3f\t%.3f",row_num++,current_point.x,current_point.y,current_point.yaw);
 		last_point = current_point;
 	}
 }

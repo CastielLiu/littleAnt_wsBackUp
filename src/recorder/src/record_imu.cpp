@@ -9,7 +9,7 @@ FILE * fp = NULL;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& imu)
 {
-	fprintf(fp,"%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\r\n", imu->header.stamp.toSec(),
+	fprintf(fp,"%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", imu->header.stamp.toSec(),
 			imu->angular_velocity.x,imu->angular_velocity.y,imu->angular_velocity.z,
 			imu->linear_acceleration.x,imu->linear_acceleration.y,imu->linear_acceleration.z);
 	
@@ -45,7 +45,7 @@ int main(int argc,char **argv)
 	else
 		ROS_INFO("open %s ok",full_file_name.c_str());
 	
-	fprintf(fp,"stamp    angle_speed_x_y_z \t line_acc_x_y_z\r\n");
+	fprintf(fp,"stamp    angle_speed_x_y_z \t line_acc_x_y_z\n");
 	
 	ROS_INFO("imu_record_node initial ok.");
 	
