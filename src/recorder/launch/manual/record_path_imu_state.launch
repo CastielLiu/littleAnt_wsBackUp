@@ -1,6 +1,8 @@
 <!-- -->
 <launch>
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
+	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
+	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="file_name" default="test1" />
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node" >
@@ -27,6 +29,13 @@
 		<param name="file_path" value="$(find recorder)/data/state/"/>
 		<param name="file_name" value="$(arg file_name)_imu.txt"/>
 		<param name="imu_topic" value="/corr_imu" />
+	</node>
+	
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
+		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
+		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
+		<param name ="stm32_baudrate" value="115200"/>
+		<param name ="max_steering_speed" value="5.0"/> <!--前后帧转角最大差值 -->
 	</node>
 	
 	<node name="record_vehicle_state_node" pkg="recorder" type="record_vehicle_state_node" output= "screen">

@@ -36,8 +36,8 @@ public:
 			return false;
 		}
 		
-		sub_state2_ = nh.subscribe("/vehicle_state2", 1, &Recorder::state2_callback, this);
-		sub_state4_ = nh.subscribe("/vehicle_state4", 1, &Recorder::state4_callback, this);
+		sub_state2_ = nh.subscribe("/vehicleState2", 1, &Recorder::state2_callback, this);
+		sub_state4_ = nh.subscribe("/vehicleState4", 1, &Recorder::state4_callback, this);
 		return true;
 		
 	}

@@ -1,1 +1,0 @@
-stamp    angle_speed_x_y_z 	 line_acc_x_y_z

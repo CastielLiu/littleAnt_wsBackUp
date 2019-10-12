@@ -1,4 +1,0 @@
-XYZRpvData xyz
-ENURpvData enu
-float64 magnitude
-float64 horizontal_magnitude
