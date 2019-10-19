@@ -103,12 +103,15 @@ PidTracking::~PidTracking()
 
 bool PidTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	sub_utm_odom_ = nh.subscribe("/ll2utm_odom",5,&PidTracking::gps_odom_callback,this);
+	std::string utm_odom_topic = nh_private.param<std::string>("utm_odom_topic","/ll2utm_odom");
+	std::string tracking_info_topic = nh_private.param<std::string>("tracking_info_topic","/tracking_state");
+	
+	sub_utm_odom_ = nh.subscribe(utm_odom_topic, 5,&PidTracking::gps_odom_callback,this);
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PidTracking::vehicleSpeed_callback,this);
 	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PidTracking::vehicleState4_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
-	pub_tracking_state_ = nh.advertise<path_tracking::State>("/tracking_state",1);
+	pub_tracking_state_ = nh.advertise<path_tracking::State>(tracking_info_topic, 1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PidTracking::pub_cmd_callback,this);
 	
