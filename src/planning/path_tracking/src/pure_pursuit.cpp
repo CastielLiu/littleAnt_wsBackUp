@@ -30,7 +30,6 @@ public:
 	void run();
 	
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
-	float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt=true);
 	void pub_cmd_callback(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr & gps,
 					  const nav_msgs::Odometry::ConstPtr& utm);
@@ -43,9 +42,6 @@ public:
 
 private:
 	void publishPathTrackingState();
-	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
-									 const gpsMsg_t& current_point);
-	bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points);
 	
 private:
 	unique_ptr<message_filters::Subscriber<gps_msgs::Inspvax>> sub_gps_;
@@ -176,11 +172,16 @@ bool PurePursuit::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 void PurePursuit::publishPathTrackingState()
 {
 	tracking_state_.header.stamp = ros::Time::now();
-	tracking_state_.target_index = target_point_index_;
-	tracking_state_.current_index = nearest_point_index_;
+	tracking_state_.position_x = current_point_.x;
+	tracking_state_.position_y = current_point_.y;
+	tracking_state_.yaw = current_point_.yaw;
+	tracking_state_.vehicle_speed =  vehicle_speed_;
+	tracking_state_.roadwheel_angle = current_roadwheelAngle_;
 	tracking_state_.lateral_error = lateral_err_;
 	tracking_state_.yaw_error = yaw_err_;
-	tracking_state_.vehicle_speed =  vehicle_speed_;
+	
+	tracking_state_.target_index = target_point_index_;
+	tracking_state_.current_index = nearest_point_index_;
 	pub_tracking_state_.publish(tracking_state_);
 }
 
@@ -250,51 +251,6 @@ void PurePursuit::run()
 	}
 }
 
-size_t PurePursuit::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
-									 const gpsMsg_t& current_point)
-{
-	size_t index = 0;
-	float min_dis = FLT_MAX;
-	float dis;
-	
-	for(size_t i=0; i<path_points.size(); )
-	{
-		dis = dis2Points(path_points[i],current_point);
-		//ROS_INFO("i=%d\t dis:%f",i,dis);
-		//ROS_INFO("path_points[%d] x:%lf\t y:%lf",i,path_points[i].x,path_points[i].y);
-		//ROS_INFO("current_point  x:%lf\t y:%lf",current_point.x,current_point.y);
-		if(dis < min_dis)
-		{
-			min_dis = dis;
-			index = i;
-		}
-		if(dis>1000)
-			i += 1000;
-		else if(dis > 500)
-			i += 500;
-		else if(dis > 250)
-			i += 250;
-		else if(dis > 125)
-			i += 125;
-		else if(dis > 63)
-			i += 63;
-		else if(dis > 42)
-			i += 42;
-		else if(dis > 21)
-			i += 21;
-		else
-			i += 1;
-	}
-	if(min_dis >50)
-	{
-		ROS_ERROR("current_point x:%f\ty:%f",current_point.x,current_point.y);
-		ROS_ERROR("findNearestPoint error mindis:%f",min_dis);
-		return path_points.size();
-	}
-		
-	return index;
-}
-
 
 void PurePursuit::pub_cmd_callback(const ros::TimerEvent&)
 {
@@ -327,28 +283,6 @@ void PurePursuit::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr
 }
 
 
-bool PurePursuit::loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
-{
-	FILE *fp = fopen(file_path.c_str(),"r");
-	
-	if(fp==NULL)
-	{
-		ROS_ERROR("open %s failed",file_path.c_str());
-		return false;
-	}
-	
-	gpsMsg_t point;
-	
-	while(!feof(fp))
-	{
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.x,&point.y,&point.yaw);
-		points.push_back(point);
-	}
-	fclose(fp);
-	
-	return true;
-}
-
 bool PurePursuit::is_gps_data_valid(gpsMsg_t& point)
 {
 	if(fabs(point.x) > 100 && fabs(point.y) > 100)
@@ -370,17 +304,6 @@ std::pair<float, float> PurePursuit::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poin
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
 }
-
-float PurePursuit::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	if(is_sqrt)
-		return sqrt(x*x +y*y);
-	return x*x+y*y;
-}
-
 
 
 int main(int argc,char**argv)

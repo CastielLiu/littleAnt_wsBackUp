@@ -35,27 +35,79 @@ float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
 	FILE *fp = fopen(file_path.c_str(),"r");
-	
 	if(fp==NULL)
 	{
 		ROS_ERROR("open %s failed",file_path.c_str());
 		return false;
 	}
-	
 	gpsMsg_t point;
-	
 	while(!feof(fp))
 	{
-#if IS_POLAR_COORDINATE_GPS == 1
-		fscanf(fp,"%lf\t%lf\t%lf\n",&point.longitude,&point.latitude,&point.yaw);
-#else
 		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
-#endif
 		points.push_back(point);
 	}
 	fclose(fp);
-	
 	return true;
+}
+
+/*
+bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
+{
+	std::ifstream in_file(file_path);
+	if(!in_file.is_open())
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	gpsMsg_t point;
+	std::string line;
+	
+	while(in_file.good())
+	{
+		getline(in_file,line);
+		std::stringstream ss(line);
+		ss >> point.x >> point.y >> point.yaw;
+		points.push_back(point);
+	}
+	
+	in_file.close();
+	return true;
+}
+*/
+
+float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
+{
+	float x = point1.x - point2.x;
+	float y = point1.y - point2.y;
+	
+	if(is_sqrt)
+		return sqrt(x*x +y*y);
+	return x*x+y*y;
+}
+
+
+size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points, const gpsMsg_t& current_point)
+{
+	size_t index = 0;
+	float min_dis2 = FLT_MAX;
+	
+	for(size_t i=0; i<path_points.size(); ++i)
+	{
+		float dis2 = dis2Points(path_points[i],current_point,false);
+		if(dis2 < min_dis2)
+		{
+			min_dis2 = dis2;
+			index = i;
+		}
+	}
+	if(min_dis2 > 15*15)
+	{
+		ROS_ERROR("current_point x:%f\ty:%f",current_point.x,current_point.y);
+		ROS_ERROR("find correct nearest point failed! the nearest point distance over 15 meters");
+		return path_points.size();
+	}
+		
+	return index;
 }
 
 float calculateDis2path(const double& X_,const double& Y_,

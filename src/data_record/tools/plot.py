@@ -5,8 +5,6 @@ import math
 import sys
 import re
 		
-
-
 def main(argv):
 	if(len(argv)<2):
 		print("please input file name")

@@ -33,7 +33,6 @@ public:
 	void run();
 	
 	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
-	float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt=true);
 	void gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm);
 	void pub_cmd_callback(const ros::TimerEvent&);
 
@@ -45,9 +44,6 @@ public:
 
 private:
 	void publishPathTrackingState();
-	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
-									 const gpsMsg_t& current_point);
-	bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points);
 	
 private:
 	ros::Subscriber sub_utm_odom_;
@@ -242,33 +238,6 @@ void PidTracking::run()
 	}
 }
 
-size_t PidTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
-									 const gpsMsg_t& current_point)
-{
-	size_t index = 0;
-	float min_dis = FLT_MAX;
-	float dis;
-	
-	for(size_t i=0; i<path_points.size(); ++i)
-	{
-		dis = dis2Points(path_points[i],current_point);
-		if(dis < min_dis)
-		{
-			min_dis = dis;
-			index = i;
-		}
-	}
-	if(min_dis >50)
-	{
-		ROS_ERROR("current_point x:%f\ty:%f",current_point.x,current_point.y);
-		ROS_ERROR("findNearestPoint error mindis:%f",min_dis);
-		return path_points.size();
-	}
-		
-	return index;
-}
-
-
 void PidTracking::pub_cmd_callback(const ros::TimerEvent&)
 {
 	pub_gps_cmd_.publish(cmd_);
@@ -303,28 +272,6 @@ void PidTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr
 	current_roadwheelAngle_ = msg->roadwheelAngle;
 }
 
-bool PidTracking::loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
-{
-	std::ifstream in_file(file_path);
-	if(!in_file.is_open())
-	{
-		ROS_ERROR("open %s failed",file_path.c_str());
-		return false;
-	}
-	gpsMsg_t point;
-	std::string line;
-	
-	while(in_file.good())
-	{
-		getline(in_file,line);
-		std::stringstream ss(line);
-		ss >> point.x >> point.y >> point.yaw;
-		points.push_back(point);
-	}
-	
-	in_file.close();
-	return true;
-}
 
 bool PidTracking::is_gps_data_valid(gpsMsg_t& point)
 {
@@ -346,16 +293,6 @@ std::pair<float, float> PidTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &poin
 	if(dis_yaw.second <0)
 		dis_yaw.second += 2*M_PI;
 	return dis_yaw;
-}
-
-float PidTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	if(is_sqrt)
-		return sqrt(x*x +y*y);
-	return x*x+y*y;
 }
 
 
