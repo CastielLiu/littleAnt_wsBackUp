@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   can2serial
   ant_math
-  state_detection
 )
 
 include_directories(

@@ -17,7 +17,6 @@
 
 #include<std_msgs/Bool.h>
 #include<ant_math/ant_math.h>
-#include<state_detection/state_detection.h>
 #include<path_tracking/State.h>
 #include<climits>
 

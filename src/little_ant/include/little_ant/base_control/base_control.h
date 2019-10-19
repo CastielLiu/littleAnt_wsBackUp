@@ -21,7 +21,6 @@
 #include <little_ant_msgs/ControlCmd1.h>
 #include <little_ant_msgs/ControlCmd2.h>
 
-#include<state_detection/state_detection.h>
 #include<ant_math/ant_math.h>
 
 #define ID_CMD_1 0x2C5

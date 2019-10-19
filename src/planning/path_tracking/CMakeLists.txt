@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   jsk_recognition_msgs
   message_filters
   ant_math
-  state_detection
   message_generation
 )
 

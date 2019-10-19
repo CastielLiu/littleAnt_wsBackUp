@@ -1,8 +1,6 @@
 #include<base_control/base_control.h>
 #include<assert.h>
 
-using namespace state_detection;
-
 static float g_steering_gearRatio = 540.0/25.0;
 
 static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int baud_rate)
@@ -76,8 +74,6 @@ bool BaseControl::init(int argc,char**argv)
 	ros::init(argc,argv,"base_control");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
-	
-	state_detection::debugSystemInitial();
 	
 	nh_private.param<std::string>("obd_can_port_name", obd_can_port_name_, "");
 	nh_private.param<std::string>("stm32_port_name", stm32_port_name_, "");
@@ -353,7 +349,6 @@ void BaseControl::parse_stm32_msgs()
 void BaseControl::setDriverlessMode()
 {
 	ROS_INFO("set driverless mode ing ............");
-	publishDebugMsg(state_detection::Debug::INFO,"enter driverless mode.");
 	
 	*(unsigned long int*)canMsg_cmd1.data = 0;
 	*(unsigned long int*)canMsg_cmd2.data = 0;
@@ -409,7 +404,6 @@ void BaseControl::setDriverlessMode()
 void BaseControl::exitDriverlessMode()
 {
 	ROS_INFO("driverless mode exited ............");
-	publishDebugMsg(state_detection::Debug::INFO,"exit driverless mode. ");
 	*(unsigned long int*)canMsg_cmd1.data = 0;
 	*(unsigned long int*)canMsg_cmd2.data = 0;
 

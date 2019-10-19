@@ -403,8 +403,6 @@ int main(int argc,char**argv)
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
-	state_detection::debugSystemInitial();
-	
 	PathTracking path_tracking;
 	if(!path_tracking.init(nh,nh_private))
 		return 1;

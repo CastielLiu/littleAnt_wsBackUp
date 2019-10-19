@@ -16,7 +16,6 @@
 #include<assert.h>
 
 #include<gps_msgs/Utm.h>
-#include<state_detection/state_detection.h>
 
 typedef enum
 {

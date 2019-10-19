@@ -1,7 +1,5 @@
 #include"avoiding.h"
 
-using namespace state_detection;
-
 Avoiding::Avoiding():
 	gps_status_(false),
 	target_point_index_status_(false),
@@ -262,8 +260,6 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			ss << "pedestrian crossing..... dis2vehicle:" << dis2vehicle <<"  dis2path:"<< dis2path << " safe_x:" <<safety_center_distance_x  << " "
 				<< expand_safty_width;
 			
-			publishDebugMsg(state_detection::Debug::ERROR,ss.str());
-			
 			if(dis2vehicle <= danger_distance_front_*2)
 			{
 				avoid_cmd_.status = true;
@@ -400,7 +396,6 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 			if(t_deceleration < 0.0)
 			{
 				avoid_cmd_.cmd2.set_speed = 0.0;
-				publishDebugMsg(state_detection::Debug::WARN," set speed : 0.0");
 			}
 			else
 			{
@@ -449,14 +444,12 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	debug_msg << "try_offest_L: " <<    try_offest[0] << "  max_L: "<< maxOffset_left_;
 	debug_msg << "  try_offest_R: " <<  try_offest[1] << "  max_R: "<< maxOffset_right_ ;
 	debug_msg << "  offset: " << offset_msg_.data;
-	publishDebugMsg(state_detection::Debug::INFO,debug_msg.str());
 }
 
 inline void Avoiding::backToOriginalLane()
 {
 	offset_msg_.data = 0.0;
 	pub_avoid_msg_to_gps_.publish(offset_msg_);
-	publishDebugMsg(state_detection::Debug::INFO,"return to original path..");
 }
 
 inline bool Avoiding::is_backToOriginalLane(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects, 
@@ -502,7 +495,6 @@ inline bool Avoiding::is_dangerous(const jsk_recognition_msgs::BoundingBoxArray:
 		{
 			std::stringstream ss ;
 			ss << "safety_x:"<<safety_center_distance_x <<"  safety_y:"<<safety_center_distance_y<<"  x:"<<x <<"  y:"<<y;
-			publishDebugMsg(state_detection::Debug::WARN,ss.str());
 			return true;
 		}
 	}
@@ -706,7 +698,6 @@ inline void Avoiding::emergencyBrake()
 	avoid_cmd_.cmd2.set_brake = 100.0;  //waiting test
 	avoid_cmd_.cmd2.set_speed = 0.0;
 	pub_avoid_cmd_.publish(avoid_cmd_);
-	publishDebugMsg(state_detection::Debug::WARN,"dangerous! emergency brake!");
 	//ROS_ERROR("dangerous! emergency brake!!!!!");
 }
 
@@ -737,8 +728,6 @@ int main(int argc,char **argv)
 	ros::init(argc,argv,"avoiding_node");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
-	
-	state_detection::debugSystemInitial();
 	
 	Avoiding avoiding;
 	if(avoiding.init(nh,nh_private))
