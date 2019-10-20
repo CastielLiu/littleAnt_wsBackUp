@@ -32,28 +32,28 @@ float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 }
 
 
-bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
-{
-	FILE *fp = fopen(file_path.c_str(),"r");
-	if(fp==NULL)
-	{
-		ROS_ERROR("open %s failed",file_path.c_str());
-		return false;
-	}
-	gpsMsg_t point;
-	while(!feof(fp))
-	{
-		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
-		points.push_back(point);
-	}
-	fclose(fp);
-	return true;
-}
+//bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
+//{
+//	FILE *fp = fopen(file_path.c_str(),"r");
+//	if(fp==NULL)
+//	{
+//		ROS_ERROR("open %s failed",file_path.c_str());
+//		return false;
+//	}
+//	gpsMsg_t point;
+//	while(!feof(fp))
+//	{
+//		fscanf(fp,"%lf\t%lf\t%lf\t%f\n",&point.x,&point.y,&point.yaw,&point.curvature);
+//		points.push_back(point);
+//	}
+//	fclose(fp);
+//	return true;
+//}
 
-/*
+
 bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 {
-	std::ifstream in_file(file_path);
+	std::ifstream in_file(file_path.c_str());
 	if(!in_file.is_open())
 	{
 		ROS_ERROR("open %s failed",file_path.c_str());
@@ -73,7 +73,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 	in_file.close();
 	return true;
 }
-*/
+
 
 float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
 {

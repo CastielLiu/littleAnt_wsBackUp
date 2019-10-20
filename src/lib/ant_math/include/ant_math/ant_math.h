@@ -10,6 +10,7 @@
 #include<ros/ros.h>
 #include<limits.h>
 #include<exception>
+#include<fstream>
 
 #define IS_POLAR_COORDINATE_GPS 0
 

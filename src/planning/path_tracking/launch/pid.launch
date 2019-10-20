@@ -4,7 +4,7 @@
 	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="max_speed"  default="30.0"/>
+	<arg name="max_speed"  default="5.0"/>
 	<arg name="forsight_dis" default="5.0"/>
 	<arg name="path_file" default="path"/>
 	
@@ -50,7 +50,7 @@
 	</node>
 	
 	<node name="record_auto_node" pkg="recorder" type="record_all_msgs_node" output= "screen">
-		<param name="file_path" value="$(find recorder)/data/state"/>
+		<param name="file_path" value="$(find recorder)/data/state/"/>
 		<param name="file_name" value="$(arg path_file)_auto.txt"/>
 		<param name="imu_topic" value="/corr_imu" />
 		<param name="utm_topic" value="/ll2utm_odom" />

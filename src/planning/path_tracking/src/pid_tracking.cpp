@@ -194,8 +194,6 @@ void PidTracking::run()
 			continue;
 		}
 		
-		ROS_INFO("t_yaw: %f\t yaw:%f",dis_yaw.second*180.0/M_PI, current_point_.yaw*180.0/M_PI);
-		
 		yaw_err_ = dis_yaw.second - current_point_.yaw;
 	
 		if(yaw_err_ >= M_PI)
@@ -218,8 +216,12 @@ void PidTracking::run()
 		
 		if(i%30==0)
 		{
+			ROS_INFO("current_x_y_yaw: %.3f\t%.3f\t%.2f",current_point_.x,current_point_.y,current_point_.yaw*180.0/M_PI);
+			ROS_INFO("target_x_y_yaw: %.3f\t%.3f\t%.2f",target_point_.x,target_point_.y,target_point_.yaw*180.0/M_PI);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err_*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);
+			ROS_INFO("t_yaw: %f\t yaw:%f",dis_yaw.second*180.0/M_PI, current_point_.yaw*180.0/M_PI);
+			std::cout << std::endl;
 		}
 		i++;
 		
