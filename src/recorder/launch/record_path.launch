@@ -9,7 +9,7 @@
 	<node name="record_path_node" pkg="recorder" type="record_path_node" output= "screen">
 		<param name="file_path" value="$(find recorder)/data/path_data/raw/"/>
 		<param name="file_name" value="$(arg file_name).txt"/>
-		<param name="sample_distance" value="0.2" />
+		<param name="sample_distance" value="0.1" />
 		<param name="utm_topic" value="/ll2utm_odom" />
 	</node>
 	
@@ -41,7 +41,7 @@
 		</node>
 	
 		<node name="record_manual_node" pkg="recorder" type="record_all_msgs_node" output= "screen">
-			<param name="file_path" value="$(find recorder)/data/state"/>
+			<param name="file_path" value="$(find recorder)/data/state/"/>
 			<param name="file_name" value="$(arg file_name)_manual.txt"/>
 			<param name="imu_topic" value="/corr_imu" />
 			<param name="utm_topic" value="/ll2utm_odom" />

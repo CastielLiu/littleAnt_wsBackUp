@@ -1,8 +1,94 @@
-#include"path_tracking.h"
+#include<ros/ros.h>
+#include<little_ant_msgs/ControlCmd.h>
+#include<little_ant_msgs/State2.h>  //speed
+#include<little_ant_msgs/State4.h>  //steerAngle
+#include<std_msgs/Float32.h>
+#include<std_msgs/UInt32.h>
+#include<std_msgs/UInt8.h>
+#include<vector>
 
+#include<nav_msgs/Odometry.h> 
+#include<geometry_msgs/Quaternion.h>
+#include<tf/transform_datatypes.h>
+#include<std_msgs/Float32.h>
+
+#include<ant_math/ant_math.h>
+#include<path_tracking/State.h>
+#include<climits>
+
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <thread>
+
+class PathTracking
+{
+public:
+	PathTracking();
+	~PathTracking();
+	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
+	void run();
+	
+	void pub_gps_cmd_callback(const ros::TimerEvent&);
+	void gps_odom_callback(const nav_msgs::Odometry::ConstPtr& msg);
+	
+	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
+	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
+	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
+
+	bool is_gps_data_valid(gpsMsg_t& point);
+	void rosSpinThread(){ros::spin();}
+
+private:
+	void pointOffset(gpsMsg_t& point,float offset);
+	void publishPathTrackingState();
+private:
+	ros::Subscriber sub_utm_odom_;
+	ros::Subscriber sub_vehicleState2_;
+	ros::Subscriber sub_vehicleState4_;
+	ros::Subscriber sub_avoiding_from_lidar_;
+	ros::Timer timer_;
+	
+	ros::Publisher pub_gps_cmd_;
+	little_ant_msgs::ControlCmd gps_controlCmd_;
+	
+	ros::Publisher pub_tracking_state_;
+	path_tracking::State tracking_state_;
+	
+	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
+	
+	std::string path_points_file_;
+	std::vector<gpsMsg_t> path_points_;
+	
+	gpsMsg_t current_point_, target_point_;
+	
+	float min_foresight_distance_;
+	float disThreshold_;
+	float avoiding_offset_;
+	
+	float path_tracking_speed_;
+	
+	bool vehicle_speed_status_;
+	
+	float vehicle_speed_;
+	float current_roadwheelAngle_;
+	
+	float safety_distance_front_;
+	float danger_distance_front_;
+	
+	float max_roadwheelAngle_;
+	bool is_avoiding_;
+	float lateral_err_;
+	float yaw_err_;
+	
+	size_t target_point_index_;
+	size_t nearest_point_index_;
+	
+	float foreSightDis_speedCoefficient_;
+	float foreSightDis_latErrCoefficient_;
+	
+};
 
 PathTracking::PathTracking():
-	gps_status_(0x00),
 	vehicle_speed_status_(false),
 	target_point_index_(0),
 	nearest_point_index_(0),
@@ -29,9 +115,10 @@ PathTracking::~PathTracking()
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
-
-	sub_cartesian_gps_ = nh.subscribe("/gps_odom",2,&PathTracking::cartesian_gps_callback,this);
+	std::string utm_odom_topic = nh_private.param<std::string>("utm_odom_topic","/ll2utm_odom");
+	std::string tracking_info_topic = nh_private.param<std::string>("tracking_info_topic","/tracking_state");
+	
+	sub_utm_odom_ = nh.subscribe(utm_odom_topic, 5,&PathTracking::gps_odom_callback,this);
 
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PathTracking::vehicleSpeed_callback,this);
 	
@@ -40,11 +127,10 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
-	pub_max_tolerate_speed_ = nh.advertise<std_msgs::Float32>("/max_tolerate_speed",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
-	pub_tracking_state_ = nh.advertise<path_tracking::State>("/tracking_state",1);
+	pub_tracking_state_ = nh.advertise<path_tracking::State>(tracking_info_topic,1);
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
@@ -69,11 +155,6 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	ROS_INFO("pathPoints size:%d",path_points_.size());
 	
-	/*for(size_t i=0; i< path_points_.size();i++ )
-	{
-	  std::cout <<path_points_[i].x <<"\t " <<path_points_[i].y <<std::endl;
-	}*/
-	
 	while(ros::ok() && !is_gps_data_valid(current_point_))
 	{
 		ROS_INFO("gps data is invalid, please check the gps topic or waiting...");
@@ -97,12 +178,6 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	target_point_ = path_points_[target_point_index_];
 	return true;
 }
-
-void PathTracking::rosSpinThread()
-{
-	ros::spin();
-}
-
 
 void PathTracking::pointOffset(gpsMsg_t& point,float offset)
 {
@@ -203,108 +278,31 @@ void PathTracking::run()
 void PathTracking::publishPathTrackingState()
 {
 	tracking_state_.header.stamp = ros::Time::now();
+	tracking_state_.position_x = current_point_.x;
+	tracking_state_.position_y = current_point_.y;
+	tracking_state_.yaw = current_point_.yaw;
+	tracking_state_.vehicle_speed =  vehicle_speed_;
+	tracking_state_.roadwheel_angle = current_roadwheelAngle_;
+	tracking_state_.lateral_error = lateral_err_;
+	tracking_state_.yaw_error = yaw_err_;
+	
 	tracking_state_.target_index = target_point_index_;
 	tracking_state_.current_index = nearest_point_index_;
-	tracking_state_.lateral_error = lateral_err_;
-	tracking_state_.vehicle_speed =  vehicle_speed_;
-	tracking_state_.yaw_error = yaw_err_;
 	pub_tracking_state_.publish(tracking_state_);
-}
-
-
-size_t PathTracking::findNearestPoint(const std::vector<gpsMsg_t>& path_points,
-									 const gpsMsg_t& current_point)
-{
-	size_t index = 0;
-	float min_dis = FLT_MAX;
-	float dis;
-	//ROS_ERROR("size:%d",path_points.size());
 	
-	for(size_t i=0; i<path_points.size(); )
-	{
-		dis = dis2Points(path_points[i],current_point);
-		//ROS_INFO("i=%d\t dis:%f",i,dis);
-		//ROS_INFO("path_points[%d] x:%lf\t y:%lf",i,path_points[i].x,path_points[i].y);
-		//ROS_INFO("current_point  x:%lf\t y:%lf",current_point.x,current_point.y);
-		if(dis < min_dis)
-		{
-			min_dis = dis;
-			index = i;
-		}
-		if(dis>1000)
-			i += 1000;
-		else if(dis > 500)
-			i += 500;
-		else if(dis > 250)
-			i += 250;
-		else if(dis > 125)
-			i += 125;
-		else if(dis > 63)
-			i += 63;
-		else if(dis > 42)
-			i += 42;
-		else if(dis > 21)
-			i += 21;
-		else
-			i += 1;
-	}
-	if(min_dis >50)
-	{
-		ROS_ERROR("current_point x:%f\ty:%f",current_point.x,current_point.y);
-		ROS_ERROR("findNearestPoint error mindis:%f",min_dis);
-		return path_points.size();
-	}
-		
-	return index;
 }
-
-
-void PathTracking::publishMaxTolerateSpeed()
-{
-	std_msgs::Float32 msg;
-	msg.data = generateMaxTolarateSpeedByCurvature(path_points_[target_point_index_+10].curvature);
-	pub_max_tolerate_speed_.publish(msg);
-}
-
-float PathTracking::point2point_dis(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	return  sqrt(x * x + y * y);
-}
-
 
 void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 {
 	pub_gps_cmd_.publish(gps_controlCmd_);
 }
 
-void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
-{
-	if(gps_status_!=0x03)
-		gps_status_ |= 0x01;
-	
-	current_point_.longitude = msg->longitude;
-	current_point_.latitude = msg->latitude;
-	current_point_.yaw = deg2rad(msg->azimuth);
-	//std::cout << "call_back ID: "<< std::this_thread::get_id()  << std::endl;
-}
 
-void PathTracking::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
+void PathTracking::gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm)
 {
-	if(gps_status_!=0x03)
-		gps_status_ |= 0x02;
-	
-	current_point_.x = msg->pose.pose.position.x;
-	current_point_.y = msg->pose.pose.position.y;
-	/*
-	tf::Quaternion quat;
-	tf::quaternionMsgToTF(msg->pose.pose.orientation, quat);
-	
-	double roll,pitch;
-	
-	tf::Matrix3x3(quat).getRPY(roll, pitch, current_point_.yaw);
-*/
+	current_point_.x = utm->pose.pose.position.x;
+	current_point_.y = utm->pose.pose.position.y;
+	current_point_.yaw = utm->pose.covariance[0];
 }
 
 void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
@@ -326,75 +324,12 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg
 	avoiding_offset_ = msg->data;
 }
 
-#if IS_POLAR_COORDINATE_GPS ==1
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(	gps_status_ > 0 &&
-		point.longitude >10.0 && point.longitude < 170.0 && 
-		point.latitude >15.0 && point.latitude <70.0)
+	if(point.x !=0 && point.y !=0)
 		return true;
 	return false;
 }
-
-std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	//ROS_INFO("second:%f")
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	return dis_yaw;
-}
-float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	
-	if(is_sqrt)
-		return sqrt(x*x +y*y);
-	return x*x+y*y;
-}
-
-#else
-bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
-{
-	if(gps_status_ == 0x03 && point.x !=0 && point.y !=0)
-		return true;
-	return false;
-}
-
-
-std::pair<float, float> PathTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	return dis_yaw;
-}
-
-float PathTracking::dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	if(is_sqrt)
-		return sqrt(x*x +y*y);
-	return x*x+y*y;
-}
-
-#endif
 
 
 int main(int argc,char**argv)

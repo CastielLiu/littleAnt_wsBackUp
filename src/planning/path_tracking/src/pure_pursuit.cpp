@@ -23,16 +23,13 @@ using std::unique_ptr;
 class PurePursuit
 {
 public:
-	typedef message_filters::sync_policies::ApproximateTime<gps_msgs::Inspvax, nav_msgs::Odometry> MySyncPolicy;
 	PurePursuit();
 	~PurePursuit();
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
 	
-	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
 	void pub_cmd_callback(const ros::TimerEvent&);
-	void gps_callback(const gps_msgs::Inspvax::ConstPtr & gps,
-					  const nav_msgs::Odometry::ConstPtr& utm);
+	void gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm);
 					  
 	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
@@ -44,12 +41,9 @@ private:
 	void publishPathTrackingState();
 	
 private:
-	unique_ptr<message_filters::Subscriber<gps_msgs::Inspvax>> sub_gps_;
-	unique_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_utm_;
-	unique_ptr<message_filters::Synchronizer<MySyncPolicy>> sync_;
-	
 	ros::Subscriber sub_vehicleState2_;
 	ros::Subscriber sub_vehicleState4_;
+	ros::Subscriber sub_utm_odom_;
 	
 	ros::Timer timer_;
 	ros::Publisher pub_gps_cmd_;
@@ -111,11 +105,7 @@ PurePursuit::~PurePursuit()
 
 bool PurePursuit::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	sub_gps_.reset(new message_filters::Subscriber<gps_msgs::Inspvax>(nh,"/gps",5));
-	sub_utm_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh,"/gps_odom",5));
-	sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(5),*sub_gps_,*sub_utm_));
-	sync_->registerCallback(boost::bind(&PurePursuit::gps_callback, this, _1, _2));
-
+	
 	sub_vehicleState2_ = nh.subscribe("/vehicleState2",1,&PurePursuit::vehicleSpeed_callback,this);
 	
 	sub_vehicleState4_ = nh.subscribe("/vehicleState4",1,&PurePursuit::vehicleState4_callback,this);
@@ -257,17 +247,12 @@ void PurePursuit::pub_cmd_callback(const ros::TimerEvent&)
 	pub_gps_cmd_.publish(cmd_);
 }
 
-void PurePursuit::gps_callback(const gps_msgs::Inspvax::ConstPtr & gps,
-							   const nav_msgs::Odometry::ConstPtr& utm)
+void PurePursuit::gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm)
 {
-	current_point_.longitude = gps->longitude;
-	current_point_.latitude = gps->latitude;
-	current_point_.yaw = deg2rad(gps->azimuth);
 	current_point_.x = utm->pose.pose.position.x;
 	current_point_.y = utm->pose.pose.position.y;
-	//std::cout << "call_back ID: "<< std::this_thread::get_id()  << std::endl;
+	current_point_.yaw = utm->pose.covariance[0];
 }
-
 
 void PurePursuit::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
@@ -289,22 +274,6 @@ bool PurePursuit::is_gps_data_valid(gpsMsg_t& point)
 		return true;
 	return false;
 }
-
-
-std::pair<float, float> PurePursuit::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	return dis_yaw;
-}
-
 
 int main(int argc,char**argv)
 {

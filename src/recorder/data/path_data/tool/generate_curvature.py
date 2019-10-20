@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import math
 import sys
 
-
 class Points:
 	def __init__(self):
 		self.x = []
@@ -46,13 +45,18 @@ class Points:
 			elif(self.curvature[i]<-0.3):
 				self.curvature[i] = -0.3
 		self.curvature[len(self.x)-1] = 0.0
+	
 	def curvatureFilter(self,count):
-		num = int(count)/2
-		cur = [0.0] * len(self.curvature)
-		for i in range(len(self.curvature)-1)[num:-num]:
-			temp_list = self.curvature[num+i:num+i+count]
-			cur[i] = sum(temp_list)/count
-		self.curvature = cur[:]
+		count = int(count)
+		if(count%2 ==0):
+			count = count + 1 
+		num = count/2
+		temp_cur = self.curvature[:]
+		
+		for i in range(len(temp_cur))[num:-num]:
+			temp_list = self.curvature[i-num:i+num+1]
+			temp_cur[i] = sum(temp_list)/count
+		self.curvature = temp_cur[:]
 	
 	def __disBetweenPoints(self,i,j):
 		x = self.x[i] - self.x[j]
@@ -61,8 +65,6 @@ class Points:
 			
 
 def main(argv):
-	path_points = Points()
-	
 	file_name = 'final.txt'
 	raw_file = '../raw/' + file_name
 	result_file = '../result/' + file_name
@@ -70,8 +72,8 @@ def main(argv):
 	if(len(argv)>2):
 		raw_file = argv[1]
 		result_file = argv[2]
-			
-			
+		
+	path_points = Points()
 	path_points.load(raw_file)
 	
 	path_points.calculateCurvature()

@@ -32,7 +32,6 @@ public:
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
 	
-	std::pair<float, float>  get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);
 	void gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm);
 	void pub_cmd_callback(const ros::TimerEvent&);
 
@@ -248,15 +247,6 @@ void PidTracking::gps_odom_callback(const nav_msgs::Odometry::ConstPtr& utm)
 	current_point_.x = utm->pose.pose.position.x;
 	current_point_.y = utm->pose.pose.position.y;
 	current_point_.yaw = utm->pose.covariance[0];
-	
-//	Eigen::Quaterniond q;
-//	q.x() = utm->pose.pose.orientation.x;
-//	q.y() = utm->pose.pose.orientation.y;
-//	q.z() = utm->pose.pose.orientation.z;
-//	q.w() = utm->pose.pose.orientation.w;
-//	
-//	Eigen::Vector3d eulerAngle=q.matrix().eulerAngles(0,1,2); //x,y,z
-//	current_point_.yaw = -eulerAngle[2] + M_PI/2;
 }
 
 void PidTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
@@ -279,22 +269,6 @@ bool PidTracking::is_gps_data_valid(gpsMsg_t& point)
 		return true;
 	return false;
 }
-
-
-std::pair<float, float> PidTracking::get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	std::pair<float, float> dis_yaw;
-	dis_yaw.first = sqrt(x * x + y * y);
-	dis_yaw.second = atan2(x,y);
-	
-	if(dis_yaw.second <0)
-		dis_yaw.second += 2*M_PI;
-	return dis_yaw;
-}
-
 
 
 int main(int argc,char**argv)

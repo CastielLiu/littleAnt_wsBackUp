@@ -9,13 +9,8 @@
 class Record
 {
 	private:
-#if IS_POLAR_COORDINATE_GPS==0
 		void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
-#else
-		void gps_callback(const gps_msgs::Inspvax::ConstPtr& gpsMsg);
-#endif
-		float calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2);
-		
+
 		std::string file_path_;
 		std::string	file_name_;
 		
@@ -65,14 +60,9 @@ bool Record::init()
 	}
 	
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
-	std::string gps_topic = private_nh.param<std::string>("gps_topic","/gps");
 	std::string utm_topic = private_nh.param<std::string>("utm_topic","/ll2utm_odom");
 	
-#if IS_POLAR_COORDINATE_GPS==0
 	sub_cartesian_gps_ = nh.subscribe(utm_topic ,1,&Record::cartesian_gps_callback,this);
-#else
-	sub_gps_= nh.subscribe(gps_topic, 1, &Record::gps_callback,this);
-#endif
 
 	fp = fopen((file_path_+file_name_).c_str(),"w");
 	
@@ -91,39 +81,6 @@ bool Record::init()
 	return true;
 }
 
-#if IS_POLAR_COORDINATE_GPS ==1
-void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr& gps)
-{
-	current_point.latitude = gps->latitude;
-	current_point.longitude = gps->longitude;
-	current_point.yaw = gps->azimuth;
-	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
-	{
-		fprintf(fp,"%.8f\t%.8f\t%.3f\n",current_point.longitude,current_point.latitude,current_point.azimuth);
-		fflush(fp);
-		
-		ROS_INFO("%.8f\t%.8f",current_point.longitude,current_point.latitude);
-		last_point = current_point;
-	}
-}
-
-float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
-{
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude * M_PI/180.);
-	float y = (point1.latitude - point2.latitude) *111000;
-	return x*x+y*y;
-}
-
-#else
-
-float Record::calculate_dis2(gpsMsg_t & point1,gpsMsg_t& point2)
-{
-	float x = point1.x - point2.x;
-	float y = point1.y - point2.y;
-	
-	return x*x+y*y;
-}
-
 void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	static size_t  row_num = 0;
@@ -131,9 +88,9 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	current_point.y = msg->pose.pose.position.y;
 	current_point.yaw = msg->pose.covariance[0];
 	
-	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
+	if(sample_distance_*sample_distance_ <= dis2Points(current_point,last_point,false))
 	{
-		fprintf(fp,"%.3f\t%.3f\t%.3f\n",current_point.x,current_point.y,current_point.yaw);
+		fprintf(fp,"%.3f\t%.3f\t%.4f\n",current_point.x,current_point.y,current_point.yaw);
 		fflush(fp);
 		
 		fprintf(fp_wgs84,"%.7f\t%.7f\n",msg->pose.covariance[1],msg->pose.covariance[2]);
@@ -144,7 +101,6 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	}
 }
 
-#endif
 
 int main(int argc,char**argv)
 {

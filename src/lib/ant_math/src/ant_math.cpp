@@ -281,19 +281,6 @@ float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance)
 	return generateRoadwheelAngleByRadius(radius);
 }
 
-/*
-void generateMaxOffset(const std::vector<gpsMsg_t>& path_points, 
-					   size_t nearest_point_index,
-					   size_t target_point_index,
-					   float& max_left, float& max_right)
-{
-	float left = -10; // a small number
-	float right = 10; //a big number
-	
-	size_t endIndex = target_point_index + 10;
-	
-	
-}*/
 
 //given the startIndex and expect distance  find the point index
 size_t findIndexForGivenDis(const std::vector<gpsMsg_t>& path_points, size_t startIndex,float dis)
@@ -302,7 +289,7 @@ size_t findIndexForGivenDis(const std::vector<gpsMsg_t>& path_points, size_t sta
 	size_t points_size = path_points.size()-1;
 	while(ros::ok())
 	{
-		if(startIndex+5 >points_size)
+		if(startIndex+5 >= points_size)
 			return 0;//error
 			
 		sum_dis	+= disBetweenPoints(path_points[startIndex],path_points[startIndex+5]);
@@ -331,6 +318,20 @@ float minCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t start
 			min = path_points[i].curvature;
 	}
 	return min;
+}
+
+std::pair<float, float> get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
+{
+	float x = point1.x - point2.x;
+	float y = point1.y - point2.y;
+	
+	std::pair<float, float> dis_yaw;
+	dis_yaw.first = sqrt(x * x + y * y);
+	dis_yaw.second = atan2(x,y);
+	
+	if(dis_yaw.second <0)
+		dis_yaw.second += 2*M_PI;
+	return dis_yaw;
 }
 
 
