@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 
-
 using std::cout;
 using std::endl;
 using std::hex;
@@ -296,7 +295,7 @@ void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 	canMsg4F0.type = 0x03;//std can msg
 	
 	uint16_t speed = vehicleSpeed_/0.0625 ; 
-	canMsg4F0.data[0] = (speed>>3)&0xff;
+	canMsg4F0.data[0] = speed>>3;
 	canMsg4F0.data[1] |= (speed%8)<<5 ;
 	
 	canMsg4F0.data[1] &= 0xef;  // speed direction 0=forward
