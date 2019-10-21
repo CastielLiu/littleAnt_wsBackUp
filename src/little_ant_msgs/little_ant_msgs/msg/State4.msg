@@ -7,4 +7,5 @@ float32 steeringAngle
 float32 roadwheelAngle
 bool steeringAngle_valid
 float32 steeringAngle_speed
+bool key
 

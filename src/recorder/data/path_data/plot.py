@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import sys
 
 
 class Points:
@@ -10,23 +11,22 @@ class Points:
 		self.y = []
 		self.yaw = []
 		self.curvature = []
-		self.maxOffset_left = []
-		self.maxOffset_right =[]
-		self.traffic_sign = []
-		self.other_info = []
+		
 		
 	def load(self,file_name):
 		with open(file_name,'r') as f:
 			lines = f.readlines()
+		
+		if lines is None:
+			return False
+			
 		for line in lines:
-			x,y,yaw,l,r,t,o = line.split()
+			x,y,yaw,curvature = line.split()
 			self.x.append(float(x))
 			self.y.append(float(y))
 			self.yaw.append(float(yaw))
-			self.maxOffset_left.append(float(l))
-			self.maxOffset_right.append(float(r))
-			self.traffic_sign.append(int(t))
-			self.other_info.append(int(o))
+			self.curvature.append(float(curvature))
+		return True
 			
 	def clear(self):
 		self.x.clear()
@@ -71,38 +71,22 @@ class Points:
 		y = self.y[i] - self.y[j]
 		return math.sqrt(x*x+y*y)
 		
-		
+
 			
-def plot():
+def plot(file_name):
 	path_points = Points()
-	path_points.load('../raw/path514_3.txt')
-	path_points.calculateCurvature()
-	path_points.curvatureFilter(15)
-	
+	path_points.load(file_name)
 	reference_point_x = path_points.x[0]
 	reference_point_y = path_points.y[0]
 	
-	fig1 = plt.figure(0)
-	ax1 = fig1.gca()
-	
-	ax1.plot(range(len(path_points.x)),path_points.curvature,'b.')
-	
-	plt.figure(2)
-	
 	path_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	#result_points = Points()
-	#result_points.load('../debug/path_debug.txt')
-	
-	#result_points.offsetPoints(reference_point_x,reference_point_y)
-	
-	#plt.plot(path_points.y,path_points.x,'r.',label="path")
-	#plt.plot(result_points.y,result_points.x,'k-',label="debug")
-	
-	plt.plot(path_points.x,path_points.y,'r.',label="path")
-	#plt.plot(result_points.x,result_points.y,'k-',label="debug")
-
-
+	plt.plot(path_points.y,path_points.x,'r.',label="reference path")
+	index = 4882
+	plt.plot(path_points.y[index],path_points.x[index],'b*')
+	index = 4997
+	plt.plot(path_points.y[index],path_points.x[index],'b*')
+	plt.axis('equal')
 
 	plt.legend()
 
@@ -115,13 +99,7 @@ def plot():
 
 	plt.show()
 
-
-
-def main():
-	plot()
-
-
-
-
-if __name__ == '__main__':
-	main()
+if(len(sys.argv) != 2):
+	print("please input file name")
+else:
+	plot(sys.argv[1])

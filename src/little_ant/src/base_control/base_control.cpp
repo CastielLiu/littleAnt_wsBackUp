@@ -216,6 +216,7 @@ void BaseControl::parse_obdCanMsg()
 				
 				state4.header.stamp = ros::Time::now();
 				state4_pub.publish(state4);
+				state4.key = key2;
 				break;
 				
 			default:
@@ -339,8 +340,9 @@ void BaseControl::parse_stm32_msgs()
 			this->exitDriverlessMode();
 			ROS_INFO("exitDriverlessMode ok ^-^");
 		}
-			
-		//printf("is_start:%d\t is_emergency_brake:%d\n",stm32_msg1_.is_start,stm32_msg1_.is_emergency_brake);
+		key1 = stm32_msg1Ptr_->key1;
+		key2 = stm32_msg1Ptr_->key2;
+		
 		//mutex_.unlock();
 	}
 }
@@ -519,6 +521,9 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		canMsg_cmd2.data[2] = uint8_t(40 *2.5);
 	else
 		canMsg_cmd2.data[2] = uint8_t(set_brake *2.5);
+		
+	if(key1)
+		canMsg_cmd2.data[2] = uint8_t(40 *2.5);
 	
 	canMsg_cmd2.data[3] = uint8_t(msg->set_accelerate *50);
 	

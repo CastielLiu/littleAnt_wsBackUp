@@ -66,7 +66,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 	{
 		getline(in_file,line);
 		std::stringstream ss(line);
-		ss >> point.x >> point.y >> point.yaw;
+		ss >> point.x >> point.y >> point.yaw >> point.curvature;
 		points.push_back(point);
 	}
 	
@@ -237,7 +237,7 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 		return speed;
 	
 	//float max_speed =  sqrt(1.0/fabs(curvature)*max_side_acceleration) *3.6;
-	float max_speed =  sqrt(1.0/fabs(curvature)*1.5) *3.6;
+	float max_speed =  sqrt(1.0/fabs(curvature)*1.2) *3.6;
 	return speed>max_speed? max_speed: speed;
 }
 
@@ -318,6 +318,17 @@ float minCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t start
 			min = path_points[i].curvature;
 	}
 	return min;
+}
+
+float maxCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t startIndex,size_t endIndex)
+{
+	float max = 0.;
+	for(size_t i=startIndex; i<endIndex; i++)
+	{
+		if(fabs(path_points[i].curvature) > max)
+			max = fabs(path_points[i].curvature);
+	}
+	return max;
 }
 
 std::pair<float, float> get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)

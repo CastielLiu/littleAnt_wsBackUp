@@ -59,6 +59,8 @@ typedef struct
 	uint8_t id;
 	uint8_t is_start :1;
 	uint8_t is_emergency_brake :1;
+	uint8_t key1 :1;
+	uint8_t key2 :1;
 	uint8_t reserved;
 	uint8_t checkNum;
 	
@@ -124,6 +126,7 @@ private:
 	little_ant_msgs::State4 state4;
 	
 	boost::mutex mutex_;
+	bool key1,key2;
 
 };
 

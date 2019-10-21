@@ -39,7 +39,7 @@ public:
 	void rosSpinThread(){ros::spin();}
 
 private:
-	void pointOffset(gpsMsg_t& point,float offset);
+	gpsMsg_t pointOffset(const gpsMsg_t& point,float offset);
 	void publishPathTrackingState();
 private:
 	ros::Subscriber sub_utm_odom_;
@@ -85,6 +85,7 @@ private:
 	
 	float foreSightDis_speedCoefficient_;
 	float foreSightDis_latErrCoefficient_;
+	bool key_;
 	
 };
 
@@ -179,10 +180,12 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
-void PathTracking::pointOffset(gpsMsg_t& point,float offset)
+gpsMsg_t PathTracking::pointOffset(const gpsMsg_t& point,float offset)
 {
-	point.x =  offset * cos(point.yaw) + point.x;
-	point.y = -offset * sin(point.yaw) + point.y;
+	gpsMsg_t result = point;
+	result.x =  offset * cos(point.yaw) + point.x;
+	result.y = -offset * sin(point.yaw) + point.y;
+	return result;
 }
 
 void PathTracking::run()
@@ -193,8 +196,10 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
-		if( avoiding_offset_ != 0.0)
-			pointOffset(target_point_,avoiding_offset_);
+		if(key_)
+			target_point_ = pointOffset(path_points_[target_point_index_],-2.0);
+		if(!key_ && avoiding_offset_ != 0.0)
+			target_point_ = pointOffset(path_points_[target_point_index_],avoiding_offset_);
 		
 		try
 		{
@@ -236,16 +241,16 @@ void PathTracking::run()
 		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
 		//find the index of a path point 8.0meters from the current point
-		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,15.0); 
+		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,disThreshold_ + 20.0); 
 		if(index ==0)
 		{
 			ROS_INFO("findIndexForGivenDis faild!");
 			break;
 		}
-		float min_curvature = minCurvatureInRange(path_points_, nearest_point_index_, index);
+		float max_curvature = maxCurvatureInRange(path_points_, nearest_point_index_, index);
 		
 		gps_controlCmd_.cmd2.set_speed = 
-				limitSpeedByPathCurvature(path_tracking_speed_,min_curvature);
+				limitSpeedByPathCurvature(path_tracking_speed_,max_curvature);
 		
 		this->publishPathTrackingState();
 		
@@ -253,7 +258,9 @@ void PathTracking::run()
 		
 		if(i%20==0)
 		{
-			ROS_INFO("curvature:%f",target_point_.curvature);
+			ROS_INFO("tar_cur:%f\t max_cur:%f",target_point_.curvature, max_curvature);
+			ROS_INFO("nearest_point_index:%d \t target_point_index:%d end_index:%d",
+					nearest_point_index_,target_point_index_,index);
 			ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err_*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);
@@ -316,6 +323,7 @@ void PathTracking::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr
 void PathTracking::vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg)
 {
 	current_roadwheelAngle_ = msg->roadwheelAngle;
+	key_ = msg->key;
 }
 
 void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg)
