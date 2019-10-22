@@ -135,6 +135,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 	while(ros::ok())
 	{
 		boxes.boxes.clear();
+		this->boxes.header.stamp = ros::Time::now();
 		mutex_.lock();
 		for(size_t i=0;i<last_frame_objects.size;i++)
 		{
@@ -144,7 +145,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 			boxes.boxes.push_back(box);
 		}
 		mutex_.unlock();
-		if(last_frame_objects.size) 
+		if(boxes.boxes.size()) 
 			boundingBox_pub.publish(boxes);
 		r.sleep();
 	}
@@ -188,7 +189,11 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 		if(objects.size)
 			esr_pub.publish(objects);
 		if(is_pubBoundingBox_)
+		{
+			mutex_.lock();
 			last_frame_objects = objects;
+			mutex_.unlock();
+		}
 		
 		objects.objects.clear();
 	}
@@ -234,7 +239,7 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 
 		object.distance = u16_distance*0.1;
 		
-		if(object.distance>100.0)
+		if(object.distance>50.0 || fabs(object.azimuth)>20.0)
 			return;
 		
 		object.x = object.distance*sin(object.azimuth*M_PI/180.0);
@@ -277,7 +282,7 @@ void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 {
 	CanMsg_t canMsg5F2 = {0x5F2,8};
-	canMsg5F2.type = 0x03; //std can msg
+	canMsg5F2.type = Can2serial::STD_DATA_FRAME; //std can msg
 	uint8_t installHeight = 20;
 	 
 	canMsg5F2.data[4] &=0x80; //clear low 7bits
@@ -286,7 +291,7 @@ void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 	out_can2serial->sendCanMsg(canMsg5F2);
 	
 	CanMsg_t canMsg4F0 = {0x4F0,8};
-	canMsg4F0.type = 0x03;//std can msg
+	canMsg4F0.type = Can2serial::STD_DATA_FRAME;//std can msg
 	
 	uint16_t speed = vehicleSpeed_/0.0625 ; 
 	canMsg4F0.data[0] = (speed>>3)&0xff;
@@ -296,7 +301,7 @@ void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 	out_can2serial->sendCanMsg(canMsg4F0);
 	
 	CanMsg_t canMsg4F1 = {0x4F1,8};
-	canMsg4F1.type = 0x03;//std can msg
+	canMsg4F1.type = Can2serial::STD_DATA_FRAME;//std can msg
 	
 	canMsg4F1.data[7] |= 0x20 ; //speed valid
 	out_can2serial->sendCanMsg(canMsg4F1);

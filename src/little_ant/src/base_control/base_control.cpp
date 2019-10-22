@@ -102,7 +102,7 @@ bool BaseControl::init(int argc,char**argv)
 	}
 	else
 		ROS_INFO("open port %s successfully",obd_can_port_name_.c_str());
-	/*
+	
 	can2serial.clearCanFilter();
 	
 	can2serial.setCanFilter_alone(0x01,ID_STATE1); usleep(10000);
@@ -110,8 +110,8 @@ bool BaseControl::init(int argc,char**argv)
 	can2serial.setCanFilter_alone(0x03,ID_STATE3); usleep(10000);
 	can2serial.setCanFilter_alone(0x04,ID_STATE4); usleep(10000);
 	
-	can2serial.configBaudrate(500);
-	*/
+//	can2serial.configBaudrate(500);
+	
 	can2serial.StartReading();
 		
 	ROS_INFO("System initialization completed");

@@ -29,7 +29,6 @@ public:
 	void is_acc_callback(const std_msgs::Bool::ConstPtr& state);
 	void updateTargetStatus_callback(const ros::TimerEvent&);
 	void carFollowRequest_callback(const esr_radar_msgs::Objects::ConstPtr& msg);
-	void current_scene_callback(const std_msgs::UInt8::ConstPtr& msg);
 	void carFollowThread();
 	
 	bool init();
@@ -47,7 +46,6 @@ private:
 	ros::Subscriber sub_vehicleSpeed_;
 	ros::Subscriber sub_start_acc_;
 	ros::Subscriber sub_carFollow_request_;
-ros::Subscriber sub_current_scene_;
 	
 	ros::Publisher pub_car_follow_response_;
 	ros::Publisher pub_cmd_;
@@ -77,8 +75,6 @@ ros::Subscriber sub_current_scene_;
 	
 	float max_target_search_distance_;
 	
-	uint8_t current_scene_;
-
 };
 
 
