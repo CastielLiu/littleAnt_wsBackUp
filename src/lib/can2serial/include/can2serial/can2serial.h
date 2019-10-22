@@ -85,7 +85,7 @@ public:
 	bool clearCanFilter(uint8_t filterNum=0xff);
 
 	void inquireBaudrate(uint8_t port =0x01);
-
+	size_t getCanMsgCount();
 	bool getCanMsg(CanMsg_t &msg);
 	
 	void inquireFilter(uint8_t filterNum ,uint8_t port=0x01);
@@ -100,7 +100,6 @@ public:
 	
 	
 private:
-
 
 	void ReadSerialPort() ;
 
@@ -133,8 +132,6 @@ private:
 	boost::mutex mutex_;
 	
 	const inquireFilterResponsePkg_t * const inquire_filter_response_ptr_;
-	
-	
 	
 	enum{HeaderByte0=0x66,HeaderByte1=0xCC};
 	enum

@@ -60,9 +60,8 @@ bool ESR_RADAR::init()
 			return 0;
 		}
 	
-		out_can2serial->clearCanFilter();
-		
-		out_can2serial->setCanFilter(1,0x00,0x7ff);
+		//out_can2serial->clearCanFilter();
+		out_can2serial->setCanFilter(0,0x300,0x7ff);
 		
 		out_can2serial->configBaudrate(500);
 		ROS_INFO("send to esr initialization complete");
@@ -77,14 +76,11 @@ bool ESR_RADAR::init()
 	
 	//in_can2serial->clearCanFilter(); usleep(10000);
 	//in_can2serial->clearCanFilter(); usleep(10000);
-
 	
 	//in_can2serial->setCanFilter_alone(0x01,0x4E0); usleep(1000);
-	in_can2serial->setCanFilter_alone(0x01,0x4E0); usleep(1000);
-	in_can2serial->setCanFilter(0x02,0x500,0x7c0); //500-53f
-	//in_can2serial->setCanFilter(0x03,0x500,0x7C0);
+	//in_can2serial->setCanFilter(0x02,0x500,0x7c0); //500-53f
 	
-	//in_can2serial->configBaudrate(500);
+	in_can2serial->configBaudrate(500);
 		
 	usleep(10000);
 	in_can2serial->StartReading();
@@ -92,14 +88,13 @@ bool ESR_RADAR::init()
 	for(uint8_t i=0;i<13;i++)
 	{
 		in_can2serial->inquireFilter(i); 
-		usleep(10000);
+		usleep(20000);
 	}
 	
 	ROS_INFO("esr radar initialization complete");
 
 	return 1;
 }
-
 
 
 void ESR_RADAR::run()
@@ -160,8 +155,8 @@ void ESR_RADAR::handleCanMsg()
 	CanMsg_t can_msg;
 	while(ros::ok())
 	{
-		usleep(1000);
-		
+		usleep(500);
+		//std::cout << in_can2serial->getCanMsgCount() << endl;
 		if(!in_can2serial->getCanMsg(can_msg)) 
 		{
 			//ROS_ERROR("nothing");
@@ -172,16 +167,14 @@ void ESR_RADAR::handleCanMsg()
 	}
 }
 
-
 void ESR_RADAR::parse_msg(CanMsg_t &can_msg)
 {
 	static uint16_t scan_index;
 //	cout << "ID:" << hex << can_msg.ID <<endl;
-/*	
-	for(size_t i=0;i<can_msg.len;i++)
-	 printf("%x\t",can_msg.data[i]);
-	 printf("\n");
-*/	
+//	
+//	for(size_t i=0;i<can_msg.len;i++)
+//		printf("%x\t",can_msg.data[i]);
+//	printf("\n");
 	
 	if(can_msg.ID == 0x4E0 || can_msg.ID < lastMsgId)
 	{
@@ -312,12 +305,12 @@ void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 
 void ESR_RADAR::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
-	static int i=0;
-	vehicleSpeed_ = (msg->wheel_speed_FL + msg->wheel_speed_RR)/2*5.0/18; //m/s
+//	static int i=0;
+	vehicleSpeed_ = msg->vehicle_speed; //m/s
 
-	i++;
-	if(i%20==0)
-		ROS_INFO("callback speed:%f ",vehicleSpeed_);
+//	i++;
+//	if(i%20==0)
+//		ROS_INFO("callback speed:%f ",vehicleSpeed_);
 }
 
 
@@ -333,17 +326,4 @@ int main(int argc,char **argv)
 	
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
- 
 

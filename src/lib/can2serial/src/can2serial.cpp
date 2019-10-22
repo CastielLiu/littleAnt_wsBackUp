@@ -127,8 +127,6 @@ void Can2serial::ReadSerialPort()
 }
 
 
-		 
-          
 void Can2serial::BufferIncomingData(unsigned char *message, unsigned int length)
 {
 	// add incoming data to buffer
@@ -473,7 +471,6 @@ void Can2serial::inquireBaudrate(uint8_t port)
 	sendCmd(0x13,buf,1);
 	
 	usleep(10000);//100ms
-
 }
 
 bool Can2serial::getCanMsg(CanMsg_t &msg)
@@ -493,6 +490,13 @@ bool Can2serial::getCanMsg(CanMsg_t &msg)
 	return true;
 }
 
+size_t Can2serial::getCanMsgCount()
+{
+	int count = writeIndex_ - readIndex_;
+	if(count<0)
+		count += MAX_MSG_BUF_SIZE;
+	return count;
+}
 
 void Can2serial::inquireFilter(uint8_t filterNum ,uint8_t port)
 {
