@@ -102,7 +102,7 @@ void ESR_RADAR::run()
 	boost::thread parse_thread(boost::bind(&ESR_RADAR::handleCanMsg,this));
 	
 	if(is_pubBoundingBox_)
-		this->start_publishBoundingBoxArray_thread();
+		boost::thread pubBoundingBoxThread(boost::bind(&ESR_RADAR::pubBoundingBoxArray,this));
 	
 	if(is_sendMsgToEsr_)
 	{
@@ -111,11 +111,6 @@ void ESR_RADAR::run()
 	}
 		
 	ros::spin();
-}
-
-void ESR_RADAR::start_publishBoundingBoxArray_thread()
-{
-	boost::thread pubBoundingBoxThread(boost::bind(&ESR_RADAR::pubBoundingBoxArray,this));
 }
 
 void ESR_RADAR::pubBoundingBoxArray()
@@ -131,7 +126,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 	box.dimensions.z = 1.0;
 	
 	ros::Rate r(20);
-	
+	ROS_INFO("pubBoundingBoxArray start");
 	while(ros::ok())
 	{
 		boxes.boxes.clear();
@@ -145,7 +140,7 @@ void ESR_RADAR::pubBoundingBoxArray()
 			boxes.boxes.push_back(box);
 		}
 		mutex_.unlock();
-		if(boxes.boxes.size()) 
+		//if(boxes.boxes.size()) 
 			boundingBox_pub.publish(boxes);
 		r.sleep();
 	}
