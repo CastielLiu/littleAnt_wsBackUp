@@ -95,7 +95,7 @@ def plot(file_name):
 	#plt.xticks(np.arange(0,200,2))
 	plt.grid('on')
 
-	plt.savefig('a.pdf')
+	#plt.savefig('a.pdf')
 
 	plt.show()
 
