@@ -285,32 +285,27 @@ void ESR_RADAR::send_vehicleMsg_callback(const ros::TimerEvent&)
 	
 	out_can2serial->sendCanMsg(canMsg5F2);
 	
-	CanMsg_t canMsg4F0 = {0x4F0,8};
-	canMsg4F0.type = Can2serial::STD_DATA_FRAME;//std can msg
-	
-	uint16_t speed = vehicleSpeed_/0.0625 ; 
-	canMsg4F0.data[0] = (speed>>3)&0xff;
-	canMsg4F0.data[1] |= (speed%8)<<5 ;
-	
-	canMsg4F0.data[1] &= 0xef;  // speed direction 0=forward
-	out_can2serial->sendCanMsg(canMsg4F0);
-	
-	CanMsg_t canMsg4F1 = {0x4F1,8};
-	canMsg4F1.type = Can2serial::STD_DATA_FRAME;//std can msg
-	
-	canMsg4F1.data[7] |= 0x20 ; //speed valid
-	out_can2serial->sendCanMsg(canMsg4F1);
+//	CanMsg_t canMsg4F0 = {0x4F0,8};
+//	canMsg4F0.type = Can2serial::STD_DATA_FRAME;//std can msg
+//	
+//	uint16_t speed = vehicleSpeed_/0.0625 ; 
+//	canMsg4F0.data[0] = (speed>>3)&0xff;
+//	canMsg4F0.data[1] |= (speed%8)<<5 ;
+//	
+//	canMsg4F0.data[1] &= 0xef;  // speed direction 0=forward
+//	out_can2serial->sendCanMsg(canMsg4F0);
+//	
+//	CanMsg_t canMsg4F1 = {0x4F1,8};
+//	canMsg4F1.type = Can2serial::STD_DATA_FRAME;//std can msg
+//	
+//	canMsg4F1.data[7] |= 0x20 ; //speed valid
+//	out_can2serial->sendCanMsg(canMsg4F1);
 	
 }
 
 void ESR_RADAR::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
-//	static int i=0;
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
-
-//	i++;
-//	if(i%20==0)
-//		ROS_INFO("callback speed:%f ",vehicleSpeed_);
 }
 
 

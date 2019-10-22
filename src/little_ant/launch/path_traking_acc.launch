@@ -53,8 +53,11 @@
 	</node>
 	
 	<node name="acc_node" pkg="acc" type="acc_node" output="screen" respawn="true">
-		<param name="trackTargetAngle_range" value="6.0"/>
+		<param name="target_search_angle_range" value="5.0"/>
+		<param name="max_target_search_distance" value="30.0"/>
+		
 		<param name="max_following_speed" value="15.0"/>
+		<param name="keeping_distance" value="13.0"/>
 	</node>
 	
 

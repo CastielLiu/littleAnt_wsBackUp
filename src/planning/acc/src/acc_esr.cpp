@@ -4,7 +4,6 @@
 Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	nh_(nh),
 	nh_private_(nh_private),
-	is_car_following_(false),
 	max_target_search_distance_(30.0)
 {
 	cmd_.cmd2.set_gear =1;
@@ -18,7 +17,7 @@ Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	
 	acc_targetId_ = 0xff; //no target
 	lastTime_of_seekTarget_ = 0.0;
-	tracking_distance_ = 10.0;
+	keeping_distance_ = 10.0;
 }
 
 bool Acc_esr::init()
@@ -31,12 +30,13 @@ bool Acc_esr::init()
 	
 	pub_cmd_ = nh_.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",2);
 	
-	nh_private_.param<float>("trackTargetAngle_range",trackTargetAngle_range_,1.0);
+	nh_private_.param<float>("target_search_angle_range",trackTargetAngle_range_,1.0);
+	nh_private_.param<float>("max_target_search_distance", max_target_search_distance_,15);
+	
 	nh_private_.param<float>("max_following_speed",max_following_speed_,15.0);
+	nh_private_.param<float>("keeping_distance", keeping_distance_,15);
 	
-	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.10),&Acc_esr::updateTargetStatus_callback,this);
-	
-//	car_follow_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&Acc_esr::carFollowThread, this)));
+	updateTargetStatus_timer_ = nh_.createTimer(ros::Duration(0.05),&Acc_esr::updateTargetStatus_callback,this);
 }
 
 void Acc_esr::run()
@@ -44,24 +44,11 @@ void Acc_esr::run()
 	ros::spin();
 }
 
-//void Acc_esr::carFollowThread()
-//{
-//	ros::Rate loop_rate(1); // nothing
-//	while(ros::ok())
-//	{
-//		if(is_car_following_)
-//		{
-//		
-//		}
-//		loop_rate.sleep();
-//	}
-//}
-
 void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg)
 {
 	vehicleSpeed_ = msg->vehicle_speed; //m/s
 		
-	tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0 * 3  + 8.0;
+	//tracking_distance_ = 0.5* vehicleSpeed_ * vehicleSpeed_ /5.0 * 3  + 8.0;
 }
 
 
@@ -94,7 +81,7 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 		//ROS_INFO("objects->size:%d \tpotentialTarget_num_:%d",objects->size,potentialTarget_num_);
 		for(size_t i=0;i<potentialTarget_num_;i++)
 		{
-			ROS_INFO("target locked distance:%f  azimuth:%f",
+			ROS_INFO("potential target: [distance:%f  azimuth:%f]",
 				objects->objects[potentialTarget_index_[i]].distance,
 				objects->objects[potentialTarget_index_[i]].azimuth);
 				
@@ -133,25 +120,25 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 	{
 		//distanceErr>0    acceleration
 		//distanceErr<0    deceleration
-		float distanceErr = trackTargetMsg_.distance -tracking_distance_;
+		float distanceErr = trackTargetMsg_.distance -keeping_distance_;
 		float t_speed;  //m/s
 		if(distanceErr >= 0)
-			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.5;  //wait debug
+			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + distanceErr *0.5;  //wait debug
 		else
-			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + (trackTargetMsg_.distance -tracking_distance_) *0.3;
+			t_speed = vehicleSpeed_ + trackTargetMsg_.speed + distanceErr *0.3;
 		if((cnt++)%20==0)
 			ROS_INFO("target speed:%f \t vehicle speed:%f \t t_speed:%f\t t_dis:%f\t dis:%f",
-						vehicleSpeed_ + trackTargetMsg_.speed,vehicleSpeed_,t_speed,tracking_distance_,trackTargetMsg_.distance);
+						vehicleSpeed_ + trackTargetMsg_.speed,vehicleSpeed_,t_speed,keeping_distance_,trackTargetMsg_.distance);
 		
 		if(t_speed > max_following_speed_/3.6)
-			cmd_.cmd2.set_speed = max_following_speed_ * 3.6; //km/h
+			cmd_.cmd2.set_speed = max_following_speed_; //km/h
 		else if(t_speed >0.0)
 			cmd_.cmd2.set_speed = t_speed * 3.6; //km/h
 		else
 		{
 			//ROS_INFO("here...............................");
 			cmd_.cmd2.set_speed = 0.0;   //emergencyBrake!!
-			cmd_.cmd2.set_brake = 35.0;
+			cmd_.cmd2.set_brake = 100;
 		}
 	}
 	pub_cmd_.publish(cmd_);

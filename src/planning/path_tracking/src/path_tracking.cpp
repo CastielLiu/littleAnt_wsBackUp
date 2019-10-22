@@ -2,7 +2,7 @@
 #include<little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/State2.h>  //speed
 #include<little_ant_msgs/State4.h>  //steerAngle
-#include<std_msgs/Float32.h>
+#include<std_msgs/Bool.h>
 #include<std_msgs/UInt32.h>
 #include<std_msgs/UInt8.h>
 #include<vector>
@@ -54,6 +54,9 @@ private:
 	ros::Publisher pub_tracking_state_;
 	path_tracking::State tracking_state_;
 	
+	ros::Publisher pub_acc_;
+	bool is_acc_;
+	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
 	std::string path_points_file_;
@@ -95,7 +98,8 @@ PathTracking::PathTracking():
 	nearest_point_index_(0),
 	avoiding_offset_(0.0),
 	max_roadwheelAngle_(25.0),
-	is_avoiding_(false)
+	is_avoiding_(false),
+	is_acc_(false)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -132,6 +136,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
 	pub_tracking_state_ = nh.advertise<path_tracking::State>(tracking_info_topic,1);
+	pub_acc_ = nh.advertise<std_msgs::Bool>("/is_acc",1);
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
@@ -196,9 +201,18 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
+		is_acc_ = false;
+		if(nearest_point_index_ > 1000 && nearest_point_index_ < 2000) //acc
+		{
+			is_acc_ = true;
+			std_msgs::Bool acc; acc.data = true;
+			pub_acc_.publish(acc);
+		}
+		
+	
 		if(key_)
 			target_point_ = pointOffset(path_points_[target_point_index_],-2.0);
-		if(!key_ && avoiding_offset_ != 0.0)
+		if(!key_ && avoiding_offset_ != 0.0 && !is_acc_)
 			target_point_ = pointOffset(path_points_[target_point_index_],avoiding_offset_);
 		
 		try

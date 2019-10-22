@@ -54,7 +54,7 @@ private:
 	little_ant_msgs::ControlCmd cmd_;
 	
 	float vehicleSpeed_;
-	float tracking_distance_;
+	float keeping_distance_;
 	bool is_acc_;
 	uint8_t acc_targetId_;
 	uint8_t acc_targetIndex_;
@@ -66,10 +66,6 @@ private:
 	float trackTargetAngle_range_;
 	
 	double lastTime_of_seekTarget_;
-	
-	boost::shared_ptr<boost::thread> car_follow_thread_ptr_;
-	
-	bool is_car_following_;
 	
 	float max_following_speed_;
 	
