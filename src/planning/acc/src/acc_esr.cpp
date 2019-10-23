@@ -53,7 +53,12 @@ void Acc_esr::vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg
 
 void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 {
-	if(!is_acc_ ) return;
+	if(!is_acc_ ) 
+	{
+		cmd_.status = false;
+		pub_cmd_.publish(cmd_);
+		return;
+	}
 	
 	static int cnt =0;
 

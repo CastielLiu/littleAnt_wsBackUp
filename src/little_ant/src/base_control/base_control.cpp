@@ -357,11 +357,11 @@ void BaseControl::setDriverlessMode()
 
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	//send driverless mode cmd
+	int count =  0;
 	while(ros::ok() )
 	{
 		can2serial.sendCanMsg(canMsg_cmd1);
 		usleep(20000);
-		static int count =  0;
 	//when setting the vehicle into driverless mode
 	//the steering will be back to the middle automaticly, and the steer rotate speed is suitable
 	//but if we immdiately send the steering cmd, the steer will rotate very fast, even cause EPS to fail
@@ -382,7 +382,10 @@ void BaseControl::setDriverlessMode()
 	for(size_t count = 0; ros::ok() && state1.act_gear != 1; ++count)
 	{
 		if(count%6==0)
+		{
 			canMsg_cmd2.data[0] = 0x00;
+			ROS_INFO("try to set gear failed!!  retrying...");
+		}
 		else
 			canMsg_cmd2.data[0] = 0x01;
 			
@@ -546,7 +549,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
 	
 	if(msg->set_emergencyBrake)
-		canMsg_cmd2.data[6] |= 0x10;
+		 canMsg_cmd2.data[6] |= 0x10;
 	else
 		canMsg_cmd2.data[6] &= 0xef;
 		
