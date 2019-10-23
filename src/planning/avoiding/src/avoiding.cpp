@@ -40,7 +40,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<float>("maxOffset_left",maxOffset_left_,-0.5);
 	nh_private.param<float>("maxOffset_right",maxOffset_right_,0.5);
 	
-	assert(maxOffset_left_ < 0 && maxOffset_right_ >=0);
+	//assert(maxOffset_left_ < 0 && maxOffset_right_ >=0);
 	
 	if(path_points_file_.empty())
 	{

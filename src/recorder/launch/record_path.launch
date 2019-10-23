@@ -3,7 +3,7 @@
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="base_control_port" default="/dev/U4"/>   <!-- CAN -->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="file_name" default="path" />
+	<arg name="file_name" default="path" />            
 	<arg name="other" default="false"/>
 
 	<node name="record_path_node" pkg="recorder" type="record_path_node" output= "screen">

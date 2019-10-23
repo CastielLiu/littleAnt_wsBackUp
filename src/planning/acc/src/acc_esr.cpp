@@ -135,7 +135,7 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			cmd_.cmd2.set_speed = t_speed * 3.6; //km/h
 		else
 		{
-			//ROS_INFO("here...............................");
+			ROS_INFO("acc: emergencyBrake...............................");
 			cmd_.cmd2.set_speed = 0.0;   //emergencyBrake!!
 			cmd_.cmd2.set_brake = 100;
 		}
@@ -156,7 +156,7 @@ void Acc_esr::is_acc_callback(const std_msgs::Bool::ConstPtr& state)
 	else if(!is_acc_ && state->data)
 	{
 		ROS_INFO("Acc mode started...");
-		cmd_.status = true;
+//		cmd_.status = true;
 	}
 	is_acc_ = state->data;
 }

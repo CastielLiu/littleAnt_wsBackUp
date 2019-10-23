@@ -4,24 +4,11 @@
 	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="file_name" default="path.txt" />
-	
-	<arg name="max_speed"  default="5.0"/>
+	<arg name="file_name" default="test5.txt" />
 	
 	<!-- euclidean_cluster -->
 	<include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch"/>
 	
-	<!--避障-->	
-	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
-		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
-		<param name="utm_topic" value="/ll2utm_odom" />
-		<param name="avoid_speed" value="10.0" />
-		<param name="objects_topic" value="/detected_bounding_boxs" />
- 		<param name="safety_distance_side" value="0.1"/>    <!--   两侧安全距离       -->
-		<param name="max_deceleration" value="5.0" />
-		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_right" value="0.0"/>
-	</node>
 
 	<!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -36,26 +23,24 @@
 		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
-		<param name="speed" value="20.0"/>						<!-- 跟踪速度  -->
+		<param name="speed" value="30.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-0.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.0"/>
-		<param name="foreSightDis_speedCoefficient" value = "1.2"/>
-		<param name="foreSightDis_latErrCoefficient" value = "0.5"/>
+		<param name="foreSightDis_speedCoefficient" value = "1.8"/>
+		<param name="foreSightDis_latErrCoefficient" value = "1.0"/>
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
-
 		<param name="port" value="$(arg gps_port)" />
 		<param name="baudrate" value="115200" />
 		<param name="log_commands" value="inspvaxb ontime 0.05" />
 		<param name="is_lltoutm"   value="true"/>
 		<param name="ll2utm_topic" value="/ll2utm_odom"/>
-		
 	</node>
 	
 	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
 		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
-		<param name ="is_sendMsgToEsr"  type ="bool"  value="True"/>
+		<param name ="is_sendMsgToEsr"  type ="bool"  value="False"/>
 		<param name ="in_port_name" value="/dev/U2"/>
 		<param name ="out_port_name" value="/dev/U3"/>
 	</node>

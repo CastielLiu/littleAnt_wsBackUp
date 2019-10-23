@@ -20,6 +20,8 @@
 #include <boost/bind.hpp>
 #include <thread>
 
+#define LowSpeed 15.0
+
 class PathTracking
 {
 public:
@@ -73,6 +75,7 @@ private:
 	bool vehicle_speed_status_;
 	
 	float vehicle_speed_;
+	float speed_limit_;
 	float current_roadwheelAngle_;
 	
 	float safety_distance_front_;
@@ -201,17 +204,105 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
-//		is_acc_ = false;
-//		if(nearest_point_index_ > 1000 && nearest_point_index_ < 2000) //acc
-//		{
+		speed_limit_ = path_tracking_speed_;
+		is_acc_ = false;
+		if(nearest_point_index_ < 700) //satrt
+			speed_limit_ = 10.0;
+		else if(nearest_point_index_ > 2026 && nearest_point_index_ < 2746) //acc
+		{
 			is_acc_ = true;
 			std_msgs::Bool acc; acc.data = true;
 			pub_acc_.publish(acc);
-//		}
+			speed_limit_ = LowSpeed;
+		}
+		else if(nearest_point_index_ >2746 && nearest_point_index_ < 3800) //path narrow
+			speed_limit_ = LowSpeed;
+		else if(nearest_point_index_ >4460 && nearest_point_index_ < 5238) //person
+			speed_limit_ = LowSpeed;
+		else if(nearest_point_index_ >8443 && nearest_point_index_ < 9615) //working
+			speed_limit_ = LowSpeed;
+		else if(nearest_point_index_ >10644 && nearest_point_index_ < 11168) //phone
+			speed_limit_ = LowSpeed;
+		size_t A = 10854, B = 10967; //phone
+		static int stoped1 = 0 ; //0: unstop 1: stop 2: stoped
+		static double stop_time;
+		float stop_duration = 5.0;
+		if(nearest_point_index_ > A && nearest_point_index_ < B)
+		{
+//			ROS_ERROR("stoped1:%d",stoped1);
+			if(stoped1 == 0)
+			{
+				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+				if(speed_limit_ < 0) speed_limit_ = 0.0;
+				if(vehicle_speed_ < 1.0) //stoped
+				{
+//					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
+					stop_time = ros::Time::now().toSec();
+					stoped1 = 1;
+				}
+			}
+			else if(stoped1 == 1)
+			{
+				if(ros::Time::now().toSec()-stop_time > stop_duration)
+				{
+//					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
+					speed_limit_ = path_tracking_speed_;
+					stoped1 = 2;
+				}
+				else
+					speed_limit_ = 0.0;
+			}
+		}
 		
-	
+		if(nearest_point_index_ >12429 && nearest_point_index_ < 12665) //up and down
+			speed_limit_ = LowSpeed;
+			
+		static int stoped2 = 0 ; //0: unstop 1: stop 2: stoped
+		A = 12665; B = 12765;
+		if(nearest_point_index_ > A && nearest_point_index_ < B)
+		{
+//			ROS_ERROR("stoped:%d",stoped2);
+			if(stoped2 == 0)
+			{
+				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+				if(speed_limit_ < 0) speed_limit_ = 0.0;
+				if(vehicle_speed_ < 1.0) //stoped
+				{
+//					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
+					stop_time = ros::Time::now().toSec();
+					stoped2 = 1;
+				}
+			}
+			else if(stoped2 == 1)
+			{
+				if(ros::Time::now().toSec()-stop_time > stop_duration)
+				{
+					speed_limit_ = path_tracking_speed_;
+					stoped2 = 2;
+//					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
+				}
+				else
+					speed_limit_ = 0.0;
+			}
+		}
+		if(nearest_point_index_ > 14035 && nearest_point_index_ < 14699) //turn rignt
+			speed_limit_ = LowSpeed;
+		
+		A = 16385; B = 16435;
+		if(nearest_point_index_ > 16079 && nearest_point_index_ < A)
+			speed_limit_ = LowSpeed;
+		else if(nearest_point_index_ > A && nearest_point_index_ < B)
+		{
+			speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+			ROS_ERROR("speed_limit_:%f",speed_limit_);
+			if(speed_limit_ < 0) speed_limit_ = 0.0;
+		}
+		else if(nearest_point_index_ > B)
+			speed_limit_ = 0;
+		
+		
 		if(key_)
-			target_point_ = pointOffset(path_points_[target_point_index_],2.5);
+			target_point_ = pointOffset(path_points_[target_point_index_],-2.5);
 		if(!key_ && avoiding_offset_ != 0.0 && !is_acc_)
 			target_point_ = pointOffset(path_points_[target_point_index_],avoiding_offset_);
 		
@@ -263,9 +354,9 @@ void PathTracking::run()
 		}
 		float max_curvature = maxCurvatureInRange(path_points_, nearest_point_index_, index);
 		
-		gps_controlCmd_.cmd2.set_speed = 
-				limitSpeedByPathCurvature(path_tracking_speed_,max_curvature);
+		float set_speed = limitSpeedByPathCurvature(path_tracking_speed_,max_curvature);
 		
+		gps_controlCmd_.cmd2.set_speed =  set_speed > speed_limit_ ? speed_limit_ : set_speed;
 		
 		this->publishPathTrackingState();
 		
