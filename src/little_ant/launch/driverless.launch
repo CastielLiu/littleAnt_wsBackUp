@@ -4,28 +4,26 @@
 	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="esr_radar_port_in" default="/dev/U3"/>  <!-- esrRadar -->
-	<arg name="esr_radar_port_out" default="/dev/ttyUSB1"/>  <!-- esrRadar -->
-	<arg name="file_name" default="raw_path3.txt" />
+	<arg name="file_name" default="path.txt" />
 	
-	<arg name="max_speed"  default="30.0"/>
+	<arg name="max_speed"  default="5.0"/>
 	
-
+	<!-- euclidean_cluster -->
+	<include file="$(find euclidean_cluster)/launch/euclidean_cluster.launch"/>
+	
 	<!--避障-->	
 	<node type="avoiding_node" pkg="avoiding"  name="avoiding_node" output="screen" >
 		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
 		<param name="utm_topic" value="/ll2utm_odom" />
 		<param name="avoid_speed" value="10.0" />
 		<param name="objects_topic" value="/detected_bounding_boxs" />
- 		<param name="safety_distance_side" value="0.3"/>    <!--   两侧安全距离       -->
+ 		<param name="safety_distance_side" value="0.1"/>    <!--   两侧安全距离       -->
 		<param name="max_deceleration" value="5.0" />
 		<param name="maxOffset_left" value="-3.0"/>  <!-- 左右侧避障偏移最大值 -->
 		<param name="maxOffset_right" value="0.0"/>
-		
 	</node>
 
-		
-	<!--底层 -->	
+	<!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
@@ -40,10 +38,9 @@
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
 		<param name="speed" value="20.0"/>						<!-- 跟踪速度  -->
 		<param name="maxOffset_left" value="-0.0"/>  <!-- 左右侧避障偏移最大值 -->
-		<param name="maxOffset_right" value="2.5"/>
+		<param name="maxOffset_right" value="0.0"/>
 		<param name="foreSightDis_speedCoefficient" value = "1.2"/>
 		<param name="foreSightDis_latErrCoefficient" value = "0.5"/>
-		
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
@@ -55,6 +52,23 @@
 		<param name="ll2utm_topic" value="/ll2utm_odom"/>
 		
 	</node>
+	
+	<node name="esr_radar" pkg="esr_radar" type ="esr_radar" output="screen">
+		<param name ="is_pubBoundingBox" type ="bool" value="True"/>
+		<param name ="is_sendMsgToEsr"  type ="bool"  value="True"/>
+		<param name ="in_port_name" value="/dev/U2"/>
+		<param name ="out_port_name" value="/dev/U3"/>
+	</node>
+	
+	<!-- acc -->
+	<node name="acc_node" pkg="acc" type="acc_node" output="screen" respawn="true">
+		<param name="target_search_angle_range" value="5.0"/>
+		<param name="max_target_search_distance" value="30.0"/>
+		
+		<param name="max_following_speed" value="15.0"/>
+		<param name="keeping_distance" value="13.0"/>
+	</node>
+	
 	
 	<node name="record_debug_path_node" pkg="recorder" type="record_path_node">
 		<param name="file_path" value="$(find recorder)/data/path_data/debug/"/>

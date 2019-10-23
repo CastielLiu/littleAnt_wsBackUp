@@ -1,6 +1,5 @@
 #include "acc/acc_esr.h"
 
-
 Acc_esr::Acc_esr(ros::NodeHandle nh,ros::NodeHandle nh_private) :
 	nh_(nh),
 	nh_private_(nh_private),
@@ -101,8 +100,8 @@ void Acc_esr::object_callback(const esr_radar_msgs::Objects::ConstPtr& objects)
 			if(objects->objects[i].id == acc_targetId_ && objects->objects[i].status != 1)  //!=newTarget
 			{
 				trackTargetMsg_ = objects->objects[i];
-				//ROS_INFO("target Id:%x  angle:%f  distance:%f speed:%f",
-				//			trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
+				ROS_INFO("target Id:%x  angle:%f  distance:%f speed:%f",
+							trackTargetMsg_.id,trackTargetMsg_.azimuth,trackTargetMsg_.distance,trackTargetMsg_.speed);
 				
 				lastTime_of_seekTarget_ = ros::Time::now().toSec();
 				publishCarFollowingStats(true);

@@ -10,6 +10,7 @@
 #include<std_msgs/Float32.h>
 #include<ant_math/ant_math.h>
 #include<std_msgs/UInt32.h>
+#include<path_tracking/State.h>
 #include<vector>
 #include<assert.h>
 
@@ -43,7 +44,7 @@ private:
 	
 	void objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects);
 	
-	void target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
+	void tracking_state_callback(const path_tracking::State::ConstPtr& msg);
 
 	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
 						  size_t objectIndex,
@@ -80,7 +81,7 @@ private:
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
-	ros::Subscriber sub_target_point_index_;
+	ros::Subscriber sub_tracking_info_;
 	ros::Subscriber sub_utm_gps_;
 	
 	ros::Publisher pub_avoid_cmd_;

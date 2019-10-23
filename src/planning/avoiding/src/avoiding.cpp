@@ -50,7 +50,7 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 
 	sub_objects_msg_ = nh.subscribe(objects_topic_,1,&Avoiding::objects_callback,this);
 	sub_vehicle_speed_ = nh.subscribe("/vehicleState2",1,&Avoiding::vehicleSpeed_callback,this);
-	sub_target_point_index_ = nh.subscribe("/track_target_index",1,&Avoiding::target_point_index_callback,this);
+	sub_tracking_info_ = nh.subscribe("/tracking_state",1,&Avoiding::tracking_state_callback,this);
 	
 	std::string utm_odom_topic = nh_private.param<std::string>("utm_odom_topic","/ll2utm_odom");
 	sub_utm_gps_ = nh.subscribe(utm_odom_topic, 5,&Avoiding::utm_gps_callback,this);
@@ -63,10 +63,10 @@ bool Avoiding::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
-void Avoiding::target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg)
+void Avoiding::tracking_state_callback(const path_tracking::State::ConstPtr& msg)
 {
 	target_point_index_status_ = true;
-	target_point_index_ = msg->data;
+	target_point_index_ = msg->target_index;
 }
 
 
@@ -310,8 +310,7 @@ inline void Avoiding::decision(const jsk_recognition_msgs::BoundingBoxArray::Con
 	{
 		std::cout << "Unable to avoid obstacle! slow down ! ";
 		std::cout << "  t_L: " <<  try_offest[0] << " max_L: "<< maxOffset_left_;
-		std::cout << "  t_R: " <<  try_offest[1] << " max_R: "<< maxOffset_right_ ;
-		
+		std::cout << "  t_R: " <<  try_offest[1] << " max_R: "<< maxOffset_right_ << std:: endl;
 		
 		avoid_cmd_.status = true;
 		avoid_cmd_.just_decelerate = true;
@@ -583,7 +582,7 @@ inline void Avoiding::showErrorSystemStatus()
 {
 	ROS_INFO("gps status:%d\t targetIndex status:%d\t vehicleSpeed status:%d",
 			gps_status_,target_point_index_status_,vehicle_speed_status_);
-	ROS_INFO("waiting for all messages is availble....");
+	ROS_ERROR("waiting for all messages is availble....");
 }
 
 inline void Avoiding::emergencyBrake()

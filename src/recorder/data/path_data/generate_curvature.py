@@ -60,15 +60,13 @@ class Points:
 
 def main(argv):
 	path_points = Points()
-	file_name = 'raw_path3.txt'
 	if(len(argv) >1):
 		file_name = argv[1]
+	else:
+		print("please input file name..")
+		return
 	raw_file = 'raw/' + file_name
 	result_file = 'result/' + file_name
-	
-	if(len(argv)>2):
-		raw_file = argv[1]
-		result_file = argv[2]
 			
 			
 	path_points.load(raw_file)

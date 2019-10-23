@@ -44,25 +44,27 @@ class Points:
 		return math.sqrt(x*x+y*y)
 		
 			
-def plot(file_name):
-	path_points = Points()
-	path_points.load(file_name)
-#	reference_point_x = path_points.x[0]
-#	reference_point_y = path_points.y[0]
-#	
-#	path_points.offsetPoints(reference_point_x,reference_point_y)
-	
-	plt.plot(path_points.y,path_points.x,'r.',label="reference path")
+def plot(file_names):
+	i = 0
+	for file_name in file_names:
+		path_points = Points()
+		path_points.load(file_name)
+		if(i==0):
+			plt.plot(path_points.y,path_points.x,'r.')
+			i = i+1
+		elif(i==1):
+			plt.plot(path_points.y,path_points.x,'b.')
+			i = i+1
+		elif(i==2):
+			plt.plot(path_points.y,path_points.x,'k.')
+			
 #	index = 4882
 #	plt.plot(path_points.y[index],path_points.x[index],'b*')
 #	index = 4997
 #	plt.plot(path_points.y[index],path_points.x[index],'b*')
 	plt.axis('equal')
-
 	plt.legend()
-
 	#plt.ylim((0,30))
-	
 	#plt.xticks(np.arange(0,200,2))
 	plt.grid('on')
 
@@ -70,7 +72,7 @@ def plot(file_name):
 
 	plt.show()
 
-if(len(sys.argv) != 2):
+if(len(sys.argv) < 2):
 	print("please input file name")
 else:
-	plot(sys.argv[1])
+	plot(sys.argv[1:])

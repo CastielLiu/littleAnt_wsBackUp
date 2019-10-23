@@ -12,9 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   gps_msgs
   serial
+  path_tracking
   jsk_recognition_msgs
   ant_math
-  state_detection
 )
 
 
