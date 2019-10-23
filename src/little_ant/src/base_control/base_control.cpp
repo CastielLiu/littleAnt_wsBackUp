@@ -105,10 +105,10 @@ bool BaseControl::init(int argc,char**argv)
 	
 	can2serial.clearCanFilter();
 	
-	can2serial.setCanFilter_alone(0x01,ID_STATE1); usleep(10000);
-	can2serial.setCanFilter_alone(0x02,ID_STATE2); usleep(10000);
-	can2serial.setCanFilter_alone(0x03,ID_STATE3); usleep(10000);
-	can2serial.setCanFilter_alone(0x04,ID_STATE4); usleep(10000);
+//	can2serial.setCanFilter_alone(0x01,ID_STATE1); usleep(10000);
+//	can2serial.setCanFilter_alone(0x02,ID_STATE2); usleep(10000);
+//	can2serial.setCanFilter_alone(0x03,ID_STATE3); usleep(10000);
+//	can2serial.setCanFilter_alone(0x04,ID_STATE4); usleep(10000);
 	
 //	can2serial.configBaudrate(500);
 	

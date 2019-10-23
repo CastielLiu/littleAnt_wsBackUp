@@ -6,7 +6,7 @@
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="file_name" default="raw_path3.txt" />
 	
-<!--底层 -->	
+<!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
 		<param name ="stm32_port_name" value="$(arg stm32_port)"/>

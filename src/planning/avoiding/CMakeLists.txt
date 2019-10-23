@@ -11,10 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   gps_msgs
-  array_msgs
   serial
   jsk_recognition_msgs
   ant_math
+  state_detection
 )
 
 

@@ -3,15 +3,13 @@
 #include<ros/ros.h>
 #include<little_ant_msgs/ControlCmd.h>
 #include<little_ant_msgs/State2.h>
-#include<esr_radar_msgs/Object.h>
-#include<esr_radar_msgs/Objects.h>
-#include<std_msgs/Bool.h>
 #include<jsk_recognition_msgs/BoundingBoxArray.h>
 #include<jsk_recognition_msgs/BoundingBox.h>
+#include<nav_msgs/Odometry.h>
 #include<iostream>
 #include<std_msgs/Float32.h>
 #include<ant_math/ant_math.h>
-#include<array_msgs/UInt32Array.h>
+#include<std_msgs/UInt32.h>
 #include<vector>
 #include<assert.h>
 
@@ -37,15 +35,15 @@ private:
 	enum object_type_t
 	{
 		Unknown = 0,
-		Person = 1,
-		////Person = 3,
-		Vehicle = 2
+		//Person = 1,
+		Person = 2,
+		Vehicle = 3
 	};
-	void utm_gps_callback(const gps_msgs::Utm::ConstPtr& msg);
+	void utm_gps_callback(const nav_msgs::Odometry::ConstPtr& utm);
 	
 	void objects_callback(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects);
 	
-	void relatedIndex_callback(const array_msgs::UInt32Array::ConstPtr& msg);
+	void target_point_index_callback(const std_msgs::UInt32::ConstPtr& msg);
 
 	void get_obstacle_msg(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
 						  size_t objectIndex,
@@ -55,11 +53,6 @@ private:
 						  size_t *obstacleIndex,
 						  size_t &obstacleSequence);
 	
-	void requestCarFollowing(const jsk_recognition_msgs::BoundingBoxArray::ConstPtr& objects,
-								   const std::vector<size_t>& indexArray);
-								   
-	void carFollowResponse_callback(const std_msgs::Bool::ConstPtr& msg);							   
-								
 	whatArea_t which_area(float& x,float& y);
 
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
@@ -87,13 +80,11 @@ private:
 private:
 	ros::Subscriber sub_objects_msg_;
 	ros::Subscriber sub_vehicle_speed_;
-	ros::Subscriber sub_related_index_;
+	ros::Subscriber sub_target_point_index_;
 	ros::Subscriber sub_utm_gps_;
-	ros::Subscriber sub_carFollow_response_;
 	
 	ros::Publisher pub_avoid_cmd_;
 	ros::Publisher pub_avoid_msg_to_gps_; 
-	ros::Publisher pub_car_follow_request_;
 	
 	little_ant_msgs::ControlCmd avoid_cmd_;
 	
@@ -114,14 +105,14 @@ private:
 	float pedestrian_detection_area_side_; //行人检测区两侧距离
 	
 	float vehicle_speed_; //m/s
+	float vehicle_axis_dis_ ;
 	float deceleration_cofficient_;
 	
 	std::vector<gpsMsg_t> path_points_;
 	
 	std::string path_points_file_;
 	
-	size_t target_point_index_;
-	size_t nearest_point_index_;
+	uint32_t target_point_index_;
 	
 	gpsMsg_t current_point_,target_point_;
 	
@@ -137,8 +128,6 @@ private:
 	bool vehicle_speed_status_;
 	
 	bool is_systemOk_;
-	
-	bool is_carFollow_;
 };
 
 
