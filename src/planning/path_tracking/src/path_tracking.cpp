@@ -206,7 +206,7 @@ void PathTracking::run()
 	{
 		float stop_duration = 6.0;
 		static double stop_time;
-		size_t A = 3000, B= 3084; //end acc stop
+		size_t A = 3040, B= 3090; //end acc stop
 		static int stoped3 = 0 ; //0: unstop 1: stop 2: stoped
 		
 		speed_limit_ = path_tracking_speed_;

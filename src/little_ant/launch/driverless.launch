@@ -19,7 +19,7 @@
 	</node>
 	
 	<!-- 跟踪   -->
-	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" >
 		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
 		<param name="disThreshold" value="6.0"/>    			<!-- 跟踪前视距离  -->
 		<param name="avoiding_disThreshold" value="15.0"/>		<!-- 跟踪前视距离  -->
@@ -46,11 +46,11 @@
 	</node>
 	
 	<!-- acc -->
-	<node name="acc_node" pkg="acc" type="acc_node" respawn="true">
-		<param name="target_search_angle_range" value="6.0"/>
+	<node name="acc_node" pkg="acc" type="acc_node" respawn="true" output="screen">
+		<param name="target_search_angle_range" value="8.0"/>
 		<param name="max_target_search_distance" value="30.0"/>
 		
-		<param name="max_following_speed" value="15.0"/>
+		<param name="max_following_speed" value="11.0"/>
 		<param name="keeping_distance" value="13.0"/>
 	</node>
 	
