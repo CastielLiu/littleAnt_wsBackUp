@@ -204,6 +204,8 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
+		gps_controlCmd_.cmd1.set_turnLight_R = false;
+		gps_controlCmd_.cmd1.set_turnLight_L = false;
 		float stop_duration = 6.0;
 		static double stop_time;
 		size_t A = 3040, B= 3090; //end acc stop
@@ -249,11 +251,14 @@ void PathTracking::run()
 		}
 		else if(nearest_point_index_ >B && nearest_point_index_ < 3800) //path narrow
 		{
+			if(nearest_point_index_ < B+25)
+				gps_controlCmd_.cmd1.set_turnLight_R = true;
 			speed_limit_ = LowSpeed;
 		}
-			
 		else if(nearest_point_index_ >4460 && nearest_point_index_ < 5238) //person
 			speed_limit_ = LowSpeed;
+		else if(nearest_point_index_ >7150 && nearest_point_index_ < 7300) //u-turn
+			gps_controlCmd_.cmd1.set_turnLight_L = true;
 		else if(nearest_point_index_ >8443 && nearest_point_index_ < 9615) //working
 			speed_limit_ = LowSpeed;
 		
@@ -320,7 +325,10 @@ void PathTracking::run()
 			}
 		}
 		if(nearest_point_index_ > 14035 && nearest_point_index_ < 14544) //turn rignt
+		{
 			speed_limit_ = LowSpeed;
+			gps_controlCmd_.cmd1.set_turnLight_R = true;
+		}
 		
 		static int stoped4 = 0 ; //0: unstop 1: stop 2: stoped
 		A = 15119; B = 15207; // pick down
@@ -352,6 +360,8 @@ void PathTracking::run()
 					speed_limit_ = 0.0;
 			}
 		}
+		else if(nearest_point_index_ > B && nearest_point_index_ < 16100)
+			gps_controlCmd_.cmd1.set_turnLight_L = true;
 		
 		A = 16539; B = 16608;
 		if(nearest_point_index_ > A-200 && nearest_point_index_ < A) //end slow down

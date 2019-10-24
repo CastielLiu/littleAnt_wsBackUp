@@ -58,10 +58,10 @@ def plot(file_names):
 		elif(i==2):
 			plt.plot(path_points.y,path_points.x,'k.')
 			
-#	index = 4882
-#	plt.plot(path_points.y[index],path_points.x[index],'b*')
-#	index = 4997
-#	plt.plot(path_points.y[index],path_points.x[index],'b*')
+	index = 7150
+	plt.plot(path_points.y[index],path_points.x[index],'b*')
+	index = 7300
+	plt.plot(path_points.y[index],path_points.x[index],'b*')
 	plt.axis('equal')
 	plt.legend()
 	#plt.ylim((0,30))
