@@ -355,11 +355,10 @@ void BaseControl::setDriverlessMode()
 
 	canMsg_cmd1.data[0] = 0x01; //driverless_mode
 	//send driverless mode cmd
-	while(ros::ok() )
+	for(int count=0; ros::ok(); )
 	{
 		can2serial.sendCanMsg(canMsg_cmd1);
 		usleep(20000);
-		static int count =  0;
 	//when setting the vehicle into driverless mode
 	//the steering will be back to the middle automaticly, and the steer rotate speed is suitable
 	//but if we immdiately send the steering cmd, the steer will rotate very fast, even cause EPS to fail

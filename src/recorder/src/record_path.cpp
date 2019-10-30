@@ -10,9 +10,8 @@ class Record
 {
 	private:
 		void cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg);
-
 		std::string file_path_;
-		std::string	file_name_;
+		std::string file_name_;
 		
 		FILE *fp;
 		FILE *fp_wgs84;
@@ -28,6 +27,7 @@ class Record
 		Record();
 		~Record();
 		bool init();
+		void run();
 		void recordToFile();
 };
 
@@ -81,6 +81,25 @@ bool Record::init()
 	return true;
 }
 
+void Record::run()
+{
+	ros::spin();
+	
+	// generate curvature
+	std::string package_path;
+	ros::param::get("~pkg_path",package_path);
+	std::string tool_file = package_path + "/scripts/generate_curvature.py";
+	std::string raw_file = package_path + "/data/path_data/raw/" + file_name_;
+	std::string result_file = package_path + "/data/path_data/result/" + file_name_;
+	std::string cmd = std::string("python ") + tool_file + " " + raw_file + " " + result_file;
+	std::cout << "\n=====================================================\n";
+	std::cout << "start to generate curvature... "<< std::endl;
+	system(cmd.c_str());
+	std::cout << "generate curvature complete..." << std::endl;
+	std::cout << "=====================================================\n";
+	
+}
+
 void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	static size_t  row_num = 0;
@@ -101,17 +120,15 @@ void Record::cartesian_gps_callback(const nav_msgs::Odometry::ConstPtr& msg)
 	}
 }
 
-
 int main(int argc,char**argv)
 {
 	ros::init(argc,argv,"record_data_node");
 	
-	Record record;
+	Record recorder;
 	
-	if(!record.init())
+	if(!recorder.init())
 		return 1;
-
-	ros::spin();
+	recorder.run();
 	
 	return 0;
 }

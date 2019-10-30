@@ -39,7 +39,7 @@ public:
 	void rosSpinThread(){ros::spin();}
 
 private:
-	void pointOffset(gpsMsg_t& point,float offset);
+	gpsMsg_t pointOffset(const gpsMsg_t& point,float offset);
 	void publishPathTrackingState();
 private:
 	ros::Subscriber sub_utm_odom_;
@@ -179,10 +179,12 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	return true;
 }
 
-void PathTracking::pointOffset(gpsMsg_t& point,float offset)
+gpsMsg_t PathTracking::pointOffset(const gpsMsg_t& point,float offset)
 {
-	point.x =  offset * cos(point.yaw) + point.x;
-	point.y = -offset * sin(point.yaw) + point.y;
+	gpsMsg_t result = point;
+	result.x =  offset * cos(point.yaw) + point.x;
+	result.y = -offset * sin(point.yaw) + point.y;
+	return result;
 }
 
 void PathTracking::run()
@@ -194,7 +196,7 @@ void PathTracking::run()
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
 		if( avoiding_offset_ != 0.0)
-			pointOffset(target_point_,avoiding_offset_);
+			target_point_ = pointOffset(path_points_[target_point_index_],avoiding_offset_);
 		
 		try
 		{
@@ -330,7 +332,6 @@ bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 		return true;
 	return false;
 }
-
 
 int main(int argc,char**argv)
 {

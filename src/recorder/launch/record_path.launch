@@ -7,6 +7,7 @@
 	<arg name="other" default="false"/>
 
 	<node name="record_path_node" pkg="recorder" type="record_path_node" output= "screen">
+		<param name="pkg_path" value="$(find recorder)"/>
 		<param name="file_path" value="$(find recorder)/data/path_data/raw/"/>
 		<param name="file_name" value="$(arg file_name).txt"/>
 		<param name="sample_distance" value="0.1" />

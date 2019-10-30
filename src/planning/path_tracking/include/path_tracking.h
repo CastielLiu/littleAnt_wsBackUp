@@ -54,7 +54,7 @@ private:
 	void publishMaxTolerateSpeed();	
 	size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points,
 									 const gpsMsg_t& current_point);
-	void pointOffset(gpsMsg_t& point,float offset);
+	gpsMsg_t PathTracking::pointOffset(const gpsMsg_t& point,float offset)
 	void publishPathTrackingState();
 private:
 	ros::Subscriber sub_gps_;
