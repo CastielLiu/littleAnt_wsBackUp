@@ -5,7 +5,7 @@ static float g_steering_gearRatio = 540.0/25.0;
 
 static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int baud_rate)
 {
-	try 
+	try
 	{
 		port_ptr = new serial::Serial(port_name,baud_rate,serial::Timeout::simpleTimeout(10)); 
 
@@ -91,6 +91,9 @@ bool BaseControl::init(int argc,char**argv)
 	state2_pub = nh.advertise<little_ant_msgs::State2>("vehicleState2",10);
 	state3_pub = nh.advertise<little_ant_msgs::State3>("vehicleState3",10);
 	state4_pub = nh.advertise<little_ant_msgs::State4>("vehicleState4",10);
+	std_msg_pub = nh.advertise<std_msgs::UInt64>("vehicle_info",1);
+	
+	timer_ = nh.createTimer(ros::Duration(0.03), &BaseControl::timer_callBack, this);
 	
 	if(!openSerial(stm32_serial_port_,stm32_port_name_,stm32_baudrate_))
 		return false;
@@ -424,6 +427,31 @@ void BaseControl::exitDriverlessMode()
 	stm32_serial_port_->flushInput();
 }
 
+void BaseControl::timer_callBack(const ros::TimerEvent& event)
+{
+	//send cmd to stm32
+	send_to_stm32_buf[5] = stm32_brake_ & 0x7f;
+	if(is_driverlessMode_)
+		send_to_stm32_buf[5] |= 0x80;
+		
+	send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
+	stm32_serial_port_->write(send_to_stm32_buf,8);
+	
+	//publish other msg
+	static StateUnion_t msg;
+	msg.state.act_gear = state1.act_gear;
+	msg.state.driverless_mode = state4.driverless_mode;
+	msg.state.hand_brake = 0;
+	msg.state.emergency_brake = 0;
+	msg.state.car_state = state1.vehicle_ready;
+	msg.state.speed = state2.vehicle_speed * 3.6 *100;
+	msg.state.roadwheelAngle = state4.roadwheelAngle *100 + 5000;
+	static std_msgs::UInt64 ros_msg;
+	ros_msg.data = msg.data;
+	std_msg_pub.publish(ros_msg);
+
+}
+
 void BaseControl::callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg)
 {
 	if(!is_driverlessMode_)
@@ -547,13 +575,11 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	can2serial.sendCanMsg(canMsg_cmd2);
 	
 	if(set_brake > 100)
-		send_to_stm32_buf[5] = 255;
+		stm32_brake_ = 100;
 	else if(set_brake >40)
-		send_to_stm32_buf[5] = 1.0*(set_brake-40)/60 * 255;
+		stm32_brake_ = (set_brake - 40)/60.0 * 100;
 	else
-		send_to_stm32_buf[5] = 0;
-	send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
-	stm32_serial_port_->write(send_to_stm32_buf,8);
+		stm32_brake_ = 0;
 }
 
 uint8_t BaseControl::generateCheckNum(const void* voidPtr,size_t len)
@@ -568,7 +594,6 @@ uint8_t BaseControl::generateCheckNum(const void* voidPtr,size_t len)
     return sum;
 }
 
-
 int main(int argc,char**argv)
 {
 	BaseControl base_control;
@@ -576,7 +601,7 @@ int main(int argc,char**argv)
 	if(base_control.init(argc,argv))
 		base_control.run();
 	
-	ROS_INFO("base_control_node has exited");
+	printf("base_control_node has exited");
 	return 0;
 }
 

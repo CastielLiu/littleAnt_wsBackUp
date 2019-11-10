@@ -10,7 +10,7 @@
 
 #include<boost/thread.hpp>
 #include<boost/bind.hpp>
-
+#include<std_msgs/UInt64.h>
 
 #include <little_ant_msgs/State1.h>
 #include <little_ant_msgs/State2.h>
@@ -64,9 +64,26 @@ typedef struct
 	
 }) stm32Msg1_t;
 
-
 // end for stm32
 
+PACK(
+typedef struct 
+{
+	uint8_t act_gear :4;
+	uint8_t driverless_mode :1;
+	uint8_t hand_brake :1;
+	uint8_t emergency_brake :1;
+	uint8_t car_state :1;
+	uint16_t speed;
+	uint16_t roadwheelAngle;
+	
+}) StateMsg_t;
+
+union StateUnion_t
+{
+	StateMsg_t state;
+	uint64_t data;
+};
 
 class BaseControl
 {
@@ -81,6 +98,7 @@ public:
 
 	void callBack1(const little_ant_msgs::ControlCmd1::ConstPtr msg);
 	void callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg);
+	void timer_callBack(const ros::TimerEvent& event);
 	
 private:
 	void Stm32BufferIncomingData(unsigned char *message, unsigned int length);
@@ -96,6 +114,7 @@ private:
 	const stm32Msg1_t *stm32_msg1Ptr_;
 	
 	bool is_driverlessMode_;
+	uint8_t stm32_brake_;
 	
 	boost::shared_ptr<boost::thread> readFromStm32_thread_ptr_; //智能指针 
 	
@@ -106,6 +125,10 @@ private:
 	ros::Publisher state2_pub;
 	ros::Publisher state3_pub;
 	ros::Publisher state4_pub;
+	
+	ros::Publisher std_msg_pub;
+	
+	ros::Timer timer_;
 	
 	std::string obd_can_port_name_;
 	
