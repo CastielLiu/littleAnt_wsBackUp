@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 import math
 import sys
@@ -21,7 +22,7 @@ class Points:
 	def dump(self,file_name):
 		with open(file_name,'w') as f:
 			for i in range(len(self.x)):
-				f.write('%.3f\t%.3f\t%.3f\t%.5f\n' %(self.x[i],self.y[i],self.yaw[i],math.fabs(self.curvature[i])))
+				f.write('%.3f\t%.3f\t%.3f\t%.5f\n' %(self.x[i],self.y[i],self.yaw[i],self.curvature[i]))
 	
 	def clear(self):
 		self.x.clear()
@@ -44,13 +45,18 @@ class Points:
 			elif(self.curvature[i]<-0.3):
 				self.curvature[i] = -0.3
 		self.curvature[len(self.x)-1] = 0.0
+	
 	def curvatureFilter(self,count):
-		num = int(count)/2
-		cur = [0.0] * len(self.curvature)
-		for i in range(len(self.curvature)-1)[num:-num]:
-			temp_list = self.curvature[num+i:num+i+count]
-			cur[i] = sum(temp_list)/count
-		self.curvature = cur[:]
+		count = int(count)
+		if(count%2 ==0):
+			count = count + 1
+		num = count/2
+		temp_cur = self.curvature[:]
+		
+		for i in range(len(temp_cur))[num:-num]:
+			temp_list = self.curvature[i-num:i+num+1]
+			temp_cur[i] = sum(temp_list)/count
+		self.curvature = temp_cur[:]
 	
 	def __disBetweenPoints(self,i,j):
 		x = self.x[i] - self.x[j]
@@ -59,20 +65,15 @@ class Points:
 			
 
 def main(argv):
+	if(len(argv)>2):
+		raw_file = argv[1]
+		result_file = argv[2]
+		
 	path_points = Points()
-	if(len(argv) >1):
-		file_name = argv[1]
-	else:
-		print("please input file name..")
-		return
-	raw_file = 'raw/' + file_name
-	result_file = 'result/' + file_name
-			
-			
 	path_points.load(raw_file)
 	
 	path_points.calculateCurvature()
-	path_points.curvatureFilter(5)
+	path_points.curvatureFilter(15)
 	path_points.dump(result_file)
 
 

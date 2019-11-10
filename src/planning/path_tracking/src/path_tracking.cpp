@@ -208,173 +208,205 @@ void PathTracking::run()
 		gps_controlCmd_.cmd1.set_turnLight_L = false;
 		float stop_duration = 6.0;
 		static double stop_time;
-		size_t A = 3040, B= 3090; //end acc stop
+		//size_t A = 3040, B= 3090; //end acc stop
 		static int stoped3 = 0 ; //0: unstop 1: stop 2: stoped
 		
 		speed_limit_ = path_tracking_speed_;
 		is_acc_ = false;
-		if(nearest_point_index_ < 700) //satrt
-			speed_limit_ = 13.0;
-		else if(nearest_point_index_ > 2026 && nearest_point_index_ < A) //acc
-		{
-			is_acc_ = true;
-			std_msgs::Bool acc; acc.data = true;
-			pub_acc_.publish(acc);
-			speed_limit_ = LowSpeed;
-		}
-		else if(nearest_point_index_ > A && nearest_point_index_ < B)
-		{
-			std_msgs::Bool acc; acc.data = false;
-			pub_acc_.publish(acc);
-			if(stoped3 == 0)
-			{
-				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
-				if(speed_limit_ < 0) speed_limit_ = 0.0;
-				if(vehicle_speed_ < 0.1) //stoped
-				{
-					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
-					stop_time = ros::Time::now().toSec();
-					stoped3 = 1;
-				}
-			}
-			else if(stoped3 == 1)
-			{
-				if(ros::Time::now().toSec()-stop_time > stop_duration)
-				{
-					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
-					speed_limit_ = path_tracking_speed_;
-					stoped3 = 2;
-				}
-				else
-					speed_limit_ = 0.0;
-			}
-		}
-		else if(nearest_point_index_ >B && nearest_point_index_ < 3800) //path narrow
-		{
-			if(nearest_point_index_ < B+25)
-				gps_controlCmd_.cmd1.set_turnLight_R = true;
-			speed_limit_ = LowSpeed;
-		}
-		else if(nearest_point_index_ >4460 && nearest_point_index_ < 5238) //person
-			speed_limit_ = LowSpeed;
-		else if(nearest_point_index_ >7150 && nearest_point_index_ < 7300) //u-turn
-			gps_controlCmd_.cmd1.set_turnLight_L = true;
-		else if(nearest_point_index_ >8443 && nearest_point_index_ < 9615) //working
-			speed_limit_ = LowSpeed;
 		
-			
-		static int stoped1 = 0 ; //0: unstop 1: stop 2: stoped
-		A = 10854, B = 10967; //phone
-		if(nearest_point_index_ >A-200 && nearest_point_index_ < A) //phone
-			speed_limit_ = LowSpeed;
-		else if(nearest_point_index_ > A && nearest_point_index_ < B)
-		{
-//			ROS_ERROR("stoped1:%d",stoped1);
-			if(stoped1 == 0)
-			{
-				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
-				if(speed_limit_ < 0) speed_limit_ = 0.0;
-				if(vehicle_speed_ < 0.1) //stoped
-				{
+//==================changzhou BEGIN======================
+/*
+max path tracking speed 20kmph
+A-B decelaration area 8kmph;
+C-E right turn light;
+D-E 10kmph ;
+F-G decelaration area 8kmph;
+*/
+
+size_t A = 763, B = 905, 
+       C = 1056, 
+       D = 1319, E = 1677, 
+       F = 1940, G = 2140;
+
+if (nearest_point_index_ > A && nearest_point_index_ <B)
+{
+    speed_limit_ = 8;
+}
+else if (nearest_point_index_ >C && nearest_point_index_ <E)
+{
+    gps_controlCmd_.cmd1.set_turnLight_R = true;
+    if(nearest_point_index_ >D && nearest_point_index_ <E)
+    speed_limit_ =12;
+}
+else if(nearest_point_index_ >F && nearest_point_index_ < G)
+{
+    speed_limit_ = 8;
+}
+//==================changzhou ENG======================
+////-------------------------------
+//		
+//		if(nearest_point_index_ < 700) //satrt
+//			speed_limit_ = 13.0;
+//		else if(nearest_point_index_ > 2026 && nearest_point_index_ < A) //acc
+//		{
+//			is_acc_ = true;
+//			std_msgs::Bool acc; acc.data = true;
+//			pub_acc_.publish(acc);
+//			speed_limit_ = LowSpeed;
+//		}
+//		else if(nearest_point_index_ > A && nearest_point_index_ < B)
+//		{
+//			std_msgs::Bool acc; acc.data = false;
+//			pub_acc_.publish(acc);
+//			if(stoped3 == 0)
+//			{
+//				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+//				if(speed_limit_ < 0) speed_limit_ = 0.0;
+//				if(vehicle_speed_ < 0.1) //stoped
+//				{
 //					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
-					stop_time = ros::Time::now().toSec();
-					stoped1 = 1;
-				}
-			}
-			else if(stoped1 == 1)
-			{
-				if(ros::Time::now().toSec()-stop_time > stop_duration)
-				{
+//					stop_time = ros::Time::now().toSec();
+//					stoped3 = 1;
+//				}
+//			}
+//			else if(stoped3 == 1)
+//			{
+//				if(ros::Time::now().toSec()-stop_time > stop_duration)
+//				{
 //					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
-					speed_limit_ = path_tracking_speed_;
-					stoped1 = 2;
-				}
-				else
-					speed_limit_ = 0.0;
-			}
-		}
-		
-		static int stoped2 = 0 ; //0: unstop 1: stop 2: stoped
-		A = 12665; B = 12765;
-		if(nearest_point_index_ >A-200 && nearest_point_index_ < A) //pick up
-			speed_limit_ = LowSpeed;
-		if(nearest_point_index_ > A && nearest_point_index_ < B)
-		{
-//			ROS_ERROR("stoped:%d",stoped2);
-			if(stoped2 == 0)
-			{
-				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
-				if(speed_limit_ < 0) speed_limit_ = 0.0;
-				if(vehicle_speed_ < 0.1) //stoped
-				{
-//					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
-					stop_time = ros::Time::now().toSec();
-					stoped2 = 1;
-				}
-			}
-			else if(stoped2 == 1)
-			{
-				if(ros::Time::now().toSec()-stop_time > stop_duration)
-				{
-					speed_limit_ = path_tracking_speed_;
-					stoped2 = 2;
-//					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
-				}
-				else
-					speed_limit_ = 0.0;
-			}
-		}
-		if(nearest_point_index_ > 14035 && nearest_point_index_ < 14544) //turn rignt
-		{
-			speed_limit_ = LowSpeed;
-			gps_controlCmd_.cmd1.set_turnLight_R = true;
-		}
-		
-		static int stoped4 = 0 ; //0: unstop 1: stop 2: stoped
-		A = 15119; B = 15207; // pick down
-		if(nearest_point_index_ > A-200 && nearest_point_index_ < A) 
-			speed_limit_ = LowSpeed;
-		else if(nearest_point_index_ > A && nearest_point_index_ < B)
-		{
-//			ROS_ERROR("stoped:%d",stoped4);
-			if(stoped4 == 0)
-			{
-				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
-				if(speed_limit_ < 0) speed_limit_ = 0.0;
-				if(vehicle_speed_ < 0.1) //stoped
-				{
-//					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
-					stop_time = ros::Time::now().toSec();
-					stoped4 = 1;
-				}
-			}
-			else if(stoped4 == 1)
-			{
-				if(ros::Time::now().toSec()-stop_time > stop_duration)
-				{
-					speed_limit_ = path_tracking_speed_;
-					stoped4 = 2;
-//					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
-				}
-				else
-					speed_limit_ = 0.0;
-			}
-		}
-		else if(nearest_point_index_ > B && nearest_point_index_ < 16100)
-			gps_controlCmd_.cmd1.set_turnLight_L = true;
-		
-		A = 16539; B = 16608;
-		if(nearest_point_index_ > A-200 && nearest_point_index_ < A) //end slow down
-			speed_limit_ = LowSpeed;
-		else if(nearest_point_index_ > A && nearest_point_index_ < B) //stop 
-		{
-			speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
-			ROS_ERROR("speed_limit_:%f",speed_limit_);
-			if(speed_limit_ < 0) speed_limit_ = 0.0;
-		}
-		else if(nearest_point_index_ > B)
-			speed_limit_ = 0;
-		
+//					speed_limit_ = path_tracking_speed_;
+//					stoped3 = 2;
+//				}
+//				else
+//					speed_limit_ = 0.0;
+//			}
+//		}
+//		else if(nearest_point_index_ >B && nearest_point_index_ < 3800) //path narrow
+//		{
+//			if(nearest_point_index_ < B+25)
+//				gps_controlCmd_.cmd1.set_turnLight_R = true;
+//			speed_limit_ = LowSpeed;
+//		}
+//		else if(nearest_point_index_ >4460 && nearest_point_index_ < 5238) //person
+//			speed_limit_ = LowSpeed;
+//		else if(nearest_point_index_ >7150 && nearest_point_index_ < 7300) //u-turn
+//			gps_controlCmd_.cmd1.set_turnLight_L = true;
+//		else if(nearest_point_index_ >8443 && nearest_point_index_ < 9615) //working
+//			speed_limit_ = LowSpeed;
+//		
+//			
+//		static int stoped1 = 0 ; //0: unstop 1: stop 2: stoped
+//		A = 10854, B = 10967; //phone
+//		if(nearest_point_index_ >A-200 && nearest_point_index_ < A) //phone
+//			speed_limit_ = LowSpeed;
+//		else if(nearest_point_index_ > A && nearest_point_index_ < B)
+//		{
+////			ROS_ERROR("stoped1:%d",stoped1);
+//			if(stoped1 == 0)
+//			{
+//				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+//				if(speed_limit_ < 0) speed_limit_ = 0.0;
+//				if(vehicle_speed_ < 0.1) //stoped
+//				{
+////					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
+//					stop_time = ros::Time::now().toSec();
+//					stoped1 = 1;
+//				}
+//			}
+//			else if(stoped1 == 1)
+//			{
+//				if(ros::Time::now().toSec()-stop_time > stop_duration)
+//				{
+////					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
+//					speed_limit_ = path_tracking_speed_;
+//					stoped1 = 2;
+//				}
+//				else
+//					speed_limit_ = 0.0;
+//			}
+//		}
+//		
+//		static int stoped2 = 0 ; //0: unstop 1: stop 2: stoped
+//		A = 12665; B = 12765;
+//		if(nearest_point_index_ >A-200 && nearest_point_index_ < A) //pick up
+//			speed_limit_ = LowSpeed;
+//		if(nearest_point_index_ > A && nearest_point_index_ < B)
+//		{
+////			ROS_ERROR("stoped:%d",stoped2);
+//			if(stoped2 == 0)
+//			{
+//				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+//				if(speed_limit_ < 0) speed_limit_ = 0.0;
+//				if(vehicle_speed_ < 0.1) //stoped
+//				{
+////					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
+//					stop_time = ros::Time::now().toSec();
+//					stoped2 = 1;
+//				}
+//			}
+//			else if(stoped2 == 1)
+//			{
+//				if(ros::Time::now().toSec()-stop_time > stop_duration)
+//				{
+//					speed_limit_ = path_tracking_speed_;
+//					stoped2 = 2;
+////					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
+//				}
+//				else
+//					speed_limit_ = 0.0;
+//			}
+//		}
+//		if(nearest_point_index_ > 14035 && nearest_point_index_ < 14544) //turn rignt
+//		{
+//			speed_limit_ = LowSpeed;
+//			gps_controlCmd_.cmd1.set_turnLight_R = true;
+//		}
+//		
+//		static int stoped4 = 0 ; //0: unstop 1: stop 2: stoped
+//		A = 15119; B = 15207; // pick down
+//		if(nearest_point_index_ > A-200 && nearest_point_index_ < A) 
+//			speed_limit_ = LowSpeed;
+//		else if(nearest_point_index_ > A && nearest_point_index_ < B)
+//		{
+////			ROS_ERROR("stoped:%d",stoped4);
+//			if(stoped4 == 0)
+//			{
+//				speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+//				if(speed_limit_ < 0) speed_limit_ = 0.0;
+//				if(vehicle_speed_ < 0.1) //stoped
+//				{
+////					ROS_ERROR("stop+++++++++++++++++++++++++++++++++++");
+//					stop_time = ros::Time::now().toSec();
+//					stoped4 = 1;
+//				}
+//			}
+//			else if(stoped4 == 1)
+//			{
+//				if(ros::Time::now().toSec()-stop_time > stop_duration)
+//				{
+//					speed_limit_ = path_tracking_speed_;
+//					stoped4 = 2;
+////					ROS_ERROR("duration: %f",ros::Time::now().toSec()-stop_time);
+//				}
+//				else
+//					speed_limit_ = 0.0;
+//			}
+//		}
+//		else if(nearest_point_index_ > B && nearest_point_index_ < 16100)
+//			gps_controlCmd_.cmd1.set_turnLight_L = true;
+//		
+//		A = 16539; B = 16608;
+//		if(nearest_point_index_ > A-200 && nearest_point_index_ < A) //end slow down
+//			speed_limit_ = LowSpeed;
+//		else if(nearest_point_index_ > A && nearest_point_index_ < B) //stop 
+//		{
+//			speed_limit_ = (B-nearest_point_index_)/(B-A)*LowSpeed;
+//			ROS_ERROR("speed_limit_:%f",speed_limit_);
+//			if(speed_limit_ < 0) speed_limit_ = 0.0;
+//		}
+//		else if(nearest_point_index_ > B)
+//			speed_limit_ = 0;
+//---------------------------------------------------------
 		
 		if(key_)
 			target_point_ = pointOffset(path_points_[target_point_index_],-2.5);
@@ -385,7 +417,8 @@ void PathTracking::run()
 		{
 			lateral_err_ = calculateDis2path(current_point_.x,current_point_.y,path_points_,
 											 target_point_index_,&nearest_point_index_) - avoiding_offset_;
-		}catch(const char* str)
+		}
+		catch(const char* str)
 		{
 			ROS_INFO("%s",str);
 			break;

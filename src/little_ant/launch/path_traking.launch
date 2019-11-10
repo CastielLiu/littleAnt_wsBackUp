@@ -4,7 +4,7 @@
 	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="file_name" default="test5.txt" />
+	<arg name="file_name" default="path.txt" />
 	
 <!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
@@ -20,7 +20,7 @@
 		
 		<param name="foreSightDistance_coefficient_" value = "1.8"/>
 		<param name="foreSightDis_latErrCoefficient" value = "1.0"/>
-		<param name="speed" value="30.0"/>
+		<param name="speed" value="19.0"/>
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >
