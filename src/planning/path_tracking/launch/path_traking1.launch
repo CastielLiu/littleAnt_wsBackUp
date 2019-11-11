@@ -1,10 +1,10 @@
 <!-- -->
 <launch>
 
-	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
+	<arg name="base_control_port" default="/dev/U4"/>   <!--底层can分析仪-->
 	<arg name="gps_port" default="/dev/ttyS1"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
-	<arg name="max_speed"  default="30.0"/>
+	<arg name="max_speed"  default="10.0"/>
 	<arg name="path_file" default="path.txt"/>
 	
 <!--底层 -->
