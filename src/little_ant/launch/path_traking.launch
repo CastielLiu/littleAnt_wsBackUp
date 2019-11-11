@@ -20,7 +20,7 @@
 		
 		<param name="foreSightDistance_coefficient_" value = "1.8"/>
 		<param name="foreSightDis_latErrCoefficient" value = "1.0"/>
-		<param name="speed" value="10.0"/>
+		<param name="speed" value="5.0"/>
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_node"  >

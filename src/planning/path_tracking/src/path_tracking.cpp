@@ -246,9 +246,9 @@ void PathTracking::run()
 		}
 		float min_curvature = minCurvatureInRange(path_points_, nearest_point_index_, index);
 		
-		gps_controlCmd_.cmd2.set_speed = 
-				limitSpeedByPathCurvature(path_tracking_speed_,min_curvature);
-		
+//		gps_controlCmd_.cmd2.set_speed = 
+//				limitSpeedByPathCurvature(path_tracking_speed_,min_curvature);
+		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;
 		this->publishPathTrackingState();
 		
 		gps_controlCmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
