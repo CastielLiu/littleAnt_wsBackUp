@@ -28,6 +28,7 @@ float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 {
 	float steering_radius = fabs(AXIS_DISTANCE/tan(angle*M_PI/180.0));
 	float max_speed =  sqrt(steering_radius*max_side_acceleration);
+	std::cout << "max tolarate speed: " << max_speed << std::endl;
 	return speed>max_speed? max_speed: speed;
 }
 
