@@ -12,6 +12,7 @@
 		<param name="file_name" value="$(arg file_name).txt"/>
 		<param name="sample_distance" value="0.1" />
 		<param name="utm_topic" value="/ll2utm_odom" />
+		<param name="curvature_gen" value="true"/>
 	</node>
 	
 	<node pkg="novatel" type="novatel_node" name="novatel_gps_node" >

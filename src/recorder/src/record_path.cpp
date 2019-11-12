@@ -17,10 +17,9 @@ class Record
 		FILE *fp_wgs84;
 		
 		gpsMsg_t last_point , current_point;
-		
+		bool is_generate_curvature_;
 		float sample_distance_;
 		ros::Subscriber sub_gps_;
-		
 		ros::Subscriber sub_cartesian_gps_ ;
 		
 	public:
@@ -52,6 +51,7 @@ bool Record::init()
 	
 	private_nh.param<std::string>("file_path",file_path_,"");
 	private_nh.param<std::string>("file_name",file_name_,"");
+	private_nh.param<bool>("curvature_gen",is_generate_curvature_,false);
 	
 	if(file_path_.empty() || file_name_.empty())
 	{
@@ -84,6 +84,8 @@ bool Record::init()
 void Record::run()
 {
 	ros::spin();
+	if(!is_generate_curvature_)
+		return;
 	
 	// generate curvature
 	std::string package_path;
