@@ -71,7 +71,6 @@ class Points:
 		y = self.y[i] - self.y[j]
 		return math.sqrt(x*x+y*y)
 		
-
 			
 def plot(file_name):
 	path_points = Points()
@@ -89,8 +88,8 @@ def plot(file_name):
 	
 	result_points.offsetPoints(reference_point_x,reference_point_y)
 	
-	plt.plot(path_points.y,path_points.x,'r.',label="reference path")
-	plt.plot(result_points.y,result_points.x,'k-',label="trajectory")
+	plt.plot(path_points.x,path_points.y,'r.',label="reference path")
+	#plt.plot(result_points.y,result_points.x,'k-',label="trajectory")
 
 	plt.legend()
 

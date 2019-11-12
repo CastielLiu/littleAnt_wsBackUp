@@ -431,9 +431,9 @@ void BaseControl::timer_callBack(const ros::TimerEvent& event)
 {
 	//send cmd to stm32
 	send_to_stm32_buf[5] = stm32_brake_ & 0x7f;
-	if(is_driverlessMode_)
+	if(state4.driverless_mode)
 		send_to_stm32_buf[5] |= 0x80;
-		
+
 	send_to_stm32_buf[7] = generateCheckNum(send_to_stm32_buf,8);
 	stm32_serial_port_->write(send_to_stm32_buf,8);
 	
