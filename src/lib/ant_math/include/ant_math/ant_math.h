@@ -123,7 +123,7 @@ float  calculateDis2path(const double& X_,const double& Y_,
 						 
 float maxRoadWheelAngleWhenChangeLane(const float& offset,const float& distance);
 float generateDangerDistanceBySpeed(const float &speed);
-float generateMaxTolarateSpeedByCurvature(const float& curvature);
+float generateMaxTolarateSpeedByCurvature(const float& curvature, const float& max_accel);
 float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,
 											const size_t& nearest_point_index,
 											const size_t& target_point_index);
@@ -131,6 +131,7 @@ float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_poin
 float disBetweenPoints(const gpsMsg_t& point1, const gpsMsg_t& point2);
 size_t findIndexForGivenDis(const std::vector<gpsMsg_t>& path_points, size_t startIndex,float dis);
 float minCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t startIndex,size_t endIndex);
+float maxCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t startIndex,size_t endIndex);
 float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt=true);
 size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points, const gpsMsg_t& current_point);
 std::pair<float, float> get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2);

@@ -65,7 +65,7 @@ private:
 	float disThreshold_;
 	float avoiding_offset_;
 	
-	float path_tracking_speed_;
+	float track_speed_;
 	
 	bool vehicle_speed_status_;
 	
@@ -76,6 +76,7 @@ private:
 	float danger_distance_front_;
 	
 	float max_roadwheelAngle_;
+	float max_side_accel_;
 	bool is_avoiding_;
 	float lateral_err_;
 	float yaw_err_;
@@ -134,12 +135,14 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
-	nh_private.param<float>("speed",path_tracking_speed_,3.0);
+	nh_private.param<float>("speed",track_speed_,5.0);
 
 	nh_private.param<float>("foreSightDis_speedCoefficient", foreSightDis_speedCoefficient_,1.8);
 	nh_private.param<float>("foreSightDis_latErrCoefficient", foreSightDis_latErrCoefficient_,0.3);
 	
 	nh_private.param<float>("min_foresight_distance",min_foresight_distance_,5.0);
+	nh_private.param<float>("max_side_accel",max_side_accel_,1.5);
+	
 	
 	if(path_points_file_.empty())
 	{
@@ -213,7 +216,9 @@ void PathTracking::run()
 		if(disThreshold_ < min_foresight_distance_) 
 			disThreshold_  = min_foresight_distance_;
 			
-		// disThreshold_ = min_foresight_distance_ + foreSightDis_speedCoefficient_ * vehicle_speed_ + foreSightDis_latErrCoefficient_ * fabs(lateral_err_);
+//		 disThreshold_ = min_foresight_distance_ + 
+//						 foreSightDis_speedCoefficient_ * vehicle_speed_ + 
+//						 foreSightDis_latErrCoefficient_ * fabs(lateral_err_);
 	
 		//ROS_INFO("disThreshold:%f\t lateral_err:%f",disThreshold_,lateral_err_);
 									 
@@ -237,25 +242,24 @@ void PathTracking::run()
 		
 		//ROS_INFO("t_roadWheelAngle :%f\n",t_roadWheelAngle);
 		
-		//find the index of a path point 8.0meters from the current point
-		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,15.0); 
+		//find the index of a path point x meters from the current point
+		size_t index = findIndexForGivenDis(path_points_,nearest_point_index_,disThreshold_ + 20); 
 		if(index ==0)
 		{
 			ROS_INFO("findIndexForGivenDis faild!");
 			break;
 		}
-		float min_curvature = minCurvatureInRange(path_points_, nearest_point_index_, index);
+		float max_curvature = maxCurvatureInRange(path_points_, nearest_point_index_, index);
+		float max_speed = generateMaxTolarateSpeedByCurvature(max_curvature, max_side_accel_);
 		
-//		gps_controlCmd_.cmd2.set_speed = 
-//				limitSpeedByPathCurvature(path_tracking_speed_,min_curvature);
-		gps_controlCmd_.cmd2.set_speed = path_tracking_speed_;
-		this->publishPathTrackingState();
-		
+		gps_controlCmd_.cmd2.set_speed = track_speed_ > max_speed ? max_speed : track_speed_;
+				
 		gps_controlCmd_.cmd2.set_roadWheelAngle = t_roadWheelAngle;
 		
+		this->publishPathTrackingState();
 		if(i%20==0)
 		{
-			ROS_INFO("curvature:%f",target_point_.curvature);
+			ROS_INFO("min_r:%.3f\t max_speed:%.1f",1.0/max_curvature, max_speed);
 			ROS_INFO("set_speed:%f\t speed:%f",gps_controlCmd_.cmd2.set_speed ,vehicle_speed_*3.6);
 			ROS_INFO("dis2target:%.2f\t yaw_err:%.2f\t lat_err:%.2f",dis_yaw.first,yaw_err_*180.0/M_PI,lateral_err_);
 			ROS_INFO("disThreshold:%f\t expect roadwheel angle:%.2f",disThreshold_,t_roadWheelAngle);

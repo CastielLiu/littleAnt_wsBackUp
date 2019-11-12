@@ -7,7 +7,7 @@ const float g_vehicle_length = 3.5;
 
 const float g_max_deceleration = 5.0; // m/s/s
 
-static const float max_side_acceleration = 1.9; // m/s/s
+static const float max_side_acceleration = 1.5; // m/s/s
 
 
 
@@ -28,7 +28,7 @@ float limitSpeedByCurrentRoadwheelAngle(float speed,float angle)
 {
 	float steering_radius = fabs(AXIS_DISTANCE/tan(angle*M_PI/180.0));
 	float max_speed =  sqrt(steering_radius*max_side_acceleration);
-	std::cout << "max tolarate speed: " << max_speed << std::endl;
+	
 	return speed>max_speed? max_speed: speed;
 }
 
@@ -237,18 +237,18 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	if(curvature == 0.0)
 		return speed;
 	
-	//float max_speed =  sqrt(1.0/fabs(curvature)*max_side_acceleration) *3.6;
-	float max_speed =  sqrt(1.0/fabs(curvature)*1.5) *3.6;
+	float max_speed =  sqrt(1.0/fabs(curvature)*max_side_acceleration) *3.6;
 	return speed>max_speed? max_speed: speed;
 }
 
 //km/h
-float generateMaxTolarateSpeedByCurvature(const float& curvature)
+float generateMaxTolarateSpeedByCurvature(const float& curvature, const float& max_accel)
 {
-	if(curvature==0.0)
+	float abs_cur = fabs(curvature);
+	if(abs_cur < 0.001)
 		return 100.0;
 
-	return sqrt(1.0/fabs(curvature)*1.5) *3.6;
+	return sqrt(1.0/abs_cur*max_accel) *3.6;
 }
 
 float generateMaxTolarateSpeedByCurvature(const std::vector<gpsMsg_t>& path_points,
@@ -320,6 +320,18 @@ float minCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t start
 	}
 	return min;
 }
+
+float maxCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t startIndex,size_t endIndex)
+{
+	float max = 0.;
+	for(size_t i=startIndex; i<endIndex; i++)
+	{
+		if(fabs(path_points[i].curvature) > max)
+			max = fabs(path_points[i].curvature);
+	}
+	return max;
+}
+
 
 std::pair<float, float> get_dis_yaw(gpsMsg_t &point1,gpsMsg_t &point2)
 {
