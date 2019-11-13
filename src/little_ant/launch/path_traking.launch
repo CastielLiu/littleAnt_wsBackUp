@@ -30,6 +30,7 @@
 		<param name="log_commands" value="inspvaxb ontime 0.05" />
 		<param name="is_lltoutm"   value="true"/>
 		<param name="ll2utm_topic" value="/ll2utm_odom"/>
+		<param name="x_offset" value="-1.3"/>
 		
 	</node>
 	
