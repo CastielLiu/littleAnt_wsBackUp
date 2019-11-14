@@ -67,7 +67,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 	{
 		getline(in_file,line);
 		std::stringstream ss(line);
-		ss >> point.x >> point.y >> point.yaw;
+		ss >> point.x >> point.y >> point.yaw >> point.curvature;
 		points.push_back(point);
 	}
 	
