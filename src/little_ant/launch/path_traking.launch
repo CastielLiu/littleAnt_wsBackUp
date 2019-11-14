@@ -15,6 +15,7 @@
 	</node>
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
+		<param name="file_path" value="$(find recorder)/data/path_data/result/"/>
 		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
 		<param name="disThreshold" value="6.0"/>
 		<param name="max_side_accel" value="1.5"/>

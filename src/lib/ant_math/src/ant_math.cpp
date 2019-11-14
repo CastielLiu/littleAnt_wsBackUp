@@ -86,7 +86,6 @@ float dis2Points(const gpsMsg_t& point1, const gpsMsg_t& point2,bool is_sqrt)
 	return x*x+y*y;
 }
 
-
 size_t findNearestPoint(const std::vector<gpsMsg_t>& path_points, const gpsMsg_t& current_point)
 {
 	size_t index = 0;

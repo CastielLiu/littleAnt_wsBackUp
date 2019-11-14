@@ -34,6 +34,7 @@ public:
 	void vehicleState4_callback(const little_ant_msgs::State4::ConstPtr& msg);
 	void vehicleSpeed_callback(const little_ant_msgs::State2::ConstPtr& msg);
 	void avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg);
+	void reload_seq_callback(const std_msgs::UInt8::ConstPtr& msg);
 
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread(){ros::spin();}
@@ -41,11 +42,13 @@ public:
 private:
 	gpsMsg_t pointOffset(const gpsMsg_t& point,float offset);
 	void publishPathTrackingState();
+	bool reloadPathPoints();
 private:
 	ros::Subscriber sub_utm_odom_;
 	ros::Subscriber sub_vehicleState2_;
 	ros::Subscriber sub_vehicleState4_;
 	ros::Subscriber sub_avoiding_from_lidar_;
+	ros::Subscriber sub_reload_seq_;
 	ros::Timer timer_;
 	
 	ros::Publisher pub_gps_cmd_;
@@ -56,6 +59,7 @@ private:
 	
 	boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
 	
+	std::string file_path_;
 	std::string path_points_file_;
 	std::vector<gpsMsg_t> path_points_;
 	
@@ -64,6 +68,7 @@ private:
 	float min_foresight_distance_;
 	float disThreshold_;
 	float avoiding_offset_;
+	uint8_t reload_seq_;
 	
 	float track_speed_;
 	
@@ -95,7 +100,8 @@ PathTracking::PathTracking():
 	nearest_point_index_(0),
 	avoiding_offset_(0.0),
 	max_roadwheelAngle_(25.0),
-	is_avoiding_(false)
+	is_avoiding_(false),
+	reload_seq_(0)
 {
 	gps_controlCmd_.origin = little_ant_msgs::ControlCmd::_GPS;
 	gps_controlCmd_.status = true;
@@ -127,12 +133,15 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",1,&PathTracking::avoiding_flag_callback,this);
 	
+	sub_reload_seq_ = nh.subscribe("/reload_seq",1, &PathTracking::reload_seq_callback,this);
+	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	
 	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
 	
 	pub_tracking_state_ = nh.advertise<path_tracking::State>(tracking_info_topic,1);
 	
+	nh_private.param<std::string>("file_path", file_path_, "");
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 
 	nh_private.param<float>("speed",track_speed_,5.0);
@@ -147,6 +156,11 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	if(path_points_file_.empty())
 	{
 		ROS_ERROR("no input path points file !!");
+		return false;
+	}
+	if(file_path_.empty())
+	{
+		ROS_ERROR("no input file path !!");
 		return false;
 	}
 	
@@ -177,9 +191,20 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		ROS_INFO("waiting for vehicle speed data ok ...");
 		usleep(200000);
 	}
-	
+
 	target_point_ = path_points_[target_point_index_];
 	return true;
+}
+
+bool PathTracking::reloadPathPoints()
+{
+	path_points_.clear();
+	std::string file = file_path_ + std::to_string(reload_seq_)+".txt";
+	if(!loadPathPoints(file, path_points_))
+		return false;
+	target_point_index_ = findNearestPoint(path_points_,current_point_);
+	target_point_ = path_points_[target_point_index_];
+	reload_seq_ = 0;
 }
 
 gpsMsg_t PathTracking::pointOffset(const gpsMsg_t& point,float offset)
@@ -198,6 +223,9 @@ void PathTracking::run()
 	
 	while(ros::ok() && target_point_index_ < path_points_.size()-2)
 	{
+		if(reload_seq_)
+			this->reloadPathPoints();
+		
 		if( avoiding_offset_ != 0.0)
 			target_point_ = pointOffset(path_points_[target_point_index_],avoiding_offset_);
 		
@@ -296,6 +324,11 @@ void PathTracking::publishPathTrackingState()
 	tracking_state_.current_index = nearest_point_index_;
 	pub_tracking_state_.publish(tracking_state_);
 	
+}
+
+void PathTracking::reload_seq_callback(const std_msgs::UInt8::ConstPtr& msg)
+{
+	reload_seq_ = msg->data;
 }
 
 void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
