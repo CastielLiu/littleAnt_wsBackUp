@@ -5,7 +5,7 @@
 	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
 	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
 	<arg name="file_name" default="path.txt" />
-	<arg name="max_speed" default="5.0" />
+	<arg name="max_speed" default="15.0" />
 <!--底层 -->
 	<node name="base_control" pkg="little_ant" type="base_control" output="screen">
 		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>

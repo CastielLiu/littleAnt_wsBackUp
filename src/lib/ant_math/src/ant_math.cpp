@@ -67,7 +67,7 @@ bool loadPathPoints(std::string file_path,std::vector<gpsMsg_t>& points)
 	{
 		getline(in_file,line);
 		std::stringstream ss(line);
-		ss >> point.x >> point.y >> point.yaw;
+		ss >> point.x >> point.y >> point.yaw >> point.curvature;
 		points.push_back(point);
 	}
 	
@@ -326,8 +326,9 @@ float maxCurvatureInRange(const std::vector<gpsMsg_t>& path_points, size_t start
 	float max = 0.;
 	for(size_t i=startIndex; i<endIndex; i++)
 	{
-		if(fabs(path_points[i].curvature) > max)
-			max = fabs(path_points[i].curvature);
+		float abs_cur = fabs(path_points[i].curvature);
+		if(abs_cur > max)
+			max = abs_cur;
 	}
 	return max;
 }
