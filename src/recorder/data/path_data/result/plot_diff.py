@@ -31,7 +31,7 @@ def main(argv):
 	if(len(argv) <2):
 		print("please input file name");
 		return
-	colors = ['y-','r-','g-.','b-*','k-*']
+	colors = ['y-','r-*','g-.','b-*','k-*']
 	for i in range(1,len(argv)):
 		points = loadPoints(argv[i])
 		xs = [point.x for point in points]
