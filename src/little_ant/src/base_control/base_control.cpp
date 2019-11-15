@@ -525,7 +525,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 	
 	set_brake = (set_brake > msg->set_brake) ? set_brake :msg->set_brake;
 	
-	if(set_brake >0.0) 
+	if(set_brake >0.0)
 		set_speed = 0.0;
 	else if(set_speed > MAX_SPEED-1) 
 		set_speed = MAX_SPEED-1;
@@ -562,7 +562,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	last_set_steeringAngle = current_set_steeringAngle;
 	
-	uint16_t steeringAngle = 10800 - current_set_steeringAngle*10 +30; //steering offset
+	uint16_t steeringAngle = 10800 - current_set_steeringAngle*10 -135; //steering offset
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
@@ -580,6 +580,8 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		stm32_brake_ = (set_brake - 40)/60.0 * 100;
 	else
 		stm32_brake_ = 0;
+	
+//	std::cout << "stm32_brake_: " << int(stm32_brake_) << std::endl;
 }
 
 uint8_t BaseControl::generateCheckNum(const void* voidPtr,size_t len)
