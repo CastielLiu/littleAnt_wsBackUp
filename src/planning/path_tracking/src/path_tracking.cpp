@@ -387,7 +387,7 @@ void PathTracking::avoiding_flag_callback(const std_msgs::Float32::ConstPtr& msg
 
 bool PathTracking::is_gps_data_valid(gpsMsg_t& point)
 {
-	if(point.x !=0 && point.y !=0)
+	if(point.x > 100 && point.y >= 100)
 		return true;
 	return false;
 }
