@@ -12,6 +12,7 @@
 #include<geometry_msgs/Quaternion.h>
 #include<tf/transform_datatypes.h>
 #include<std_msgs/Float32.h>
+#include<js_control/Info.h>
 
 #include<ant_math/ant_math.h>
 #include<path_tracking/State.h>
@@ -38,6 +39,7 @@ public:
 	void reload_seq_callback(const std_msgs::UInt8::ConstPtr& msg);
 	void jsBraking_callback(const std_msgs::Float32::ConstPtr& msg);
 	void isManual_callback(const std_msgs::Bool::ConstPtr& msg);
+	void joyInfo_callback(const js_control::Info::ConstPtr& msg);
 
 	bool is_gps_data_valid(gpsMsg_t& point);
 	void rosSpinThread(){ros::spin();}
@@ -55,6 +57,7 @@ private:
 	//lc
 	ros::Subscriber sub_isMaunal_;
 	ros::Subscriber sub_jsBraking_;
+	ros::Subscriber sub_joy_info_;
 	
 	ros::Timer timer_;
 	
@@ -103,6 +106,7 @@ private:
 	bool isManual_;
 	float jsBrakingVar_;
 	
+	
 };
 
 PathTracking::PathTracking():
@@ -150,6 +154,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	//lc
 	sub_isMaunal_ = nh.subscribe("/isManual",1, &PathTracking::isManual_callback, this);
 	sub_jsBraking_ = nh.subscribe("/jsBrakingCmd",1, &PathTracking::jsBraking_callback,this);
+	sub_joy_info_ = nh.subscribe("/joy_info",1, &PathTracking::joyInfo_callback, this);
 	
 	pub_gps_cmd_ = nh.advertise<little_ant_msgs::ControlCmd>("/sensor_decision",1);
 	
@@ -401,6 +406,11 @@ void PathTracking::isManual_callback(const std_msgs::Bool::ConstPtr& msg)
 void PathTracking::jsBraking_callback(const std_msgs::Float32::ConstPtr& msg)
 {
 	jsBrakingVar_ = msg->data;
+}
+
+void PathTracking::joyInfo_callback(const js_control::Info::ConstPtr& msg)
+{
+	track_speed_ = msg->soft_gear*5;
 }
 
 int main(int argc,char**argv)
