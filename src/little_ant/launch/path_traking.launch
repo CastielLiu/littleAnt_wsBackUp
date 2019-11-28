@@ -19,8 +19,8 @@
 		<param name="path_points_file" value="$(find recorder)/data/path_data/result/$(arg file_name)"/>
 		<param name="disThreshold" value="6.0"/>
 		<param name="max_side_accel" value="1.5"/>
-		<param name="foreSightDistance_coefficient_" value = "1.8"/>
-		<param name="foreSightDis_latErrCoefficient" value = "1.0"/>
+		<param name="foreSightDistance_coefficient_" value = "1.4"/>
+		<param name="foreSightDis_latErrCoefficient" value = "-1.5"/>
 		<param name="speed" value="$(arg max_speed)"/>
 	</node>
 	

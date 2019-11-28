@@ -562,7 +562,7 @@ void BaseControl::callBack2(const little_ant_msgs::ControlCmd2::ConstPtr msg)
 		
 	last_set_steeringAngle = current_set_steeringAngle;
 	
-	uint16_t steeringAngle = 10800 - current_set_steeringAngle*10 -135; //steering offset
+	uint16_t steeringAngle = 10800 - (current_set_steeringAngle*10 - 20) ; //steering offset
 	
 	canMsg_cmd2.data[4] =  uint8_t(steeringAngle / 256);
 	canMsg_cmd2.data[5] = uint8_t(steeringAngle % 256);
