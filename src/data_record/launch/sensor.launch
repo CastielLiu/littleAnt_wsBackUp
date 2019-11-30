@@ -1,7 +1,0 @@
-<!-- -->
-<launch>
-	<include file="$(find novatel)/launch/novatel.launch"/>
-	<include file="$(find novatel)/launch/novatel_imu.launch"/>
-	<include file="$(find little_ant)/launch/base_control.launch"/>
-	
-</launch>
